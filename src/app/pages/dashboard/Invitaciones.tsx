@@ -103,7 +103,9 @@ export default function Invitaciones() {
   };
 
   const copyInvitationLink = async (token: string) => {
-    const link = `${window.location.origin}/invitacion/${token}`;
+    const base = import.meta.env.BASE_URL;
+    const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+    const link = `${window.location.origin}${cleanBase}/invitacion/${token}`;
     
     try {
       // Try modern clipboard API first
