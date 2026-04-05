@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
+import { useAuth } from './contexts/AuthContext';
 
 // Public pages
 import Landing from './pages/Landing';
@@ -50,12 +51,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Dashboard route selector based on user role
 const DashboardHome = () => {
-  const currentUser = localStorage.getItem('currentUser');
-  if (!currentUser) {
+  const { user } = useAuth();
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
   
-  const user = JSON.parse(currentUser);
   return user.rol === 'dueño' ? <DuenoDashboard /> : <InquilinoDashboard />;
 };
 

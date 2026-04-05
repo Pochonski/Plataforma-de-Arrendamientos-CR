@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Property, Invitation, Payment, Contract, Notification, Message, Conversation, ConversationType, User } from '../types';
 
 // Mock users for demo
@@ -113,13 +113,61 @@ const INITIAL_PROPERTIES: Property[] = [
 ];
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [properties, setProperties] = useState<Property[]>(INITIAL_PROPERTIES);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
+  // Data helper to load from local storage and revive Dates
+  const reviveDate = (k: string, v: any) => {
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(v)) {
+      return new Date(v);
+    }
+    return v;
+  };
+
+  const loadState = <T,>(key: string, defaultVal: T): T => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved, reviveDate);
+      }
+    } catch (e) {
+      console.error(`Error loading state ${key}`, e);
+    }
+    return defaultVal;
+  };
+
+  const [properties, setProperties] = useState<Property[]>(() => loadState('app_properties', INITIAL_PROPERTIES));
+  const [invitations, setInvitations] = useState<Invitation[]>(() => loadState('app_invitations', []));
+  const [contracts, setContracts] = useState<Contract[]>(() => loadState('app_contracts', []));
+  const [payments, setPayments] = useState<Payment[]>(() => loadState('app_payments', []));
+  const [notifications, setNotifications] = useState<Notification[]>(() => loadState('app_notifications', []));
+  const [conversations, setConversations] = useState<Conversation[]>(() => loadState('app_conversations', []));
+  const [messages, setMessages] = useState<Message[]>(() => loadState('app_messages', []));
+
+  // Sync state to local storage when changed
+  useEffect(() => localStorage.setItem('app_properties', JSON.stringify(properties)), [properties]);
+  useEffect(() => localStorage.setItem('app_invitations', JSON.stringify(invitations)), [invitations]);
+  useEffect(() => localStorage.setItem('app_contracts', JSON.stringify(contracts)), [contracts]);
+  useEffect(() => localStorage.setItem('app_payments', JSON.stringify(payments)), [payments]);
+  useEffect(() => localStorage.setItem('app_notifications', JSON.stringify(notifications)), [notifications]);
+  useEffect(() => localStorage.setItem('app_conversations', JSON.stringify(conversations)), [conversations]);
+  useEffect(() => localStorage.setItem('app_messages', JSON.stringify(messages)), [messages]);
+
+  // Sync state across different browser tabs in real-time
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      try {
+        if (e.key === 'app_properties' && e.newValue) setProperties(JSON.parse(e.newValue, reviveDate));
+        if (e.key === 'app_invitations' && e.newValue) setInvitations(JSON.parse(e.newValue, reviveDate));
+        if (e.key === 'app_contracts' && e.newValue) setContracts(JSON.parse(e.newValue, reviveDate));
+        if (e.key === 'app_payments' && e.newValue) setPayments(JSON.parse(e.newValue, reviveDate));
+        if (e.key === 'app_notifications' && e.newValue) setNotifications(JSON.parse(e.newValue, reviveDate));
+        if (e.key === 'app_conversations' && e.newValue) setConversations(JSON.parse(e.newValue, reviveDate));
+        if (e.key === 'app_messages' && e.newValue) setMessages(JSON.parse(e.newValue, reviveDate));
+      } catch (err) {
+        console.error('Error syncing state across tabs:', err);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Properties
   const addProperty = (property: Omit<Property, 'id' | 'createdAt'>) => {
@@ -249,7 +297,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (existingConversation) {
       return existingConversation;
     }
-    return createConversation({ participants, propertyId, type });
+    return createConversation({ participants, propertyId, type: type || 'general' });
   };
 
   const getConversationById = (id: string) => {
@@ -297,7 +345,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return messages.filter(m => m.conversationId === conversationId);
   };
 
-  const markMessagesAsRead = (conversationId: string, userId: string) => {
+  const markMessagesAsRead = useCallback((conversationId: string, userId: string) => {
     setMessages(prev =>
       prev.map(m => 
         m.conversationId === conversationId && m.senderId !== userId
@@ -320,7 +368,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return conv;
       })
     );
-  };
+  }, []);
 
   const getUnreadMessagesCount = (userId: string) => {
     return conversations

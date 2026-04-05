@@ -13,6 +13,7 @@ import {
   MapPin,
   CheckCircle2,
 } from 'lucide-react';
+import { downloadContractPDF } from '../../utils/export';
 
 export default function MiContrato() {
   const { user } = useAuth();
@@ -203,7 +204,19 @@ export default function MiContrato() {
                   Ver historial
                 </Link>
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => {
+                downloadContractPDF(
+                  {
+                    id: myContract.id,
+                    inquilinoNombre: user?.nombre || 'Inquilino',
+                    monto: formatPrice(myContract.montoMensual, myContract.moneda),
+                    fechaInicio: new Date(myContract.fechaInicio).toLocaleDateString('es-CR'),
+                    estado: myContract.estado,
+                  },
+                  property,
+                  `Contrato_${myContract.id}`
+                );
+              }}>
                 <Download className="size-4 mr-2" />
                 Descargar contrato
               </Button>

@@ -34,6 +34,7 @@ export default function AceptarInvitacion() {
     createContract,
     addNotification,
     getUserById,
+    updateProperty,
   } = useData();
 
   const [invitation, setInvitation] = useState<any>(null);
@@ -81,6 +82,11 @@ export default function AceptarInvitacion() {
         moneda: invitation.moneda,
         fechaInicio: new Date(),
         estado: 'activo',
+      });
+
+      // Actualizar estado de la propiedad a "alquilada" para que ya no aparezca disponible
+      updateProperty(property.id, {
+        estado: 'alquilada',
       });
 
       // Notificar al dueño

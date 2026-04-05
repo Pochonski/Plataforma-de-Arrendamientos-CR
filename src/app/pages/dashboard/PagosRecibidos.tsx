@@ -31,8 +31,10 @@ import {
   Eye,
   Search,
   Filter,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { downloadExcel } from '../../utils/export';
 
 export default function PagosRecibidos() {
   const { user } = useAuth();
@@ -203,8 +205,28 @@ export default function PagosRecibidos() {
 
       {/* Payments Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Comprobantes</CardTitle>
+          {filteredPayments.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => {
+              const exportData = filteredPayments.map(p => {
+                const property = properties.find((pr) => pr.id === p.propiedadId);
+                return {
+                  'Propiedad': property?.titulo || 'Propiedad',
+                  'Periodo': `${getMonthName(p.mes)} ${p.año}`,
+                  'Monto': p.monto,
+                  'Moneda': p.moneda,
+                  'Fecha de Subida': p.fechaSubida ? new Date(p.fechaSubida).toLocaleDateString() : 'N/A',
+                  'Estado': p.estado,
+                  'Nota de rechazo': p.motivoRechazo || ''
+                };
+              });
+              downloadExcel(exportData, 'pagos_recibidos');
+            }}>
+              <Download className="size-4 mr-2" />
+              Exportar
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {filteredPayments.length > 0 ? (

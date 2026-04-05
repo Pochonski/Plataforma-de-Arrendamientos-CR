@@ -84,6 +84,14 @@ npm run dev
 
 La aplicación estará disponible en `http://localhost:5173`
 
+### Despliegue con GitHub Actions
+El proyecto incluye un flujo de trabajo (`.github/workflows/deploy.yml`) para realizar el despliegue automático hacia **GitHub Pages**. 
+Para ponerlo en marcha:
+1. Sube tu código a GitHub.
+2. En los **Settings** de tu repositorio, ve a la sección de **Pages**.
+3. Selecciona **GitHub Actions** en *Source*.
+4. Cada vez que hagas `git push` a `main`, la aplicación se construirá y publicará automáticamente.
+
 ## 👥 Usuarios de Prueba
 
 ### Dueño
@@ -190,13 +198,18 @@ Actualmente utiliza **localStorage** para simular persistencia. Los datos incluy
 - Mensajes y conversaciones
 - Notificaciones
 
+### Utilidades Extras Implementadas 🚀
+- **jsPDF** - Generación de contratos en PDF oficial.
+- **xlsx** - Exportación de historial de pagos a formato Excel.
+
 ## 🚧 Próximos Pasos para Producción
 
 - [ ] Backend con API REST (Node.js/Express)
 - [ ] Base de datos (PostgreSQL/MongoDB)
 - [ ] Almacenamiento cloud para imágenes (S3/Cloudinary)
 - [ ] Sistema de emails (SendGrid/Mailgun)
-- [ ] Generación de PDFs para contratos
+- [x] Generación de PDFs para contratos (¡Completado!)
+- [x] Exportación de transacciones a Excel (¡Completado!)
 - [ ] Pasarela de pagos (Stripe/PayPal)
 - [ ] Verificación de identidad
 - [ ] 2FA y seguridad avanzada

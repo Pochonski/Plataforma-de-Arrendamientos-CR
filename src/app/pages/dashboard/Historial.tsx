@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
+import { downloadExcel } from '../../utils/export';
 import {
   Table,
   TableBody,
@@ -198,7 +199,21 @@ export default function Historial() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Pagos</CardTitle>
           {filteredPayments.length > 0 && (
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => {
+              const exportData = filteredPayments.map(p => {
+                const property = properties.find((pr) => pr.id === p.propiedadId);
+                return {
+                  'Propiedad': property?.titulo || 'Propiedad',
+                  'Periodo': `${getMonthName(p.mes)} ${p.año}`,
+                  'Monto': p.monto,
+                  'Moneda': p.moneda,
+                  'Fecha de Subida': p.fechaSubida ? new Date(p.fechaSubida).toLocaleDateString() : 'N/A',
+                  'Estado': p.estado,
+                  'Nota de rechazo': p.motivoRechazo || ''
+                };
+              });
+              downloadExcel(exportData, 'historial_pagos');
+            }}>
               <Download className="size-4 mr-2" />
               Exportar
             </Button>
