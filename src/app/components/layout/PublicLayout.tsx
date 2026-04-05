@@ -3,8 +3,10 @@ import { Button } from '../ui/button';
 import { Logo } from '../shared/Logo';
 import { ThemeToggle } from '../shared/ThemeToggle';
 import { Building2, Search, FileText, CreditCard, BarChart3 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function PublicLayout() {
+  const { isAuthenticated, logout } = useAuth();
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -25,12 +27,25 @@ export function PublicLayout() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" asChild className="hidden sm:inline-flex">
-              <Link to="/login">Iniciar sesión</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/registro">Registrarse</Link>
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                  <Link to="/dashboard">Panel de Control</Link>
+                </Button>
+                <Button variant="outline" onClick={logout} className="hidden sm:inline-flex">
+                  Cerrar Sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                  <Link to="/login">Iniciar sesión</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/registro">Registrarse</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
