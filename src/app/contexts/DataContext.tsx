@@ -134,7 +134,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Inicializar datos llamando a Azure API Management
   useEffect(() => {
-    const API_URL = 'https://plataforma-arrendamientos-api.azure-api.net/api';
+    const API_URL = (import.meta as any).env.VITE_API_URL;
 
     // Obtener propiedades desde Azure
     fetch(`${API_URL}/propiedades`)
@@ -160,8 +160,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Properties
   const addProperty = async (property: Omit<Property, 'id' | 'createdAt'>) => {
     try {
+      const API_URL = (import.meta as any).env.VITE_API_URL;
       // Notificar a Azure API de la creación
-      await fetch('https://plataforma-arrendamientos-api.azure-api.net/api/propiedades', {
+      await fetch(`${API_URL}/propiedades`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(property)
@@ -246,8 +247,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Payments
   const addPayment = async (payment: Omit<Payment, 'id'>) => {
     try {
+      const API_URL = (import.meta as any).env.VITE_API_URL;
       // Notificar a Azure API de la creación del pago
-      await fetch('https://plataforma-arrendamientos-api.azure-api.net/api/pagos', {
+      await fetch(`${API_URL}/pagos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payment)

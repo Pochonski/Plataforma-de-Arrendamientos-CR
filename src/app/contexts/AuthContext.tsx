@@ -39,8 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (correo: string, contraseña: string): Promise<boolean> => {
     try {
-      // Login usando Azure APIM
-      const response = await fetch('https://plataforma-arrendamientos-api.azure-api.net/api/usuarios');
+      // Login usando Azure APIM desde variables de entorno
+      const apiUrl = (import.meta as any).env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/usuarios`);
       const usuariosMock = await response.json();
       
       const foundUser = usuariosMock.find((u: any) => u.correo === correo);
