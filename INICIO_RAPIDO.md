@@ -15,7 +15,7 @@ npm run dev
 # http://localhost:5173
 ```
 
-¡Eso es todo! 🎉
+Eso es todo! 🎉
 
 ## 👥 Credenciales de Prueba
 
