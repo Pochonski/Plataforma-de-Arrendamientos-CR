@@ -1,0 +1,104 @@
+import { createBrowserRouter, Navigate } from 'react-router';
+import { PublicLayout } from './components/layout/PublicLayout';
+import { DashboardLayout } from './components/layout/DashboardLayout';
+
+// Public pages
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Registro from './pages/Registro';
+import Propiedades from './pages/Propiedades';
+import PropiedadDetalle from './pages/PropiedadDetalle';
+import DesignDocs from './pages/DesignDocs';
+import AceptarInvitacion from './pages/AceptarInvitacion';
+import RecuperarContrasena from './pages/RecuperarContrasena';
+import NotFound from './pages/NotFound';
+
+// Dashboard pages
+import DuenoDashboard from './pages/dashboard/DuenoDashboard';
+import InquilinoDashboard from './pages/dashboard/InquilinoDashboard';
+import MisPropiedades from './pages/dashboard/MisPropiedades';
+import NuevaPropiedad from './pages/dashboard/NuevaPropiedad';
+import EditarPropiedad from './pages/dashboard/EditarPropiedad';
+import SubirComprobante from './pages/dashboard/SubirComprobante';
+import PagosRecibidos from './pages/dashboard/PagosRecibidos';
+import Perfil from './pages/dashboard/Perfil';
+import Historial from './pages/dashboard/Historial';
+import Invitaciones from './pages/dashboard/Invitaciones';
+import NuevaInvitacion from './pages/dashboard/NuevaInvitacion';
+import MiContrato from './pages/dashboard/MiContrato';
+import Notificaciones from './pages/dashboard/Notificaciones';
+import Mensajes from './pages/dashboard/Mensajes';
+
+// Placeholder components for routes not yet implemented
+const Placeholder = ({ title }: { title: string }) => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <h1 className="text-2xl font-bold mb-2">{title}</h1>
+      <p className="text-muted-foreground">Esta página está en desarrollo</p>
+    </div>
+  </div>
+);
+
+// Protected route wrapper
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const currentUser = localStorage.getItem('currentUser');
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
+
+// Dashboard route selector based on user role
+const DashboardHome = () => {
+  const currentUser = localStorage.getItem('currentUser');
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  const user = JSON.parse(currentUser);
+  return user.rol === 'dueño' ? <DuenoDashboard /> : <InquilinoDashboard />;
+};
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <PublicLayout />,
+    children: [
+      { index: true, element: <Landing /> },
+      { path: 'login', element: <Login /> },
+      { path: 'registro', element: <Registro /> },
+      { path: 'propiedades', element: <Propiedades /> },
+      { path: 'propiedades/:id', element: <PropiedadDetalle /> },
+      { path: 'invitacion/:token', element: <AceptarInvitacion /> },
+      { path: 'recuperar-contraseña', element: <RecuperarContrasena /> },
+      { path: 'design-docs', element: <DesignDocs /> },
+    ],
+  },
+  {
+    path: '/dashboard',
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <DashboardHome /> },
+      { path: 'propiedades', element: <MisPropiedades /> },
+      { path: 'propiedades/nueva', element: <NuevaPropiedad /> },
+      { path: 'propiedades/:id/editar', element: <EditarPropiedad /> },
+      { path: 'invitaciones', element: <Invitaciones /> },
+      { path: 'invitaciones/nueva', element: <NuevaInvitacion /> },
+      { path: 'pagos', element: <PagosRecibidos /> },
+      { path: 'pago', element: <SubirComprobante /> },
+      { path: 'contrato', element: <MiContrato /> },
+      { path: 'historial', element: <Historial /> },
+      { path: 'notificaciones', element: <Notificaciones /> },
+      { path: 'mensajes', element: <Mensajes /> },
+      { path: 'perfil', element: <Perfil /> },
+    ],
+  },
+  {
+    path: '*',
+    element: <NotFound />,
+  },
+]);
