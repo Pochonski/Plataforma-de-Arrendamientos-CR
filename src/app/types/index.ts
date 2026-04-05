@@ -44,13 +44,16 @@ export interface Invitation {
   fechaEmision: Date;
   fechaExpiracion: Date;
   montoAlquiler: number;
+  montoDeposito: number; // Nuevo campo para depósito
   moneda: Currency;
 }
 
 export type PaymentStatus = 'pendiente' | 'aprobado' | 'rechazado';
+export type PaymentType = 'mensualidad' | 'deposito';
 
 export interface Payment {
   id: string;
+  tipo: PaymentType; // Nuevo campo para diferenciar pagos
   contratoId: string;
   propiedadId: string;
   inquilinoId: string;
@@ -67,6 +70,7 @@ export interface Payment {
 }
 
 export type ContractStatus = 'activo' | 'finalizado' | 'cancelado';
+export type DepositStatus = 'pendiente' | 'pagado' | 'devuelto' | 'retenido';
 
 export interface Contract {
   id: string;
@@ -75,9 +79,11 @@ export interface Contract {
   duenoId: string;
   inquilinoId: string;
   montoMensual: number;
+  montoDeposito: number;
   moneda: Currency;
   fechaInicio: Date;
   estado: ContractStatus;
+  estadoDeposito: DepositStatus; // Estado actual del depósito
 }
 
 export type NotificationType = 

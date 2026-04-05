@@ -29,6 +29,7 @@ export default function SubirComprobante() {
 
   const [mes, setMes] = useState(currentMonth.toString());
   const [año, setAño] = useState(currentYear.toString());
+  const [tipoPago, setTipoPago] = useState<'mensualidad' | 'deposito'>('mensualidad');
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -121,9 +122,10 @@ export default function SubirComprobante() {
         propiedadId: myContract.propiedadId,
         inquilinoId: myContract.inquilinoId,
         duenoId: myContract.duenoId,
-        mes: parseInt(mes),
-        año: parseInt(año),
-        monto: myContract.montoMensual,
+        tipo: tipoPago,
+        mes: tipoPago === 'mensualidad' ? parseInt(mes) : 0,
+        año: tipoPago === 'mensualidad' ? parseInt(año) : 0,
+        monto: tipoPago === 'mensualidad' ? myContract.montoMensual : myContract.montoDeposito,
         moneda: myContract.moneda,
         comprobante,
         estado: 'pendiente',
@@ -166,11 +168,27 @@ export default function SubirComprobante() {
             {/* Period Selection */}
             <Card>
               <CardHeader>
-                <CardTitle>Periodo de pago</CardTitle>
+                <CardTitle>Detalles del pago</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                {myContract.estadoDeposito === 'pendiente' && (
+                  <div className="space-y-2 mb-4">
+                    <Label htmlFor="tipoPago">Tipo de pago</Label>
+                    <Select value={tipoPago} onValueChange={(v: 'mensualidad' | 'deposito') => setTipoPago(v)} disabled={isLoading}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mensualidad">Mensualidad</SelectItem>
+                        <SelectItem value="deposito">Depósito de Garantía</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {tipoPago === 'mensualidad' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
                     <Label htmlFor="mes">Mes</Label>
                     <Select value={mes} onValueChange={setMes} disabled={isLoading}>
                       <SelectTrigger>
@@ -202,11 +220,12 @@ export default function SubirComprobante() {
                     </Select>
                   </div>
                 </div>
+                )}
 
                 <div className="p-4 rounded-lg bg-muted space-y-1">
                   <p className="text-sm text-muted-foreground">Monto a pagar</p>
                   <p className="text-2xl font-bold text-primary">
-                    {formatPrice(myContract.montoMensual, myContract.moneda)}
+                    {formatPrice(tipoPago === 'mensualidad' ? myContract.montoMensual : myContract.montoDeposito, myContract.moneda)}
                   </p>
                 </div>
               </CardContent>
@@ -329,11 +348,33 @@ export default function SubirComprobante() {
                 <p className="text-sm text-muted-foreground">
                   {property.distrito}, {property.canton}
                 </p>
-                <div className="pt-2 border-t">
-                  <p className="text-sm text-muted-foreground mb-1">Monto mensual</p>
-                  <p className="text-xl font-bold text-primary">
-                    {formatPrice(myContract.montoMensual, myContract.moneda)}
-                  </p>
+                <div className="pt-2 border-t mt-4 flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Monto mensual</p>
+                    <p className="text-xl font-bold text-primary">
+                      {formatPrice(myContract.montoMensual, myContract.moneda)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1 text-right">Depósito</p>
+                    {myContract.estadoDeposito === 'pagado' ? (
+                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full font-medium inline-block float-right">
+                        Asegurado
+                      </span>
+                    ) : myContract.estadoDeposito === 'pendiente' ? (
+                      <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full font-medium inline-block float-right">
+                        Pendiente
+                      </span>
+                    ) : myContract.estadoDeposito === 'devuelto' ? (
+                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full font-medium inline-block float-right">
+                        Devuelto
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full font-medium inline-block float-right">
+                        Retenido
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

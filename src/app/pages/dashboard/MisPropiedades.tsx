@@ -36,9 +36,13 @@ import { toast } from 'sonner';
 
 export default function MisPropiedades() {
   const { user } = useAuth();
-  const { properties, deleteProperty } = useData();
+  const { properties, deleteProperty, contracts, updateContract, updateProperty } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  
+  // Finish Contract State
+  const [finishPropertyId, setFinishPropertyId] = useState<string | null>(null);
+  const [depositResolution, setDepositResolution] = useState<'devuelto' | 'retenido' | null>(null);
 
   const myProperties = properties.filter((p) => p.duenoId === user?.id);
 
@@ -52,6 +56,26 @@ export default function MisPropiedades() {
     deleteProperty(id);
     setDeleteId(null);
     toast.success('Propiedad eliminada exitosamente');
+  };
+
+  const handleFinishContract = () => {
+    if (!finishPropertyId || !depositResolution) return;
+
+    const property = properties.find(p => p.id === finishPropertyId);
+    if (!property) return;
+
+    const activeContract = contracts.find(c => c.propiedadId === finishPropertyId && c.estado === 'activo');
+    if (activeContract) {
+      updateContract(activeContract.id, {
+        estado: 'finalizado',
+        estadoDeposito: depositResolution
+      });
+      toast.success(`Contrato finalizado. Depósito ${depositResolution}.`);
+    }
+
+    updateProperty(finishPropertyId, { estado: 'disponible' });
+    setFinishPropertyId(null);
+    setDepositResolution(null);
   };
 
   const formatPrice = (precio: number, moneda: string) => {
@@ -135,6 +159,12 @@ export default function MisPropiedades() {
                           Editar
                         </Link>
                       </DropdownMenuItem>
+                      {property.estado === 'alquilada' && (
+                        <DropdownMenuItem onClick={() => setFinishPropertyId(property.id)}>
+                          <Trash2 className="size-4 mr-2 text-amber-500" />
+                          Finalizar Contrato
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={() => setDeleteId(property.id)}
@@ -225,6 +255,46 @@ export default function MisPropiedades() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Finish Contract Dialog */}
+      <AlertDialog open={!!finishPropertyId} onOpenChange={() => {
+        setFinishPropertyId(null);
+        setDepositResolution(null);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar Contrato</AlertDialogTitle>
+            <AlertDialogDescription>
+              La propiedad volverá a estar disponible para alquilar. 
+              Por favor, indica qué sucedió con el depósito de garantía.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-4 py-4">
+            <Button
+              variant={depositResolution === 'devuelto' ? 'default' : 'outline'}
+              className={depositResolution === 'devuelto' ? 'bg-green-600 hover:bg-green-700' : ''}
+              onClick={() => setDepositResolution('devuelto')}
+            >
+              Fue devuelto al inquilino
+            </Button>
+            <Button
+              variant={depositResolution === 'retenido' ? 'destructive' : 'outline'}
+              onClick={() => setDepositResolution('retenido')}
+            >
+              Fue retenido (daños/deudas)
+            </Button>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleFinishContract}
+              disabled={!depositResolution}
+            >
+              Finalizar contrato
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

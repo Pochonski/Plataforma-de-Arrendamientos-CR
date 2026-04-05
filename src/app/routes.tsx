@@ -42,8 +42,8 @@ const Placeholder = ({ title }: { title: string }) => (
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const currentUser = localStorage.getItem('currentUser');
-  if (!currentUser) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
@@ -102,5 +102,5 @@ export const router = createBrowserRouter([
     element: <NotFound />,
   },
 ], {
-  basename: import.meta.env.BASE_URL,
+  basename: (import.meta as any).env.BASE_URL,
 });

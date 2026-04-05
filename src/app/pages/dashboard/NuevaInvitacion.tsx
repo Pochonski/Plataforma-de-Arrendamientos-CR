@@ -26,6 +26,7 @@ export default function NuevaInvitacion() {
   const [propiedadId, setPropiedadId] = useState('');
   const [inquilinoCorreo, setInquilinoCorreo] = useState('');
   const [montoAlquiler, setMontoAlquiler] = useState('');
+  const [montoDeposito, setMontoDeposito] = useState('');
   const [moneda, setMoneda] = useState<'CRC' | 'USD'>('CRC');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +38,7 @@ export default function NuevaInvitacion() {
     e.preventDefault();
     setError('');
 
-    if (!propiedadId || !montoAlquiler) {
+    if (!propiedadId || !montoAlquiler || !montoDeposito) {
       setError('Por favor completa todos los campos obligatorios');
       return;
     }
@@ -55,6 +56,7 @@ export default function NuevaInvitacion() {
         duenoId: user?.id || '',
         inquilinoCorreo: inquilinoCorreo || undefined,
         montoAlquiler: parseFloat(montoAlquiler),
+        montoDeposito: parseFloat(montoDeposito),
         moneda,
       });
 
@@ -156,6 +158,12 @@ export default function NuevaInvitacion() {
                   {formatPrice(createdInvitation.montoAlquiler, createdInvitation.moneda)}
                 </p>
               </div>
+              <div>
+                <Label className="text-muted-foreground">Depósito de garantía</Label>
+                <p className="font-semibold text-lg text-primary">
+                  {formatPrice(createdInvitation.montoDeposito, createdInvitation.moneda)}
+                </p>
+              </div>
               {createdInvitation.inquilinoCorreo && (
                 <div>
                   <Label className="text-muted-foreground">Inquilino</Label>
@@ -199,6 +207,7 @@ export default function NuevaInvitacion() {
             setPropiedadId('');
             setInquilinoCorreo('');
             setMontoAlquiler('');
+            setMontoDeposito('');
           }}>
             Crear otra invitación
           </Button>
@@ -258,6 +267,7 @@ export default function NuevaInvitacion() {
                   const prop = properties.find((p) => p.id === value);
                   if (prop) {
                     setMontoAlquiler(prop.precio.toString());
+                    setMontoDeposito(prop.precio.toString()); // El depósito por defecto es 1 mensualidad
                     setMoneda(prop.moneda);
                   }
                 }}
@@ -299,6 +309,19 @@ export default function NuevaInvitacion() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="deposito">Monto depósito de garantía *</Label>
+                <Input
+                  id="deposito"
+                  type="number"
+                  placeholder="850000"
+                  value={montoDeposito}
+                  onChange={(e) => setMontoDeposito(e.target.value)}
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-muted-foreground">Por ley suele ser equivalente a un mes</p>
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="moneda">Moneda *</Label>
                 <Select value={moneda} onValueChange={(value: 'CRC' | 'USD') => setMoneda(value)} disabled={isLoading}>
                   <SelectTrigger>

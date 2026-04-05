@@ -79,9 +79,11 @@ export default function AceptarInvitacion() {
         duenoId: invitation.duenoId,
         inquilinoId: user.id,
         montoMensual: invitation.montoAlquiler,
+        montoDeposito: invitation.montoDeposito || invitation.montoAlquiler, // Fallback if old invitation
         moneda: invitation.moneda,
         fechaInicio: new Date(),
         estado: 'activo',
+        estadoDeposito: 'pendiente',
       });
 
       // Actualizar estado de la propiedad a "alquilada" para que ya no aparezca disponible
@@ -354,7 +356,7 @@ export default function AceptarInvitacion() {
                 Detalles del contrato
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="bg-muted/50">
                   <CardContent className="p-4">
                     <p className="text-sm text-muted-foreground mb-1">Monto mensual</p>
@@ -366,9 +368,18 @@ export default function AceptarInvitacion() {
 
                 <Card className="bg-muted/50">
                   <CardContent className="p-4">
+                    <p className="text-sm text-muted-foreground mb-1">Depósito de garantía</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {formatCurrency(invitation.montoDeposito || invitation.montoAlquiler, invitation.moneda)}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4">
                     <p className="text-sm text-muted-foreground mb-1">Propietario</p>
-                    <p className="font-semibold">{owner?.nombre || 'No disponible'}</p>
-                    <p className="text-sm text-muted-foreground">{owner?.correo || ''}</p>
+                    <p className="font-semibold truncate">{owner?.nombre || 'No disponible'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{owner?.correo || ''}</p>
                   </CardContent>
                 </Card>
               </div>

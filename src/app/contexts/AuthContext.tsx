@@ -32,20 +32,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Check localStorage for saved user
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // LocalStorage ha sido removido según las reglas del proyecto.
+    // El usuario debe iniciar sesión al cargar la página manualmente
+    // validándose con la API de Azure APIM en la función de login.
   }, []);
 
   const login = async (correo: string, contraseña: string): Promise<boolean> => {
-    // Mock login - in real app would call API
-    const foundUser = MOCK_USERS.find(u => u.correo === correo);
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
-      return true;
+    try {
+      // Login usando Azure APIM
+      const response = await fetch('https://plataforma-arrendamientos-api.azure-api.net/api/usuarios');
+      const usuariosMock = await response.json();
+      
+      const foundUser = usuariosMock.find((u: any) => u.correo === correo);
+      if (foundUser) {
+        setUser(foundUser);
+        // localstorage eliminado, el estado muere al refrescar la página según requerimiento.
+        return true;
+      }
+    } catch (err) {
+      console.error("Error validando usuario contra Azure APIM", err);
     }
     return false;
   };
@@ -59,20 +64,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rol,
     };
     setUser(newUser);
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
+    // localstorage eliminado por requerimiento
     return true;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('currentUser');
+    // localstorage eliminado
   };
 
   const updateUser = (updates: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      // localstorage eliminado
     }
   };
 

@@ -29,6 +29,10 @@ export default function Propiedades() {
   const [selectedPrecio, setSelectedPrecio] = useState('todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const provincias = [
     'San José',
@@ -76,6 +80,15 @@ export default function Propiedades() {
 
     return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio && property.estado === 'disponible';
   });
+
+  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const paginatedProperties = filteredProperties.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset page when filters change
+  const handlePageReset = () => setCurrentPage(1);
 
   const formatPrice = (precio: number, moneda: string) => {
     const symbol = moneda === 'USD' ? '$' : '₡';
@@ -242,7 +255,10 @@ export default function Propiedades() {
                 placeholder="Busca por ubicación, tipo de propiedad o características..."
                 className="pl-10 h-12 text-base"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  handlePageReset();
+                }}
               />
             </div>
           </div>
@@ -253,7 +269,7 @@ export default function Propiedades() {
         {/* Filters */}
         <div className="flex flex-col lg:flex-row gap-4 mb-8">
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Select value={selectedProvincia} onValueChange={setSelectedProvincia}>
+            <Select value={selectedProvincia} onValueChange={(val) => { setSelectedProvincia(val); handlePageReset(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Provincia" />
               </SelectTrigger>
@@ -267,7 +283,7 @@ export default function Propiedades() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedTipo} onValueChange={setSelectedTipo}>
+            <Select value={selectedTipo} onValueChange={(val) => { setSelectedTipo(val); handlePageReset(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Tipo de propiedad" />
               </SelectTrigger>
@@ -281,7 +297,7 @@ export default function Propiedades() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedPrecio} onValueChange={setSelectedPrecio}>
+            <Select value={selectedPrecio} onValueChange={(val) => { setSelectedPrecio(val); handlePageReset(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Rango de precio" />
               </SelectTrigger>
@@ -329,11 +345,36 @@ export default function Propiedades() {
         {isLoading ? (
           <LoadingSkeleton />
         ) : filteredProperties.length > 0 ? (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-6'}>
-            {filteredProperties.map((property) => (
-              <PropertyCard key={property.id} property={property} mode={viewMode} />
-            ))}
-          </div>
+          <>
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-6'}>
+              {paginatedProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} mode={viewMode} />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-8">
+                <Button
+                  variant="outline"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm font-medium">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <Card className="p-12 text-center">
             <div className="inline-flex items-center justify-center size-16 rounded-full bg-muted mb-4">
@@ -349,6 +390,7 @@ export default function Propiedades() {
                 setSelectedProvincia('todas');
                 setSelectedTipo('todos');
                 setSelectedPrecio('todos');
+                handlePageReset();
               }}
             >
               Limpiar filtros

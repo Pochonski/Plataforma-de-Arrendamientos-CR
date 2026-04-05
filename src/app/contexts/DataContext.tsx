@@ -31,6 +31,7 @@ interface DataContextType {
   
   contracts: Contract[];
   createContract: (contract: Omit<Contract, 'id'>) => void;
+  updateContract: (id: string, updates: Partial<Contract>) => void;
   getContractByInquilinoId: (inquilinoId: string) => Contract | undefined;
   
   payments: Payment[];
@@ -121,56 +122,56 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return v;
   };
 
-  const loadState = <T,>(key: string, defaultVal: T): T => {
-    try {
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        return JSON.parse(saved, reviveDate);
-      }
-    } catch (e) {
-      console.error(`Error loading state ${key}`, e);
-    }
-    return defaultVal;
-  };
+  // Eliminamos localStorage por requerimiento del proyecto
+  // Ahora manejamos el estado en memoria y lo sincronizamos con Azure APIM
+  const [properties, setProperties] = useState<Property[]>(INITIAL_PROPERTIES); 
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  const [properties, setProperties] = useState<Property[]>(() => loadState('app_properties', INITIAL_PROPERTIES));
-  const [invitations, setInvitations] = useState<Invitation[]>(() => loadState('app_invitations', []));
-  const [contracts, setContracts] = useState<Contract[]>(() => loadState('app_contracts', []));
-  const [payments, setPayments] = useState<Payment[]>(() => loadState('app_payments', []));
-  const [notifications, setNotifications] = useState<Notification[]>(() => loadState('app_notifications', []));
-  const [conversations, setConversations] = useState<Conversation[]>(() => loadState('app_conversations', []));
-  const [messages, setMessages] = useState<Message[]>(() => loadState('app_messages', []));
-
-  // Sync state to local storage when changed
-  useEffect(() => localStorage.setItem('app_properties', JSON.stringify(properties)), [properties]);
-  useEffect(() => localStorage.setItem('app_invitations', JSON.stringify(invitations)), [invitations]);
-  useEffect(() => localStorage.setItem('app_contracts', JSON.stringify(contracts)), [contracts]);
-  useEffect(() => localStorage.setItem('app_payments', JSON.stringify(payments)), [payments]);
-  useEffect(() => localStorage.setItem('app_notifications', JSON.stringify(notifications)), [notifications]);
-  useEffect(() => localStorage.setItem('app_conversations', JSON.stringify(conversations)), [conversations]);
-  useEffect(() => localStorage.setItem('app_messages', JSON.stringify(messages)), [messages]);
-
-  // Sync state across different browser tabs in real-time
+  // Inicializar datos llamando a Azure API Management
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      try {
-        if (e.key === 'app_properties' && e.newValue) setProperties(JSON.parse(e.newValue, reviveDate));
-        if (e.key === 'app_invitations' && e.newValue) setInvitations(JSON.parse(e.newValue, reviveDate));
-        if (e.key === 'app_contracts' && e.newValue) setContracts(JSON.parse(e.newValue, reviveDate));
-        if (e.key === 'app_payments' && e.newValue) setPayments(JSON.parse(e.newValue, reviveDate));
-        if (e.key === 'app_notifications' && e.newValue) setNotifications(JSON.parse(e.newValue, reviveDate));
-        if (e.key === 'app_conversations' && e.newValue) setConversations(JSON.parse(e.newValue, reviveDate));
-        if (e.key === 'app_messages' && e.newValue) setMessages(JSON.parse(e.newValue, reviveDate));
-      } catch (err) {
-        console.error('Error syncing state across tabs:', err);
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    const API_URL = 'https://plataforma-arrendamientos-api.azure-api.net/api';
+
+    // Obtener propiedades desde Azure
+    fetch(`${API_URL}/propiedades`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProperties(data);
+        }
+      })
+      .catch(err => console.error('Error obteniendo propiedades:', err));
+
+    // Obtener contratos desde Azure
+    fetch(`${API_URL}/contratos`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setContracts(data);
+        }
+      })
+      .catch(err => console.error('Error obteniendo contratos:', err));
   }, []);
 
   // Properties
-  const addProperty = (property: Omit<Property, 'id' | 'createdAt'>) => {
+  const addProperty = async (property: Omit<Property, 'id' | 'createdAt'>) => {
+    try {
+      // Notificar a Azure API de la creación
+      await fetch('https://plataforma-arrendamientos-api.azure-api.net/api/propiedades', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(property)
+      });
+      console.log('Propiedad creada exitosamente en Azure APIM (Mock)');
+    } catch (err) {
+      console.error('Error creando propiedad en Azure APIM', err);
+    }
+    
+    // Actualizar UI
     const newProperty: Property = {
       ...property,
       id: Date.now().toString(),
@@ -236,8 +237,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return contracts.find(c => c.inquilinoId === inquilinoId && c.estado === 'activo');
   };
 
+  const updateContract = (id: string, updates: Partial<Contract>) => {
+    setContracts(prev =>
+      prev.map(c => (c.id === id ? { ...c, ...updates } : c))
+    );
+  };
+
   // Payments
-  const addPayment = (payment: Omit<Payment, 'id'>) => {
+  const addPayment = async (payment: Omit<Payment, 'id'>) => {
+    try {
+      // Notificar a Azure API de la creación del pago
+      await fetch('https://plataforma-arrendamientos-api.azure-api.net/api/pagos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payment)
+      });
+      console.log('Pago creado exitosamente en Azure APIM (Mock)');
+    } catch (err) {
+      console.error('Error enviando pago a Azure APIM', err);
+    }
+
     const newPayment: Payment = {
       ...payment,
       id: Date.now().toString(),
@@ -395,6 +414,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getInvitationByToken,
         contracts,
         createContract,
+        updateContract,
         getContractByInquilinoId,
         payments,
         addPayment,

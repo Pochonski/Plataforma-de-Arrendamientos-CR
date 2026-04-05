@@ -38,7 +38,7 @@ import { downloadExcel } from '../../utils/export';
 
 export default function PagosRecibidos() {
   const { user } = useAuth();
-  const { payments, updatePayment, properties } = useData();
+  const { payments, updatePayment, properties, updateContract } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -79,11 +79,28 @@ export default function PagosRecibidos() {
     }
   };
 
+  const getPaymentTypeBadge = (tipo?: string) => {
+    if (tipo === 'deposito') {
+      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Depósito</Badge>;
+    }
+    return <Badge variant="outline">Mensualidad</Badge>;
+  };
+
   const handleApprove = (paymentId: string) => {
+    const payment = payments.find(p => p.id === paymentId);
+    if (!payment) return;
+
     updatePayment(paymentId, {
       estado: 'aprobado',
       fechaRevision: new Date(),
     });
+
+    if (payment.tipo === 'deposito') {
+      updateContract(payment.contratoId, {
+        estadoDeposito: 'pagado'
+      });
+    }
+
     setSelectedPayment(null);
     toast.success('Pago aprobado exitosamente');
   };
@@ -209,12 +226,13 @@ export default function PagosRecibidos() {
           <CardTitle>Comprobantes</CardTitle>
           {filteredPayments.length > 0 && (
             <Button variant="outline" size="sm" onClick={() => {
-              const exportData = filteredPayments.map(p => {
-                const property = properties.find((pr) => pr.id === p.propiedadId);
-                return {
-                  'Propiedad': property?.titulo || 'Propiedad',
-                  'Periodo': `${getMonthName(p.mes)} ${p.año}`,
-                  'Monto': p.monto,
+                const exportData = filteredPayments.map(p => {
+                  const property = properties.find((pr) => pr.id === p.propiedadId);
+                  return {
+                    'Propiedad': property?.titulo || 'Propiedad',
+                    'Tipo': p.tipo === 'deposito' ? 'Depósito' : 'Mensualidad',
+                    'Periodo': p.tipo === 'deposito' ? 'Inicio' : `${getMonthName(p.mes)} ${p.año}`,
+                    'Monto': p.monto,
                   'Moneda': p.moneda,
                   'Fecha de Subida': p.fechaSubida ? new Date(p.fechaSubida).toLocaleDateString() : 'N/A',
                   'Estado': p.estado,
@@ -235,6 +253,7 @@ export default function PagosRecibidos() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Propiedad</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Periodo</TableHead>
                     <TableHead>Monto</TableHead>
                     <TableHead>Fecha subida</TableHead>
@@ -250,8 +269,9 @@ export default function PagosRecibidos() {
                         <TableCell className="font-medium">
                           {property?.titulo || 'Propiedad'}
                         </TableCell>
+                        <TableCell>{getPaymentTypeBadge(payment.tipo)}</TableCell>
                         <TableCell>
-                          {getMonthName(payment.mes)} {payment.año}
+                          {payment.tipo === 'deposito' ? 'Inicio' : `${getMonthName(payment.mes)} ${payment.año}`}
                         </TableCell>
                         <TableCell>{formatPrice(payment.monto, payment.moneda)}</TableCell>
                         <TableCell>
@@ -311,9 +331,13 @@ export default function PagosRecibidos() {
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Periodo</Label>
-                  <p className="font-semibold">
-                    {getMonthName(selectedPayment.mes)} {selectedPayment.año}
+                  <Label className="text-muted-foreground">Periodo / Tipo</Label>
+                  <p className="font-semibold mt-1">
+                    {selectedPayment.tipo === 'deposito' ? (
+                      <span className="flex items-center gap-2">{getPaymentTypeBadge(selectedPayment.tipo)} Inicio</span>
+                    ) : (
+                      <span className="flex items-center gap-2">{getPaymentTypeBadge(selectedPayment.tipo)} {getMonthName(selectedPayment.mes)} {selectedPayment.año}</span>
+                    )}
                   </p>
                 </div>
                 <div>
