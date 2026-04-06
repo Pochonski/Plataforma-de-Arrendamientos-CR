@@ -317,7 +317,12 @@ export default function Landing() {
               <Button size="lg" variant="secondary" asChild>
                 <Link to="/registro">Crear cuenta gratis</Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10" asChild>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-primary transition-colors font-semibold"
+                asChild
+              >
                 <Link to="/propiedades">Ver propiedades</Link>
               </Button>
             </div>
