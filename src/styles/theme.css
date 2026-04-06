@@ -2,6 +2,15 @@
 
 :root {
   --font-size: 16px;
+
+  /* ── Typography tokens ── */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+  /* Letter-spacing for display font */
+  --tracking-display: -0.02em;
+  --tracking-label:   0.01em;
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;
@@ -117,6 +126,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Typography tokens exposed to Tailwind */
+  --font-display: var(--font-display);
+  --font-body:    var(--font-body);
+  --font-mono:    var(--font-mono);
 }
 
 @layer base {
@@ -124,58 +138,143 @@
     @apply border-border outline-ring/50;
   }
 
-  body {
-    @apply bg-background text-foreground;
-  }
-
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
-
+  /* ── FONT 2: Inter — base for everything ── */
   html {
     font-size: var(--font-size);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.6;
+  }
+
+  /* ── FONT 1: Playfair Display — headings ── */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: var(--tracking-display);
   }
 
   h1 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-size: var(--text-3xl);
+    font-weight: 900;
   }
 
   h2 {
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-size: var(--text-2xl);
+    font-weight: 700;
   }
 
   h3 {
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-size: var(--text-xl);
+    font-weight: 600;
   }
 
+  /* ── FONT 2: Inter — sub-headings, labels, buttons, inputs ── */
   h4 {
+    font-family: var(--font-body);
     font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
+    font-weight: 600;
     line-height: 1.5;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
   }
 
   label {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 500;
     line-height: 1.5;
+    letter-spacing: var(--tracking-label);
   }
 
   button {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 600;
     line-height: 1.5;
+    letter-spacing: 0.02em;
   }
 
-  input {
+  input, textarea, select {
+    font-family: var(--font-body);
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+
+  /* ── FONT 3: JetBrains Mono — prices, data, codes ── */
+  code, kbd, pre, samp {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  /* Utility: apply mono to price/numeric data */
+  .font-price,
+  .font-data,
+  [data-type="price"],
+  [data-type="code"] {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* ============================================================
+   TYPOGRAPHY UTILITIES — use these classes anywhere
+   ============================================================
+   font-display  → Playfair Display  (heroic headings)
+   font-sans     → Inter             (UI, buttons, body)
+   font-mono     → JetBrains Mono   (prices, codes, data)
+   ============================================================ */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display) !important;
+  }
+
+  .font-sans {
+    font-family: var(--font-body) !important;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono) !important;
+  }
+
+  /* Heading helpers */
+  .heading-hero {
+    font-family: var(--font-display);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .heading-section {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  /* Price / stat display */
+  .stat-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Eyebrow / overline label */
+  .label-overline {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 }
