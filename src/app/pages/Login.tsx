@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -20,6 +20,7 @@ export default function Login() {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +37,8 @@ export default function Login() {
       const success = await login(correo, contraseña);
       if (success) {
         toast.success('¡Bienvenido de nuevo!');
-        navigate('/dashboard');
+        const from = location.state?.from?.pathname || location.state?.returnTo || '/dashboard';
+        navigate(from, { replace: true });
       } else {
         setError('Correo o contraseña incorrectos');
       }

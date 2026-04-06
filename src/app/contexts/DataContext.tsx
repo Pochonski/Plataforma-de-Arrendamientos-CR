@@ -25,7 +25,7 @@ interface DataContextType {
   getPropertyById: (id: string) => Property | undefined;
   
   invitations: Invitation[];
-  createInvitation: (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>) => Invitation;
+  createInvitation: (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>) => Promise<Invitation>;
   updateInvitation: (id: string, updates: Partial<Invitation>) => void;
   getInvitationByToken: (token: string) => Invitation | undefined;
   
@@ -155,6 +155,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(err => console.error('Error obteniendo contratos:', err));
+
+    // Obtener invitaciones desde Azure
+    fetch(`${API_URL}/invitaciones`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setInvitations(data);
+        }
+      })
+      .catch(err => console.error('Error obteniendo invitaciones:', err));
   }, []);
 
   // Properties
@@ -196,7 +206,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Invitations
-  const createInvitation = (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>) => {
+  const createInvitation = async (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>) => {
     const token = Math.random().toString(36).substring(2, 15);
     const fechaEmision = new Date();
     const fechaExpiracion = new Date();
@@ -210,6 +220,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       fechaExpiracion,
       estado: 'pendiente',
     };
+
+    try {
+      const API_URL = (import.meta as any).env.VITE_API_URL;
+      await fetch(`${API_URL}/invitaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newInvitation)
+      });
+      console.log('Invitación sincronizada con Azure APIM');
+    } catch (err) {
+      console.error('Error sincronizando invitación con Azure', err);
+    }
     
     setInvitations(prev => [newInvitation, ...prev]);
     return newInvitation;
