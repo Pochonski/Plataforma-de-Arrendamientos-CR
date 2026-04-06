@@ -106,6 +106,10 @@ Para ponerlo en marcha:
 
 ```
 /
+├── docs/                # Documentación del proyecto
+│   ├── setup/           # Guías de inicio y despliegue
+│   ├── design/          # Documentación UX/UI y Figma
+│   └── project/         # Estándares, changelog y seguridad
 ├── src/
 │   ├── app/
 │   │   ├── components/      # Componentes reutilizables
@@ -120,6 +124,7 @@ Para ponerlo en marcha:
 │   │   └── routes.tsx       # Configuración de rutas
 │   └── styles/              # Estilos globales
 ├── package.json
+├── LICENSE
 └── README.md
 ```
 
@@ -218,11 +223,23 @@ Actualmente utiliza **localStorage** para simular persistencia. Los datos incluy
 
 ## 📚 Documentación Adicional
 
-- [USUARIOS_PRUEBA.md](./USUARIOS_PRUEBA.md) - Guía de usuarios y flujos de prueba
-- [DOCUMENTACION_UX_UI.md](./DOCUMENTACION_UX_UI.md) - Documentación de diseño UX/UI
-- [GUIA_FIGMA_USER_FLOWS.md](./GUIA_FIGMA_USER_FLOWS.md) - User flows y wireframes
-- [MATRIZ_EVALUACION_DISENO.md](./MATRIZ_EVALUACION_DISENO.md) - Evaluación de diseño
-- [PLANTILLAS_VISUALES_FIGMA.md](./PLANTILLAS_VISUALES_FIGMA.md) - Templates visuales
+### 🚀 Configuración y Uso
+- [Guía de Inicio Rápido](docs/setup/quick-start.md) - Cómo empezar en 5 minutos
+- [Usuarios de Prueba](docs/setup/test-users.md) - Credenciales y flujos de prueba
+- [Guía de Despliegue](docs/setup/deployment.md) - Instrucciones para producción
+- [Azure APIM Guide](docs/setup/azure-apim.md) - Configuración de API Management
+
+### 🎨 Diseño y UX
+- [Documentación UX/UI](docs/design/ux-ui-documentation.md) - Decisiones de diseño y estilos
+- [User Flows en Figma](docs/design/figma-user-flows.md) - Diagramas de flujo y wireframes
+- [Matriz de Evaluación](docs/design/design-evaluation-matrix.md) - Criterios de diseño
+- [Plantillas Figma](docs/design/figma-visual-templates.md) - Recursos visuales
+
+### 📂 Proyecto
+- [Changelog](docs/project/changelog.md) - Historial de cambios
+- [Contributing](docs/project/contributing.md) - Cómo colaborar
+- [Security](docs/project/security.md) - Políticas de seguridad
+- [Revisión Completa](docs/project/full-review.md) - Estado actual del proyecto
 
 ## 🤝 Contribución
 

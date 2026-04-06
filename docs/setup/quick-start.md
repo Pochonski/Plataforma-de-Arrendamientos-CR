@@ -108,8 +108,8 @@ npm run preview      # Preview del build
 
 ### Explorar la Documentación
 - Visita `/design-docs` para ver wireframes y mockups
-- Lee `USUARIOS_PRUEBA.md` para flujos detallados
-- Revisa `README.md` para información completa
+- Lee [test-users.md](test-users.md) para flujos detallados
+- Revisa [README.md](../../README.md) para información completa
 
 ## 🐛 Solución Rápida de Problemas
 
@@ -136,10 +136,10 @@ npm run dev
 
 Una vez que hayas probado la aplicación:
 
-1. Lee `README.md` para entender la arquitectura
-2. Revisa `USUARIOS_PRUEBA.md` para flujos completos
-3. Explora `CONTRIBUTING.md` si quieres contribuir
-4. Consulta `DEPLOYMENT.md` para publicar
+1. Lee [README.md](../../README.md) para entender la arquitectura
+2. Revisa [test-users.md](test-users.md) para flujos completos
+3. Explora [contributing.md](../project/contributing.md) si quieres contribuir
+4. Consulta [deployment.md](deployment.md) para publicar
 
 ## 🎉 ¡A Explorar!
 

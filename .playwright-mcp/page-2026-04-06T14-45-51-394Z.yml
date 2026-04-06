@@ -1,0 +1,216 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "Arrendamientos CR" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e12]: Arrendamientos CR
+        - navigation [ref=e13]:
+          - link "Propiedades" [ref=e14] [cursor=pointer]:
+            - /url: /propiedades
+          - link "Cómo funciona" [ref=e15] [cursor=pointer]:
+            - /url: /#como-funciona
+          - link "Beneficios" [ref=e16] [cursor=pointer]:
+            - /url: /#beneficios
+        - generic [ref=e17]:
+          - button "Cambiar tema" [ref=e18]:
+            - img
+            - generic [ref=e19]: Cambiar tema
+          - link "Iniciar sesión" [ref=e20] [cursor=pointer]:
+            - /url: /login
+          - link "Registrarse" [ref=e21] [cursor=pointer]:
+            - /url: /registro
+    - main [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - img
+            - text: Plataforma moderna de arrendamientos
+          - heading "Encuentra propiedades, formaliza tu alquiler y controla tus pagos en un solo lugar" [level=1] [ref=e29]
+          - paragraph [ref=e30]: La solución completa para gestionar arrendamientos en Costa Rica de forma segura, transparente y profesional.
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - img [ref=e33]
+              - textbox "Busca por ubicación, tipo de propiedad..." [ref=e36]
+            - link "Buscar propiedades" [ref=e37] [cursor=pointer]:
+              - /url: /propiedades
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - img [ref=e40]
+              - generic [ref=e43]: Todas las provincias
+            - generic [ref=e44]:
+              - img [ref=e45]
+              - generic [ref=e49]: Verificadas
+            - generic [ref=e50]:
+              - img [ref=e51]
+              - generic [ref=e53]: Gestión segura
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - heading "Propiedades destacadas" [level=2] [ref=e58]
+              - paragraph [ref=e59]: Descubre las mejores opciones disponibles
+            - link "Ver todas" [ref=e60] [cursor=pointer]:
+              - /url: /propiedades
+          - generic [ref=e61]:
+            - generic [ref=e62]:
+              - img "Apartamento moderno en Escazú" [ref=e64]
+              - generic [ref=e65]:
+                - generic [ref=e66]:
+                  - heading "Apartamento moderno en Escazú" [level=3] [ref=e67]
+                  - generic [ref=e68]: Disponible
+                - generic [ref=e69]:
+                  - img [ref=e70]
+                  - generic [ref=e73]: San Rafael, Escazú
+                - generic [ref=e74]:
+                  - generic [ref=e75]: ₡650,000
+                  - generic [ref=e76]: /mes
+            - generic [ref=e77]:
+              - img "Casa amplia en Heredia" [ref=e79]
+              - generic [ref=e80]:
+                - generic [ref=e81]:
+                  - heading "Casa amplia en Heredia" [level=3] [ref=e82]
+                  - generic [ref=e83]: Disponible
+                - generic [ref=e84]:
+                  - img [ref=e85]
+                  - generic [ref=e88]: Mercedes, Heredia
+                - generic [ref=e89]:
+                  - generic [ref=e90]: ₡850,000
+                  - generic [ref=e91]: /mes
+            - generic [ref=e92]:
+              - img "Estudio en Sabana" [ref=e94]
+              - generic [ref=e95]:
+                - generic [ref=e96]:
+                  - heading "Estudio en Sabana" [level=3] [ref=e97]
+                  - generic [ref=e98]: Disponible
+                - generic [ref=e99]:
+                  - img [ref=e100]
+                  - generic [ref=e103]: Mata Redonda, San José
+                - generic [ref=e104]:
+                  - generic [ref=e105]: ₡450,000
+                  - generic [ref=e106]: /mes
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - heading "Todo lo que necesitas en un solo lugar" [level=2] [ref=e110]
+            - paragraph [ref=e111]: Una plataforma completa que resuelve los problemas más comunes en la gestión de alquileres
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - img [ref=e115]
+              - heading "Busca propiedades" [level=3] [ref=e118]
+              - paragraph [ref=e119]: Encuentra el lugar perfecto con nuestro catálogo actualizado de propiedades en alquiler.
+            - generic [ref=e120]:
+              - img [ref=e122]
+              - heading "Formaliza contratos" [level=3] [ref=e125]
+              - paragraph [ref=e126]: Gestiona invitaciones y contratos de forma segura y trazable.
+            - generic [ref=e127]:
+              - img [ref=e129]
+              - heading "Registra pagos" [level=3] [ref=e131]
+              - paragraph [ref=e132]: Sube comprobantes de SINPE o transferencia y lleva control total.
+            - generic [ref=e133]:
+              - img [ref=e135]
+              - heading "Historial ordenado" [level=3] [ref=e137]
+              - paragraph [ref=e138]: Accede a todo tu historial de pagos y documentos en un solo lugar.
+        - generic [ref=e140]:
+          - generic [ref=e141]:
+            - heading "¿Cómo funciona?" [level=2] [ref=e142]
+            - paragraph [ref=e143]: En cuatro pasos simples estarás gestionando tus alquileres de forma profesional
+          - generic [ref=e144]:
+            - generic [ref=e146]:
+              - generic [ref=e147]: "1"
+              - heading "Regístrate" [level=3] [ref=e148]
+              - paragraph [ref=e149]: Crea tu cuenta como dueño o inquilino en menos de un minuto.
+            - generic [ref=e152]:
+              - generic [ref=e153]: "2"
+              - heading "Publica o busca" [level=3] [ref=e154]
+              - paragraph [ref=e155]: Los dueños publican propiedades, los inquilinos encuentran su hogar ideal.
+            - generic [ref=e158]:
+              - generic [ref=e159]: "3"
+              - heading "Formaliza" [level=3] [ref=e160]
+              - paragraph [ref=e161]: Genera invitaciones de contrato seguras con un enlace único.
+            - generic [ref=e164]:
+              - generic [ref=e165]: "4"
+              - heading "Gestiona" [level=3] [ref=e166]
+              - paragraph [ref=e167]: Registra pagos mensuales y mantén todo documentado.
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - heading "Olvídate de los pagos perdidos en WhatsApp" [level=2] [ref=e172]
+            - paragraph [ref=e173]: Llevamos tu gestión de alquileres al siguiente nivel con herramientas diseñadas específicamente para el mercado costarricense.
+            - generic [ref=e174]:
+              - generic [ref=e175]:
+                - img [ref=e176]
+                - generic [ref=e179]: Sin necesidad de intercambiar comprobantes por chat
+              - generic [ref=e180]:
+                - img [ref=e181]
+                - generic [ref=e184]: Historial completo siempre disponible
+              - generic [ref=e185]:
+                - img [ref=e186]
+                - generic [ref=e189]: Invitaciones con expiración automática
+              - generic [ref=e190]:
+                - img [ref=e191]
+                - generic [ref=e194]: Revisión y aprobación de pagos centralizada
+              - generic [ref=e195]:
+                - img [ref=e196]
+                - generic [ref=e199]: Notificaciones en tiempo real
+              - generic [ref=e200]:
+                - img [ref=e201]
+                - generic [ref=e204]: Interfaz moderna y fácil de usar
+            - generic [ref=e205]:
+              - link "Comenzar gratis" [ref=e206] [cursor=pointer]:
+                - /url: /registro
+              - link "Explorar propiedades" [ref=e207] [cursor=pointer]:
+                - /url: /propiedades
+          - img "Plataforma de arrendamientos" [ref=e210]
+        - generic [ref=e213]:
+          - heading "¿Listo para modernizar tu gestión de alquileres?" [level=2] [ref=e214]
+          - paragraph [ref=e215]: Únete a cientos de dueños e inquilinos que ya confían en nuestra plataforma
+          - generic [ref=e216]:
+            - link "Crear cuenta gratis" [ref=e217] [cursor=pointer]:
+              - /url: /registro
+            - link "Ver propiedades" [ref=e218] [cursor=pointer]:
+              - /url: /propiedades
+    - contentinfo [ref=e219]:
+      - generic [ref=e220]:
+        - generic [ref=e221]:
+          - generic [ref=e222]:
+            - generic [ref=e223]:
+              - img [ref=e225]
+              - generic [ref=e229]: Arrendamientos CR
+            - paragraph [ref=e230]: La plataforma moderna para gestionar alquileres en Costa Rica de forma segura y transparente.
+          - generic [ref=e231]:
+            - heading "Producto" [level=3] [ref=e232]
+            - list [ref=e233]:
+              - listitem [ref=e234]:
+                - link "Propiedades" [ref=e235] [cursor=pointer]:
+                  - /url: /propiedades
+              - listitem [ref=e236]:
+                - link "Cómo funciona" [ref=e237] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e238]:
+                - link "Precios" [ref=e239] [cursor=pointer]:
+                  - /url: /
+          - generic [ref=e240]:
+            - heading "Recursos" [level=3] [ref=e241]
+            - list [ref=e242]:
+              - listitem [ref=e243]:
+                - link "Centro de ayuda" [ref=e244] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e245]:
+                - link "Blog" [ref=e246] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e247]:
+                - link "Guías" [ref=e248] [cursor=pointer]:
+                  - /url: /
+          - generic [ref=e249]:
+            - heading "Legal" [level=3] [ref=e250]
+            - list [ref=e251]:
+              - listitem [ref=e252]:
+                - link "Términos de uso" [ref=e253] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e254]:
+                - link "Privacidad" [ref=e255] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e256]:
+                - link "Cookies" [ref=e257] [cursor=pointer]:
+                  - /url: /
+        - paragraph [ref=e259]: © 2026 Arrendamientos CR. Todos los derechos reservados.
+  - region "Notifications alt+T"
