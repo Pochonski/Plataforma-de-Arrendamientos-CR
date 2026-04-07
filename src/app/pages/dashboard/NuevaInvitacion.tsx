@@ -105,7 +105,8 @@ export default function NuevaInvitacion() {
     }
   };
 
-  const formatPrice = (precio: number, moneda: string) => {
+  const formatPrice = (precio: number | undefined, moneda: string | undefined) => {
+    if (precio == null) return '—';
     const symbol = moneda === 'USD' ? '$' : '₡';
     return `${symbol}${precio.toLocaleString('es-CR')}`;
   };

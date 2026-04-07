@@ -122,15 +122,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return v;
   };
 
-  // Eliminamos localStorage por requerimiento del proyecto
-  // Ahora manejamos el estado en memoria y lo sincronizamos con Azure APIM
-  const [properties, setProperties] = useState<Property[]>(INITIAL_PROPERTIES); 
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Helper to safely load from localStorage
+  const loadFromStorage = <T,>(key: string, fallback: T): T => {
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        return JSON.parse(stored, reviveDate);
+      }
+    } catch (err) {
+      console.error(`Error loading ${key} from localStorage`, err);
+    }
+    return fallback;
+  };
+
+  // Helper to persist to localStorage
+  const saveToStorage = (key: string, value: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {
+      console.error(`Error saving ${key} to localStorage`, err);
+    }
+  };
+
+  const [properties, setProperties] = useState<Property[]>(() => loadFromStorage('app_properties', INITIAL_PROPERTIES)); 
+  const [invitations, setInvitations] = useState<Invitation[]>(() => loadFromStorage('app_invitations', []));
+  const [contracts, setContracts] = useState<Contract[]>(() => loadFromStorage('app_contracts', []));
+  const [payments, setPayments] = useState<Payment[]>(() => loadFromStorage('app_payments', []));
+  const [notifications, setNotifications] = useState<Notification[]>(() => loadFromStorage('app_notifications', []));
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Persist critical state to localStorage whenever it changes
+  useEffect(() => { saveToStorage('app_invitations', invitations); }, [invitations]);
+  useEffect(() => { saveToStorage('app_contracts', contracts); }, [contracts]);
+  useEffect(() => { saveToStorage('app_payments', payments); }, [payments]);
+  useEffect(() => { saveToStorage('app_notifications', notifications); }, [notifications]);
+  useEffect(() => { saveToStorage('app_properties', properties); }, [properties]);
 
   // Inicializar datos llamando a Azure API Management
   useEffect(() => {
