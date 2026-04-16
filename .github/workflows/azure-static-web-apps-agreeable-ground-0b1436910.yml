@@ -32,8 +32,11 @@ jobs:
           api_location: "" # Api source code path - optional
           output_location: "dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
-        env: # Se inyecta la variable secreta en tiempo de compilacion sin subirla al codigo:
+        env: # Se inyectan las variables secretas en tiempo de compilacion sin subirlas al codigo:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_APIM_SUBSCRIPTION_KEY: ${{ secrets.VITE_APIM_SUBSCRIPTION_KEY }}
+          VITE_USE_API: ${{ secrets.VITE_USE_API }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
@@ -46,3 +49,4 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_GROUND_0B1436910 }}
           action: "close"
+          app_location: "/" # Explicitly provide app_location even for close action to satisfy validation
