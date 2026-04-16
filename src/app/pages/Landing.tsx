@@ -16,9 +16,19 @@ import {
   Shield,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useData } from '../contexts/DataContext';
 
 export default function Landing() {
+  const { properties } = useData();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Obtener propiedades disponibles para mostrar
+  const availableProperties = properties.filter(p => p.estado === 'disponible').slice(0, 6);
+  
+  const formatPrice = (precio: number, moneda: string) => {
+    const symbol = moneda === 'USD' ? '$' : '₡';
+    return `${symbol}${precio.toLocaleString('es-CR')}`;
+  };
 
   const features = [
     {
@@ -144,61 +154,50 @@ export default function Landing() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                id: 1,
-                image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
-                title: 'Apartamento moderno en Escazú',
-                price: '₡650,000',
-                location: 'San Rafael, Escazú',
-                beds: 2,
-                baths: 2,
-              },
-              {
-                id: 2,
-                image: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800',
-                title: 'Casa amplia en Heredia',
-                price: '₡850,000',
-                location: 'Mercedes, Heredia',
-                beds: 3,
-                baths: 2.5,
-              },
-              {
-                id: 3,
-                image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
-                title: 'Estudio en Sabana',
-                price: '₡450,000',
-                location: 'Mata Redonda, San José',
-                beds: 1,
-                baths: 1,
-              },
-            ].map((property) => (
-              <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-[4/3] overflow-hidden">
-                  <ImageWithFallback
-                    src={property.image}
-                    alt={property.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold line-clamp-1">{property.title}</h3>
-                    <Badge variant="secondary">Disponible</Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <MapPin className="size-4" />
-                    <span className="line-clamp-1">{property.location}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-2xl font-bold text-primary">{property.price}</span>
-                    <span className="text-sm text-muted-foreground">/mes</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {availableProperties.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableProperties.map((property) => (
+                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <Link to={`/propiedades/${property.id}`}>
+                    <div className="aspect-[4/3] overflow-hidden">
+                      <ImageWithFallback
+                        src={property.imagenes[0]}
+                        alt={property.titulo}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold line-clamp-1">{property.titulo}</h3>
+                        <Badge variant="secondary">Disponible</Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <MapPin className="size-4" />
+                        <span className="line-clamp-1">{property.distrito}, {property.canton}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <span className="text-2xl font-bold text-primary">{formatPrice(property.precio, property.moneda)}</span>
+                        <span className="text-sm text-muted-foreground">/mes</span>
+                      </div>
+                    </CardContent>
+                  </Link>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="p-12 text-center">
+              <div className="inline-flex items-center justify-center size-16 rounded-full bg-muted mb-4">
+                <Building2 className="size-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No hay propiedades disponibles</h3>
+              <p className="text-muted-foreground mb-6">
+                Explora todas las propiedades en nuestro catálogo completo
+              </p>
+              <Button asChild>
+                <Link to="/propiedades">Ver todas las propiedades</Link>
+              </Button>
+            </Card>
+          )}
 
           <div className="mt-8 text-center sm:hidden">
             <Button variant="outline" asChild className="w-full sm:w-auto">

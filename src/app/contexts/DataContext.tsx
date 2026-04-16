@@ -159,49 +159,80 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => { saveToStorage('app_notifications', notifications); }, [notifications]);
   useEffect(() => { saveToStorage('app_properties', properties); }, [properties]);
 
-  // Inicializar datos llamando a Azure API Management
+  // Inicializar datos desde Azure API Management (deshabilitado para desarrollo local)
+  // Descomentar solo cuando la API de Azure esté configurada con CORS y mock services activos
   useEffect(() => {
-    const API_URL = (import.meta as any).env.VITE_API_URL;
+    const API_BASE = (import.meta as any).env.VITE_API_URL || '';
+    const USE_API = (import.meta as any).env.VITE_USE_API === 'true';
+    const APIM_KEY = (import.meta as any).env.VITE_APIM_SUBSCRIPTION_KEY || '';
+
+    if (!USE_API || !API_BASE) {
+      console.log('⚠️ Usando datos mock locales (API de Azure deshabilitada para desarrollo)');
+      return;
+    }
+
+    const headers = {
+      'Accept': 'application/json',
+      ...(APIM_KEY && { 'Ocp-Apim-Subscription-Key': APIM_KEY }),
+    };
+
+    console.log('🔄 Conectando con Azure API Management...');
 
     // Obtener propiedades desde Azure
-    fetch(`${API_URL}/propiedades`)
-      .then(res => res.json())
+    fetch(`${API_BASE}/propiedades`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setProperties(data);
+          console.log(`✅ ${data.length} propiedades cargadas desde Azure`);
         }
       })
-      .catch(err => console.error('Error obteniendo propiedades:', err));
+      .catch(err => console.warn('⚠️ API Azure no disponible para propiedades:', err.message));
 
     // Obtener contratos desde Azure
-    fetch(`${API_URL}/contratos`)
-      .then(res => res.json())
+    fetch(`${API_BASE}/contratos`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setContracts(data);
+          console.log(`✅ ${data.length} contratos cargados desde Azure`);
         }
       })
-      .catch(err => console.error('Error obteniendo contratos:', err));
+      .catch(err => console.warn('⚠️ API Azure no disponible para contratos:', err.message));
 
     // Obtener invitaciones desde Azure
-    fetch(`${API_URL}/invitaciones`)
-      .then(res => res.json())
+    fetch(`${API_BASE}/invitaciones`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setInvitations(data);
+          console.log(`✅ ${data.length} invitaciones cargadas desde Azure`);
         }
       })
-      .catch(err => console.error('Error obteniendo invitaciones:', err));
+      .catch(err => console.warn('⚠️ API Azure no disponible para invitaciones:', err.message));
   }, []);
 
   // Properties
   const addProperty = async (property: Omit<Property, 'id' | 'createdAt'>) => {
     try {
       const API_URL = (import.meta as any).env.VITE_API_URL;
+      const APIM_KEY = (import.meta as any).env.VITE_APIM_SUBSCRIPTION_KEY || '';
       // Notificar a Azure API de la creación
       await fetch(`${API_URL}/propiedades`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(APIM_KEY && { 'Ocp-Apim-Subscription-Key': APIM_KEY }),
+        },
         body: JSON.stringify(property)
       });
       console.log('Propiedad creada exitosamente en Azure APIM (Mock)');
@@ -250,9 +281,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       const API_URL = (import.meta as any).env.VITE_API_URL;
+      const APIM_KEY = (import.meta as any).env.VITE_APIM_SUBSCRIPTION_KEY || '';
       await fetch(`${API_URL}/invitaciones`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(APIM_KEY && { 'Ocp-Apim-Subscription-Key': APIM_KEY }),
+        },
         body: JSON.stringify(newInvitation)
       });
       console.log('Invitación sincronizada con Azure APIM');
@@ -297,10 +332,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addPayment = async (payment: Omit<Payment, 'id'>) => {
     try {
       const API_URL = (import.meta as any).env.VITE_API_URL;
+      const APIM_KEY = (import.meta as any).env.VITE_APIM_SUBSCRIPTION_KEY || '';
       // Notificar a Azure API de la creación del pago
       await fetch(`${API_URL}/pagos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(APIM_KEY && { 'Ocp-Apim-Subscription-Key': APIM_KEY }),
+        },
         body: JSON.stringify(payment)
       });
       console.log('Pago creado exitosamente en Azure APIM (Mock)');

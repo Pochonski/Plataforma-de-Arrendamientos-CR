@@ -4,6 +4,7 @@ import { User } from '../types';
 interface AuthContextType {
   user: User | null;
   login: (correo: string, contraseña: string) => Promise<boolean>;
+  loginWithGoogle: (credentialResponse: any) => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino') => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
@@ -56,6 +57,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
+  const loginWithGoogle = async (credentialResponse: any): Promise<boolean> => {
+    try {
+      // Decodificar el token de Google
+      const token = credentialResponse.credential;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      // Crear usuario con datos de Google
+      const googleUser: User = {
+        id: payload.sub || payload.email,
+        nombre: payload.name,
+        correo: payload.email,
+        rol: 'inquilino', // Por defecto, el usuario puede cambiar después
+      };
+      
+      setUser(googleUser);
+      return true;
+    } catch (err) {
+      console.error("Error con login de Google:", err);
+      return false;
+    }
+  };
+
   const register = async (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino'): Promise<boolean> => {
     // Mock registration
     const newUser: User = {
@@ -87,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         login,
+        loginWithGoogle,
         register,
         logout,
         updateUser,
