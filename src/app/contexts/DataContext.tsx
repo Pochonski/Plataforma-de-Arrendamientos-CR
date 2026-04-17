@@ -531,18 +531,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updatePayment = async (id: string, updates: Partial<Payment>) => {
-    const raw = denormalizePayment({ ...updates, id });
-    const res = await fetch(`${API_BASE}/pagos/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(raw),
-    });
+    try {
+      const raw = denormalizePayment({ ...updates, id });
+      const res = await fetch(`${API_BASE}/pagos/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(raw),
+      });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`Error actualizando pago ${id}:`, res.status, errorText);
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
 
-    setPayments(prev =>
-      prev.map(p => p.id === id ? { ...p, ...updates } : p)
-    );
+      setPayments(prev =>
+        prev.map(p => p.id === id ? { ...p, ...updates } : p)
+      );
+    } catch (err) {
+      console.error('Error en updatePayment:', err);
+      throw err;
+    }
   };
 
   // Notifications
