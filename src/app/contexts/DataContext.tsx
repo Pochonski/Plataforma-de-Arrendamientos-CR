@@ -382,19 +382,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const getContractByInquilinoId = async (inquilinoId: string): Promise<Contract | undefined> => {
-    // APIM does NOT have /contratos/inquilino/{id}.
-    // Fetch all contracts from /contratos and filter by inquilinoId.
+    // Calls GET /contratos/{inquilinoId} — APIM returns only this user's contract.
+    // Response is a single object (or null), NOT the full list.
     try {
-      const res = await fetch(`${API_BASE}/contratos`, {
+      const res = await fetch(`${API_BASE}/contratos/${inquilinoId}`, {
         method: 'GET',
         headers: getHeaders(),
       });
 
       if (!res.ok) return undefined;
-      const data = await res.json();
-      const list: Contract[] = Array.isArray(data) ? data.map(normalizeContract) : [];
-      // Match by normalized inquilinoId OR raw idInquilino
-      return list.find(c => c.inquilinoId === inquilinoId);
+
+      const raw = await res.json();
+      // APIM may return null or an empty body when no contract exists
+      if (!raw || !raw.id) return undefined;
+
+      return normalizeContract(raw);
     } catch {
       return undefined;
     }
