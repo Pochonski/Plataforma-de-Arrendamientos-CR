@@ -17,10 +17,28 @@ export function PublicLayout() {
             <Link to="/propiedades" className="text-muted-foreground hover:text-foreground transition-colors">
               Propiedades
             </Link>
-            <Link to="/#como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link 
+              to="/#como-funciona" 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              onClick={(e) => {
+                if (window.location.pathname === '/') {
+                  e.preventDefault();
+                  document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
               Cómo funciona
             </Link>
-            <Link to="/#beneficios" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link 
+              to="/#beneficios" 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              onClick={(e) => {
+                if (window.location.pathname === '/') {
+                  e.preventDefault();
+                  document.getElementById('beneficios')?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
               Beneficios
             </Link>
           </nav>
