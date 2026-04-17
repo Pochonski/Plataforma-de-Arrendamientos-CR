@@ -9,29 +9,41 @@ const PAGE_SIZE = 6;
 // Normalization helpers — map APIM field names → frontend type field names
 // ---------------------------------------------------------------------------
 
-const normalizeProperty = (raw: any): Property => ({
-  id: raw.id ?? '',
-  titulo: raw.titulo ?? '',
-  descripcion: raw.descripcion ?? '',
-  precio: raw.precio ?? 0,
-  moneda: (raw.moneda ?? 'CRC') as Currency,
-  provincia: raw.provincia ?? '',
-  canton: raw.canton ?? '',
-  distrito: raw.distrito ?? '',
-  tipo: (raw.tipo ?? 'apartamento') as PropertyType,
-  // APIM may return 'alquilado' (without 'a'), normalize it
-  estado: (['disponible', 'alquilada', 'mantenimiento'].includes(raw.estado)
-    ? raw.estado
-    : raw.estado === 'alquilado' ? 'alquilada' : 'disponible') as PropertyStatus,
-  imagenes: Array.isArray(raw.imagenes) ? raw.imagenes : [],
-  // APIM uses idDueno; frontend uses duenoId
-  duenoId: raw.duenoId ?? raw.idDueno ?? '',
-  // APIM uses amenidades; frontend uses caracteristicas
-  caracteristicas: Array.isArray(raw.caracteristicas)
-    ? raw.caracteristicas
-    : Array.isArray(raw.amenidades) ? raw.amenidades : [],
-  createdAt: new Date(raw.createdAt ?? raw.fechaCreacion ?? Date.now()),
-});
+const normalizeProperty = (raw: any): Property => {
+  // Handle price conversion (especially for APIM mocks that send "string" or actual strings)
+  let precio = 0;
+  if (typeof raw.precio === 'number') {
+    precio = raw.precio;
+  } else if (typeof raw.precio === 'string') {
+    precio = parseFloat(raw.precio);
+    if (isNaN(precio)) precio = 0;
+  }
+
+  return {
+    // If ID is generic "string", use a random one for local UI stability
+    id: !raw.id || raw.id === 'string' ? `mock-${Math.random().toString(36).substr(2, 9)}` : raw.id,
+    titulo: raw.titulo === 'string' ? 'Propiedad Nueva' : (raw.titulo ?? ''),
+    descripcion: raw.descripcion === 'string' ? '' : (raw.descripcion ?? ''),
+    precio: precio,
+    moneda: (raw.moneda === 'string' ? 'CRC' : (raw.moneda ?? 'CRC')) as Currency,
+    provincia: raw.provincia === 'string' ? '' : (raw.provincia ?? ''),
+    canton: raw.canton === 'string' ? '' : (raw.canton ?? ''),
+    distrito: raw.distrito === 'string' ? '' : (raw.distrito ?? ''),
+    tipo: (raw.tipo === 'string' ? 'apartamento' : (raw.tipo ?? 'apartamento')) as PropertyType,
+    // APIM may return 'alquilado' (without 'a'), normalize it
+    estado: (['disponible', 'alquilada', 'mantenimiento'].includes(raw.estado)
+      ? raw.estado
+      : raw.estado === 'alquilado' ? 'alquilada' : 'disponible') as PropertyStatus,
+    imagenes: Array.isArray(raw.imagenes) ? raw.imagenes.filter(i => i !== 'string') : [],
+    // APIM uses idDueno; frontend uses duenoId
+    duenoId: raw.duenoId ?? raw.idDueno ?? '',
+    // APIM uses amenidades; frontend uses caracteristicas
+    caracteristicas: Array.isArray(raw.caracteristicas)
+      ? raw.caracteristicas.filter(c => c !== 'string')
+      : Array.isArray(raw.amenidades) ? raw.amenidades.filter(a => a !== 'string') : [],
+    createdAt: new Date(raw.createdAt ?? raw.fechaCreacion ?? Date.now()),
+  };
+};
 
 const denormalizeProperty = (p: Partial<Property>): any => {
   const raw: any = { ...p };
