@@ -47,17 +47,16 @@ const normalizeProperty = (raw: any): Property => {
 
 const denormalizeProperty = (p: Partial<Property>): any => {
   const raw: any = { ...p };
-  // Map duenoId -> idDueno
+  // Map duenoId -> idDueno (APIM expects idDueno)
   if (p.duenoId) {
     raw.idDueno = p.duenoId;
     delete (raw as any).duenoId;
   }
-  // Map caracteristicas -> amenidades
-  if (p.caracteristicas) {
-    raw.amenidades = p.caracteristicas;
-    delete (raw as any).caracteristicas;
-  }
-  // Ensure we don't send Date objects to APIM (stringify doesn't always handle them as simple dates)
+  
+  // We keep the name 'caracteristicas' as it is in our frontend Property type
+  // and it matches the user's preferred APIM schema for POST.
+  
+  // Ensure we don't send Date objects to APIM
   if (p.createdAt instanceof Date) {
     raw.fechaCreacion = p.createdAt.toISOString();
     delete (raw as any).createdAt;
