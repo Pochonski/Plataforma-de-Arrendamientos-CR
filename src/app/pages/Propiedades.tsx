@@ -146,12 +146,12 @@ export default function Propiedades() {
               <p className="text-muted-foreground line-clamp-2">{property.descripcion}</p>
 
               <div className="flex flex-wrap gap-2">
-                {property.caracteristicas.slice(0, 4).map((caracteristica, idx) => (
+                {(property.caracteristicas ?? []).slice(0, 4).map((caracteristica, idx) => (
                   <Badge key={idx} variant="outline">
                     {caracteristica}
                   </Badge>
                 ))}
-                {property.caracteristicas.length > 4 && (
+                {(property.caracteristicas?.length ?? 0) > 4 && (
                   <Badge variant="outline">+{property.caracteristicas.length - 4} más</Badge>
                 )}
               </div>
