@@ -15,20 +15,20 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { Skeleton } from '../components/ui/skeleton';
-import { Search, MapPin, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Property } from '../types';
 import { toast } from 'sonner';
 
 export default function Propiedades() {
-  const { properties, propertiesTotal, propertiesTotalPages, isLoadingProperties, fetchProperties } = useData();
+  const { properties, propertiesTotal, propertiesPage, propertiesTotalPages, isLoadingProperties, fetchProperties } = useData();
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  
+  // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProvincia, setSelectedProvincia] = useState('todas');
   const [selectedTipo, setSelectedTipo] = useState('todos');
   const [selectedPrecio, setSelectedPrecio] = useState('todos');
-  // Simulated pagination state - no limit on page numbers
-  const [currentPage, setCurrentPage] = useState(1);
 
   const provincias = [
     'San José',
@@ -56,36 +56,41 @@ export default function Propiedades() {
     { value: '1200000-999999999', label: 'Más de ₡1,200,000' },
   ];
 
-  // Filter properties (but keep for display count - simulated pagination uses full list)
-  const filteredProperties = properties.filter((property) => {
-    const matchesSearch =
-      property.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.provincia.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.canton.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesProvincia =
-      selectedProvincia === 'todas' || property.provincia === selectedProvincia;
-
-    const matchesTipo = selectedTipo === 'todos' || property.tipo === selectedTipo;
-
-    let matchesPrecio = true;
+  // Build filters object for API
+  const buildFilters = () => {
+    const filters: any = {};
+    if (searchQuery.trim()) filters.search = searchQuery.trim();
+    if (selectedProvincia !== 'todas') filters.provincia = selectedProvincia;
+    if (selectedTipo !== 'todos') filters.tipo = selectedTipo;
     if (selectedPrecio !== 'todos') {
       const [min, max] = selectedPrecio.split('-').map(Number);
-      matchesPrecio = property.precio >= min && property.precio <= max;
+      filters.precioMin = min;
+      filters.precioMax = max;
     }
+    return filters;
+  };
 
-    return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio;
-  });
+  // Handle page change with filters
+  const handlePageChange = (page: number) => {
+    const filters = buildFilters();
+    fetchProperties(page, filters);
+    window.scrollTo({ top: 300, behavior: 'smooth' }); // Scroll to grid start roughly
+  };
 
-  // Simulated pagination: always show exactly 6 items regardless of page
-  const itemsPerPage = 6;
-  const safeAll = properties ?? [];
-  // Always display the same first 6 elements from the FULL list - no actual pagination slicing
-  const displayedProperties = safeAll.slice(0, itemsPerPage);
+  // Handle filter changes - reset to page 1
+  const handleFilterChange = () => {
+    const filters = buildFilters();
+    fetchProperties(1, filters);
+  };
 
-  // Reset page when filters change
-  const handlePageReset = () => setCurrentPage(1);
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedProvincia('todas');
+    setSelectedTipo('todos');
+    setSelectedPrecio('todos');
+    fetchProperties(1, {});
+  };
 
   const formatPrice = (precio: number, moneda: string) => {
     const symbol = moneda === 'USD' ? '$' : '₡';
@@ -182,9 +187,11 @@ export default function Propiedades() {
                 placeholder="Busca por ubicación, tipo de propiedad o características..."
                 className="pl-10 h-12 text-base"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  handlePageReset();
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleFilterChange();
+                  }
                 }}
               />
             </div>
@@ -196,7 +203,7 @@ export default function Propiedades() {
         {/* Filters */}
         <div className="flex flex-col lg:flex-row gap-4 mb-8">
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Select value={selectedProvincia} onValueChange={(val) => { setSelectedProvincia(val); handlePageReset(); }}>
+            <Select value={selectedProvincia} onValueChange={(val) => { setSelectedProvincia(val); handleFilterChange(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Provincia" />
               </SelectTrigger>
@@ -210,7 +217,7 @@ export default function Propiedades() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedTipo} onValueChange={(val) => { setSelectedTipo(val); handlePageReset(); }}>
+            <Select value={selectedTipo} onValueChange={(val) => { setSelectedTipo(val); handleFilterChange(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Tipo de propiedad" />
               </SelectTrigger>
@@ -224,7 +231,7 @@ export default function Propiedades() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedPrecio} onValueChange={(val) => { setSelectedPrecio(val); handlePageReset(); }}>
+            <Select value={selectedPrecio} onValueChange={(val) => { setSelectedPrecio(val); handleFilterChange(); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Rango de precio" />
               </SelectTrigger>
@@ -240,47 +247,109 @@ export default function Propiedades() {
           </div>
         </div>
 
-        {/* Results Count */}
+        {/* Results Count and Clear Filters */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
             {propertiesTotal} {propertiesTotal === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}
+            {propertiesTotalPages > 0 && ` (página ${propertiesPage} de ${propertiesTotalPages})`}
           </p>
-          <Button variant="ghost" size="sm">
-            <SlidersHorizontal className="size-4 mr-2" />
-            Más filtros
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+              Limpiar filtros
+            </Button>
+            <Button variant="ghost" size="sm">
+              <SlidersHorizontal className="size-4 mr-2" />
+              Más filtros
+            </Button>
+          </div>
         </div>
 
         {/* Properties Grid/List */}
         {isLoadingProperties ? (
           <LoadingSkeleton />
-        ) : filteredProperties.length > 0 ? (
+        ) : properties.length > 0 ? (
           <>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {displayedProperties.map((property) => (
+              {properties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
               ))}
             </div>
 
-            {/* Simulated Pagination Controls - Always visible with infinite pages */}
-            <div className="flex justify-center items-center gap-4 mt-8">
-              <Button
-                variant="outline"
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              >
-                Anterior
-              </Button>
-              <span className="text-sm font-medium px-4 py-2 bg-muted rounded-lg">
-                Página {currentPage}
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(p => p + 1)}
-              >
-                Siguiente
-              </Button>
-            </div>
+            {/* Real Pagination Controls */}
+            {propertiesTotalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={propertiesPage <= 1}
+                  onClick={() => handlePageChange(1)}
+                  title="Primera página"
+                >
+                  <ChevronsLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={propertiesPage <= 1}
+                  onClick={() => handlePageChange(propertiesPage - 1)}
+                  title="Página anterior"
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                
+                <div className="flex items-center gap-1 px-4">
+                  {Array.from({ length: Math.min(5, propertiesTotalPages) }, (_, i) => {
+                    let pageNum;
+                    if (propertiesTotalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (propertiesPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (propertiesPage >= propertiesTotalPages - 2) {
+                      pageNum = propertiesTotalPages - 4 + i;
+                    } else {
+                      pageNum = propertiesPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={propertiesPage === pageNum ? 'default' : 'outline'}
+                        size="icon"
+                        className="size-9"
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={propertiesPage >= propertiesTotalPages}
+                  onClick={() => handlePageChange(propertiesPage + 1)}
+                  title="Página siguiente"
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={propertiesPage >= propertiesTotalPages}
+                  onClick={() => handlePageChange(propertiesTotalPages)}
+                  title="Última página"
+                >
+                  <ChevronsRight className="size-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Page info text */}
+            {propertiesTotalPages > 0 && (
+              <p className="text-center text-sm text-muted-foreground mt-4">
+                Mostrando {properties.length} propiedades de {propertiesTotal} en total
+              </p>
+            )}
           </>
         ) : (
           <Card className="p-12 text-center">
@@ -291,15 +360,7 @@ export default function Propiedades() {
             <p className="text-muted-foreground mb-6">
               Intenta ajustar tus filtros de búsqueda
             </p>
-            <Button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedProvincia('todas');
-                setSelectedTipo('todos');
-                setSelectedPrecio('todos');
-                handlePageReset();
-              }}
-            >
+            <Button onClick={handleClearFilters}>
               Limpiar filtros
             </Button>
           </Card>

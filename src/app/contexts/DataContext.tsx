@@ -95,14 +95,22 @@ const getHeaders = () => ({
   ...(APIM_KEY && { 'Ocp-Apim-Subscription-Key': APIM_KEY }),
 });
 
+interface FilterParams {
+  search?: string;
+  provincia?: string;
+  tipo?: string;
+  precioMin?: number;
+  precioMax?: number;
+}
+
 interface DataContextType {
-  // Properties with pagination
+  // Properties with pagination and filters
   properties: Property[];
   propertiesTotal: number;
   propertiesPage: number;
   propertiesTotalPages: number;
   isLoadingProperties: boolean;
-  fetchProperties: (page?: number) => Promise<void>;
+  fetchProperties: (page?: number, filters?: FilterParams) => Promise<void>;
   addProperty: (property: Omit<Property, 'id' | 'createdAt'>) => Promise<Property>;
   updateProperty: (id: string, updates: Partial<Property>) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
@@ -183,14 +191,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
-  // Properties with pagination
-  const fetchProperties = useCallback(async (page: number = 1) => {
+  // Properties with pagination and filters
+  const fetchProperties = useCallback(async (page: number = 1, filters?: FilterParams) => {
     setIsLoadingProperties(true);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: PAGE_SIZE.toString(),
       });
+
+      // Add filter parameters to URL for real API support
+      if (filters) {
+        if (filters.search) params.append('search', filters.search);
+        if (filters.provincia && filters.provincia !== 'todas') params.append('provincia', filters.provincia);
+        if (filters.tipo && filters.tipo !== 'todos') params.append('tipo', filters.tipo);
+        if (filters.precioMin !== undefined) params.append('precioMin', filters.precioMin.toString());
+        if (filters.precioMax !== undefined) params.append('precioMax', filters.precioMax.toString());
+      }
+
       const res = await fetch(`${API_BASE}/propiedades?${params}`, {
         method: 'GET',
         headers: getHeaders(),
@@ -202,18 +220,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       // Handle both paginated {data, total, page, pageSize, totalPages} and plain array responses
       if (Array.isArray(data)) {
-        // Plain array — normalize field names and paginate locally
-        const normalized = data.map(normalizeProperty);
+        // Normalize field names
+        let result = data.map(normalizeProperty);
+        
+        // APPLY LOCAL FILTERING (Crucial for Mocks/Arrays)
+        if (filters) {
+          if (filters.search) {
+            const query = filters.search.toLowerCase();
+            result = result.filter(p => 
+              p.titulo.toLowerCase().includes(query) || 
+              p.descripcion.toLowerCase().includes(query) ||
+              p.canton.toLowerCase().includes(query) ||
+              p.distrito.toLowerCase().includes(query)
+            );
+          }
+          if (filters.provincia && filters.provincia !== 'todas') {
+            result = result.filter(p => p.provincia === filters.provincia);
+          }
+          if (filters.tipo && filters.tipo !== 'todos') {
+            result = result.filter(p => p.tipo === filters.tipo);
+          }
+          if (filters.precioMin !== undefined) {
+            result = result.filter(p => p.precio >= (filters.precioMin || 0));
+          }
+          if (filters.precioMax !== undefined) {
+            result = result.filter(p => p.precio <= (filters.precioMax || Infinity));
+          }
+        }
+
+        // Apply pagination on THE FILTERED RESULT
         const start = (page - 1) * PAGE_SIZE;
         const end = start + PAGE_SIZE;
-        const paginatedData = normalized.slice(start, end);
+        const paginatedData = result.slice(start, end);
 
         setProperties(paginatedData);
-        setPropertiesTotal(normalized.length);
+        setPropertiesTotal(result.length);
         setPropertiesPage(page);
-        setPropertiesTotalPages(Math.ceil(normalized.length / PAGE_SIZE));
+        setPropertiesTotalPages(Math.ceil(result.length / PAGE_SIZE));
       } else if (data.data && Array.isArray(data.data)) {
-        // Paginated response from real API
+        // Real paginated response from API that already filters/paginates
         setProperties(data.data.map(normalizeProperty));
         setPropertiesTotal(data.total || 0);
         setPropertiesPage(data.page || page);
