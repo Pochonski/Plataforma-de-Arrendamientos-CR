@@ -564,7 +564,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         headers: getHeaders(),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`Error en GET ${endpoint}:`, res.status, errorText);
+        throw new Error(`HTTP ${res.status}`);
+      }
 
       const data = await res.json();
       const normalizedData = Array.isArray(data) ? data.map(n => ({
@@ -626,7 +630,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         method: 'GET',
         headers: getHeaders(),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`Error en GET ${endpoint}:`, res.status, errorText);
+        throw new Error(`HTTP ${res.status}`);
+      }
       const data = await res.json();
       const normalizedData = Array.isArray(data) ? data.map(c => ({
         ...c,
