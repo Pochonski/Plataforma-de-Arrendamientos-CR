@@ -24,7 +24,8 @@ export default function EditarPropiedad() {
   const { properties, updateProperty, getPropertyById } = useData();
   const navigate = useNavigate();
 
-  const property = id ? getPropertyById(id) : null;
+  const [property, setProperty] = useState<Property | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -40,6 +41,26 @@ export default function EditarPropiedad() {
   const [nuevaCaracteristica, setNuevaCaracteristica] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const loadProperty = async () => {
+      if (id) {
+        setInitialLoading(true);
+        try {
+          const data = await getPropertyById(id);
+          setProperty(data || null);
+        } catch (err) {
+          console.error('Error loading property:', err);
+          setProperty(null);
+        } finally {
+          setInitialLoading(false);
+        }
+      } else {
+        setInitialLoading(false);
+      }
+    };
+    loadProperty();
+  }, [id, getPropertyById]);
 
   useEffect(() => {
     if (property) {
@@ -88,6 +109,17 @@ export default function EditarPropiedad() {
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
   ];
+
+  if (initialLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-2">
+          <div className="size-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground">Cargando propiedad...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!property || property.duenoId !== user?.id) {
     return (
