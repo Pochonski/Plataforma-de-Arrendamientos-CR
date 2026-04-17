@@ -679,10 +679,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     fetchProperties(1);
     fetchInvitations();
     fetchContracts();
-    fetchNotifications();
-    fetchConversations();
-    fetchMessages();
-  }, []);
+  }, [fetchProperties, fetchInvitations, fetchContracts]);
 
   return (
     <DataContext.Provider
