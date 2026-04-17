@@ -17,10 +17,10 @@ export function PublicLayout() {
             <Link to="/propiedades" className="text-muted-foreground hover:text-foreground transition-colors">
               Propiedades
             </Link>
-            <Link to="#como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/#como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">
               Cómo funciona
             </Link>
-            <Link to="#beneficios" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/#beneficios" className="text-muted-foreground hover:text-foreground transition-colors">
               Beneficios
             </Link>
           </nav>
@@ -73,7 +73,7 @@ export function PublicLayout() {
               <h3 className="font-semibold mb-3">Producto</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/propiedades" className="hover:text-foreground transition-colors">Propiedades</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Cómo funciona</Link></li>
+                <li><Link to="/#como-funciona" className="hover:text-foreground transition-colors">Cómo funciona</Link></li>
                 <li><Link to="#" className="hover:text-foreground transition-colors">Precios</Link></li>
               </ul>
             </div>
