@@ -283,7 +283,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateProperty = async (id: string, updates: Partial<Property>) => {
     // APIM uses PUT /propiedades/{id}
-    const raw = denormalizeProperty(updates);
+    // We include the ID in the body as well, just in case the backend requires it
+    const raw = denormalizeProperty({ ...updates, id });
     const res = await fetch(`${API_BASE}/propiedades/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
