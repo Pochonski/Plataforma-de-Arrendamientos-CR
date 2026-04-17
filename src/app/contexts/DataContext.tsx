@@ -34,13 +34,13 @@ const normalizeProperty = (raw: any): Property => {
     estado: (['disponible', 'alquilada', 'mantenimiento'].includes(raw.estado)
       ? raw.estado
       : raw.estado === 'alquilado' ? 'alquilada' : 'disponible') as PropertyStatus,
-    imagenes: Array.isArray(raw.imagenes) ? raw.imagenes.filter(i => i !== 'string') : [],
+    imagenes: Array.isArray(raw.imagenes) ? raw.imagenes.filter((i: string) => i !== 'string') : [],
     // APIM uses idDueno; frontend uses duenoId
     duenoId: raw.duenoId ?? raw.idDueno ?? '',
     // APIM uses amenidades; frontend uses caracteristicas
     caracteristicas: Array.isArray(raw.caracteristicas)
-      ? raw.caracteristicas.filter(c => c !== 'string')
-      : Array.isArray(raw.amenidades) ? raw.amenidades.filter(a => a !== 'string') : [],
+      ? raw.caracteristicas.filter((c: string) => c !== 'string')
+      : Array.isArray(raw.amenidades) ? raw.amenidades.filter((a: string) => a !== 'string') : [],
     createdAt: new Date(raw.createdAt ?? raw.fechaCreacion ?? Date.now()),
   };
 };
