@@ -1,9 +1,72 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { Property, Invitation, Payment, Contract, Notification, User, Conversation, Message, ConversationType } from '../types';
+import { Property, Invitation, Payment, Contract, Notification, User, Conversation, Message, ConversationType, PropertyStatus, PropertyType, Currency, ContractStatus, DepositStatus } from '../types';
 
 const API_BASE = (import.meta as any).env.VITE_API_URL || '';
 const APIM_KEY = (import.meta as any).env.VITE_APIM_SUBSCRIPTION_KEY || '';
 const PAGE_SIZE = 6;
+
+// ---------------------------------------------------------------------------
+// Normalization helpers — map APIM field names → frontend type field names
+// ---------------------------------------------------------------------------
+
+const normalizeProperty = (raw: any): Property => ({
+  id: raw.id ?? '',
+  titulo: raw.titulo ?? '',
+  descripcion: raw.descripcion ?? '',
+  precio: raw.precio ?? 0,
+  moneda: (raw.moneda ?? 'CRC') as Currency,
+  provincia: raw.provincia ?? '',
+  canton: raw.canton ?? '',
+  distrito: raw.distrito ?? '',
+  tipo: (raw.tipo ?? 'apartamento') as PropertyType,
+  // APIM may return 'alquilado' (without 'a'), normalize it
+  estado: (['disponible', 'alquilada', 'mantenimiento'].includes(raw.estado)
+    ? raw.estado
+    : raw.estado === 'alquilado' ? 'alquilada' : 'disponible') as PropertyStatus,
+  imagenes: Array.isArray(raw.imagenes) ? raw.imagenes : [],
+  // APIM uses idDueno; frontend uses duenoId
+  duenoId: raw.duenoId ?? raw.idDueno ?? '',
+  // APIM uses amenidades; frontend uses caracteristicas
+  caracteristicas: Array.isArray(raw.caracteristicas)
+    ? raw.caracteristicas
+    : Array.isArray(raw.amenidades) ? raw.amenidades : [],
+  createdAt: new Date(raw.createdAt ?? raw.fechaCreacion ?? Date.now()),
+});
+
+const normalizeContract = (raw: any): Contract => ({
+  id: raw.id ?? '',
+  invitacionId: raw.invitacionId ?? raw.idInvitacion ?? '',
+  // APIM uses idPropiedad; frontend uses propiedadId
+  propiedadId: raw.propiedadId ?? raw.idPropiedad ?? '',
+  // APIM uses idDueno; frontend uses duenoId
+  duenoId: raw.duenoId ?? raw.idDueno ?? '',
+  // APIM uses idInquilino; frontend uses inquilinoId
+  inquilinoId: raw.inquilinoId ?? raw.idInquilino ?? '',
+  montoMensual: raw.montoMensual ?? 0,
+  // APIM uses 'deposito'; frontend uses montoDeposito
+  montoDeposito: raw.montoDeposito ?? raw.deposito ?? 0,
+  moneda: (raw.moneda ?? 'CRC') as Currency,
+  fechaInicio: new Date(raw.fechaInicio ?? Date.now()),
+  estado: (raw.estado ?? 'activo') as ContractStatus,
+  estadoDeposito: (raw.estadoDeposito ?? 'pendiente') as DepositStatus,
+});
+
+const normalizeInvitation = (raw: any): Invitation => ({
+  id: raw.id ?? '',
+  token: raw.token ?? '',
+  // APIM uses idPropiedad; frontend uses propiedadId
+  propiedadId: raw.propiedadId ?? raw.idPropiedad ?? '',
+  duenoId: raw.duenoId ?? raw.idDueno ?? '',
+  inquilinoCorreo: raw.inquilinoCorreo ?? raw.correoInvitado ?? undefined,
+  inquilinoId: raw.inquilinoId ?? raw.idInquilino ?? undefined,
+  estado: raw.estado ?? 'pendiente',
+  fechaEmision: new Date(raw.fechaEmision ?? raw.fechaEnvio ?? Date.now()),
+  fechaExpiracion: new Date(raw.fechaExpiracion ?? raw.fechaEnvio ?? Date.now()),
+  montoAlquiler: raw.montoAlquiler ?? raw.montoMensual ?? 0,
+  montoDeposito: raw.montoDeposito ?? raw.deposito ?? 0,
+  moneda: (raw.moneda ?? 'CRC') as Currency,
+});
+
 
 const getHeaders = () => ({
   'Accept': 'application/json',
@@ -118,18 +181,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       // Handle both paginated {data, total, page, pageSize, totalPages} and plain array responses
       if (Array.isArray(data)) {
-        // Plain array from mock - simulate pagination locally
+        // Plain array — normalize field names and paginate locally
+        const normalized = data.map(normalizeProperty);
         const start = (page - 1) * PAGE_SIZE;
         const end = start + PAGE_SIZE;
-        const paginatedData = data.slice(start, end);
+        const paginatedData = normalized.slice(start, end);
 
         setProperties(paginatedData);
-        setPropertiesTotal(data.length);
+        setPropertiesTotal(normalized.length);
         setPropertiesPage(page);
-        setPropertiesTotalPages(Math.ceil(data.length / PAGE_SIZE));
+        setPropertiesTotalPages(Math.ceil(normalized.length / PAGE_SIZE));
       } else if (data.data && Array.isArray(data.data)) {
         // Paginated response from real API
-        setProperties(data.data);
+        setProperties(data.data.map(normalizeProperty));
         setPropertiesTotal(data.total || 0);
         setPropertiesPage(data.page || page);
         setPropertiesTotalPages(data.totalPages || 0);
@@ -192,7 +256,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
 
       if (!res.ok) return undefined;
-      return await res.json();
+      const raw = await res.json();
+      return normalizeProperty(raw);
     } catch {
       return undefined;
     }
@@ -210,7 +275,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      setInvitations(Array.isArray(data) ? data : []);
+      // Normalize APIM field names → frontend types
+      setInvitations(Array.isArray(data) ? data.map(normalizeInvitation) : []);
     } catch (err) {
       console.error('Error fetching invitations:', err);
       setInvitations([]);
@@ -248,14 +314,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const getInvitationByToken = async (token: string): Promise<Invitation | undefined> => {
+    // APIM does NOT have /invitaciones/token/{token}.
+    // Fetch all invitations from /invitaciones and filter by token.
     try {
-      const res = await fetch(`${API_BASE}/invitaciones/token/${token}`, {
+      const res = await fetch(`${API_BASE}/invitaciones`, {
         method: 'GET',
         headers: getHeaders(),
       });
 
       if (!res.ok) return undefined;
-      return await res.json();
+      const data = await res.json();
+      const list: Invitation[] = Array.isArray(data) ? data.map(normalizeInvitation) : [];
+      return list.find(inv => inv.token === token);
     } catch {
       return undefined;
     }
@@ -273,7 +343,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      setContracts(Array.isArray(data) ? data : []);
+      // Normalize APIM field names → frontend types
+      setContracts(Array.isArray(data) ? data.map(normalizeContract) : []);
     } catch (err) {
       console.error('Error fetching contracts:', err);
       setContracts([]);
@@ -311,14 +382,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const getContractByInquilinoId = async (inquilinoId: string): Promise<Contract | undefined> => {
+    // APIM does NOT have /contratos/inquilino/{id}.
+    // Fetch all contracts from /contratos and filter by inquilinoId.
     try {
-      const res = await fetch(`${API_BASE}/contratos/inquilino/${inquilinoId}`, {
+      const res = await fetch(`${API_BASE}/contratos`, {
         method: 'GET',
         headers: getHeaders(),
       });
 
       if (!res.ok) return undefined;
-      return await res.json();
+      const data = await res.json();
+      const list: Contract[] = Array.isArray(data) ? data.map(normalizeContract) : [];
+      // Match by normalized inquilinoId OR raw idInquilino
+      return list.find(c => c.inquilinoId === inquilinoId);
     } catch {
       return undefined;
     }

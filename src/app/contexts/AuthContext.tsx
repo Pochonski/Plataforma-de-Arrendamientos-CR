@@ -13,6 +13,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Normalize the user object received from APIM:
+// - APIM returns rol: "dueno" (no tilde), frontend expects 'dueño' | 'inquilino'
+const normalizeUser = (raw: any): User => ({
+  ...raw,
+  rol: raw.rol === 'dueno' || raw.rol === 'arrendador' ? 'dueño'
+     : raw.rol === 'arrendatario' ? 'inquilino'
+     : raw.rol ?? 'inquilino',
+});
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
@@ -30,9 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await fetch(`${apiUrl}/usuarios`);
         if (response.ok) {
           const usuarios = await response.json();
-          const foundUser = usuarios.find((u: User) => u.correo === correo);
+          const foundUser = usuarios.find((u: any) => u.correo === correo);
           if (foundUser) {
-            setUser(foundUser);
+            // Normalize role from APIM ("dueno" → "dueño")
+            setUser(normalizeUser(foundUser));
             return true;
           }
         }
