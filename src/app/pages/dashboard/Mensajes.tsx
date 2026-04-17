@@ -149,7 +149,7 @@ export default function Mensajes() {
       pago_comprobante: CreditCard,
       general: MessageSquare,
     };
-    const Icon = icons[type];
+    const Icon = icons[type] || MessageSquare;
     return <Icon className="size-4" />;
   };
 
