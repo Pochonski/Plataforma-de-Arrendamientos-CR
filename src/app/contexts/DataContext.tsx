@@ -755,7 +755,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Users
   const getUserById = async (id: string): Promise<User | undefined> => {
     try {
-      const res = await fetch(`${API_BASE}/usuarios/${id}`, {
+      const res = await fetch(`${API_BASE}/usuario/${id}`, {
         method: 'GET',
         headers: getHeaders(),
       });
