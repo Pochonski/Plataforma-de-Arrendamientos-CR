@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Button } from '../../components/ui/button';
@@ -33,8 +33,14 @@ import {
 
 export default function Historial() {
   const { user } = useAuth();
-  const { payments, properties } = useData();
+  const { payments, properties, fetchPayments } = useData();
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchPayments(user.id);
+    }
+  }, [user?.id, fetchPayments]);
   const [filterAño, setFilterAño] = useState<string>('todos');
   const [filterEstado, setFilterEstado] = useState<string>('todos');
 

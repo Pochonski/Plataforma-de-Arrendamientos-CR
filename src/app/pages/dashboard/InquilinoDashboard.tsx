@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
@@ -20,9 +20,15 @@ import {
 
 export default function InquilinoDashboard() {
   const { user } = useAuth();
-  const { contracts, payments, properties, getContractByInquilinoId } = useData();
+  const { contracts, payments, properties, getContractByInquilinoId, fetchPayments } = useData();
   const [myContract, setMyContract] = useState<Contract | null>(null);
   const [isLoadingContract, setIsLoadingContract] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchPayments(user.id);
+    }
+  }, [user?.id, fetchPayments]);
 
   useEffect(() => {
     const loadContract = async () => {

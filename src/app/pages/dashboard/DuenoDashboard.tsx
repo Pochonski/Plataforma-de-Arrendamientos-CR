@@ -1,4 +1,5 @@
-import { Link } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -26,7 +27,13 @@ import {
 
 export default function DuenoDashboard() {
   const { user } = useAuth();
-  const { properties, invitations, payments } = useData();
+  const { properties, invitations, payments, fetchPayments } = useData();
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchPayments(user.id);
+    }
+  }, [user?.id, fetchPayments]);
 
   const myProperties = properties.filter((p) => p.duenoId === user?.id);
   const myInvitations = invitations.filter((inv) => inv.duenoId === user?.id);

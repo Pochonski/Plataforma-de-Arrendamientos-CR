@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Button } from '../../components/ui/button';
@@ -18,7 +18,11 @@ import {
 
 export default function Notificaciones() {
   const { user } = useAuth();
-  const { notifications, markNotificationAsRead, getUnreadCount } = useData();
+  const { notifications, markNotificationAsRead, getUnreadCount, fetchNotifications } = useData();
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const myNotifications = notifications.filter((n) => n.userId === user?.id);
   const [filter, setFilter] = useState<'todas' | 'no-leidas'>('todas');

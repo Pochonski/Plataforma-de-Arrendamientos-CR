@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Button } from '../../components/ui/button';
@@ -38,8 +38,14 @@ import { downloadExcel } from '../../utils/export';
 
 export default function PagosRecibidos() {
   const { user } = useAuth();
-  const { payments, updatePayment, properties, updateContract } = useData();
+  const { payments, updatePayment, properties, updateContract, fetchPayments } = useData();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  useEffect(() => {
+    if (user?.id) {
+      fetchPayments(user.id);
+    }
+  }, [user?.id, fetchPayments]);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState('');
