@@ -134,7 +134,7 @@ interface DataContextType {
   // Notifications
   notifications: Notification[];
   isLoadingNotifications: boolean;
-  fetchNotifications: () => Promise<void>;
+  fetchNotifications: (userId?: string) => Promise<void>;
   addNotification: (notification: Omit<Notification, 'id'>) => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
   getUnreadCount: (userId: string) => number;
@@ -148,8 +148,8 @@ interface DataContextType {
   messages: Message[];
   isLoadingConversations: boolean;
   isLoadingMessages: boolean;
-  fetchConversations: () => Promise<void>;
-  fetchMessages: () => Promise<void>;
+  fetchConversations: (userId?: string) => Promise<void>;
+  fetchMessages: (userId?: string) => Promise<void>;
   getConversationsByUserId: (userId: string) => Conversation[];
   getMessagesByConversationId: (conversationId: string) => Message[];
   sendMessage: (message: Omit<Message, 'id' | 'timestamp' | 'status'>) => Promise<Message>;
@@ -474,10 +474,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Notifications
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (userId?: string) => {
     setIsLoadingNotifications(true);
     try {
-      const res = await fetch(`${API_BASE}/notificaciones`, {
+      const endpoint = userId ? `${API_BASE}/notificaciones/${userId}` : `${API_BASE}/notificaciones`;
+      const res = await fetch(endpoint, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -485,7 +486,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      setNotifications(Array.isArray(data) ? data : []);
+      const normalizedData = Array.isArray(data) ? data.map(n => ({
+        ...n,
+        fecha: new Date(n.fecha)
+      })) : [];
+      setNotifications(normalizedData);
     } catch (err) {
       console.error('Error fetching notifications:', err);
       setNotifications([]);
@@ -532,16 +537,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Conversations
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (userId?: string) => {
     setIsLoadingConversations(true);
     try {
-      const res = await fetch(`${API_BASE}/conversaciones`, {
+      const endpoint = userId ? `${API_BASE}/conversaciones/${userId}` : `${API_BASE}/conversaciones`;
+      const res = await fetch(endpoint, {
         method: 'GET',
         headers: getHeaders(),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setConversations(Array.isArray(data) ? data : []);
+      const normalizedData = Array.isArray(data) ? data.map(c => ({
+        ...c,
+        lastMessageAt: c.lastMessageAt ? new Date(c.lastMessageAt) : undefined,
+        createdAt: new Date(c.createdAt)
+      })) : [];
+      setConversations(normalizedData);
     } catch (err) {
       console.error('Error fetching conversations:', err);
       setConversations([]);
@@ -578,16 +589,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Messages
-  const fetchMessages = useCallback(async () => {
+  const fetchMessages = useCallback(async (userId?: string) => {
     setIsLoadingMessages(true);
     try {
-      const res = await fetch(`${API_BASE}/mensajes`, {
+      const endpoint = userId ? `${API_BASE}/mensajes/${userId}` : `${API_BASE}/mensajes`;
+      const res = await fetch(endpoint, {
         method: 'GET',
         headers: getHeaders(),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setMessages(Array.isArray(data) ? data : []);
+      const normalizedData = Array.isArray(data) ? data.map(m => ({
+        ...m,
+        timestamp: new Date(m.timestamp)
+      })) : [];
+      setMessages(normalizedData);
     } catch (err) {
       console.error('Error fetching messages:', err);
       setMessages([]);

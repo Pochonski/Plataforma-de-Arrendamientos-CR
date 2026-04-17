@@ -28,35 +28,31 @@ import { toast } from 'sonner';
 
 export default function Mensajes() {
   const { user } = useAuth();
-  const { properties, getPropertyById, getUserById } = useData();
+  const { 
+    properties, 
+    getPropertyById, 
+    getUserById,
+    conversations,
+    messages,
+    fetchConversations,
+    fetchMessages,
+    sendMessage,
+    getConversationsByUserId,
+    getMessagesByConversationId
+  } = useData();
 
-  // Conversations and messages are managed locally in this component
-  // since DataContext doesn't provide messaging features yet
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
+  useEffect(() => {
+    if (user?.id) {
+      fetchConversations(user.id);
+      fetchMessages(user.id);
+    }
+  }, [user?.id, fetchConversations, fetchMessages]);
+
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<ConversationType | 'all'>('all');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Stub for getConversationsByUserId - returns empty array until messaging is implemented
-  const getConversationsByUserId = (_userId: string) => conversations;
-
-  // Stub for getMessagesByConversationId - returns messages for selected conversation
-  const getMessagesByConversationId = (conversationId: string) =>
-    messages.filter(m => m.conversationId === conversationId);
-
-  // Stub for sendMessage - adds message locally until backend is connected
-  const sendMessage = (msg: { conversationId: string; senderId: string; receiverId: string; content: string; type: string }) => {
-    const newMessage = {
-      ...msg,
-      id: Date.now().toString(),
-      status: 'sent' as const,
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, newMessage]);
-  };
 
   // Stub for markMessagesAsRead - updates message status locally
   const markMessagesAsRead = (_conversationId: string, _userId: string) => {

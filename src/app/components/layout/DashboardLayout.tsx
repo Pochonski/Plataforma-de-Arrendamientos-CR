@@ -31,17 +31,20 @@ import { useState, useEffect } from 'react';
 
 export function DashboardLayout() {
   const { user, logout } = useAuth();
-  const { getUnreadCount, getUnreadMessagesCount, fetchPayments } = useData();
+  const { getUnreadCount, getUnreadMessagesCount, fetchPayments, fetchNotifications, fetchMessages, fetchConversations } = useData();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
-      // Refresh payments for the specific user upon entering the dashboard
+      // Refresh context for the specific user upon entering the dashboard
       fetchPayments(user.id);
+      fetchNotifications(user.id);
+      fetchConversations(user.id);
+      fetchMessages(user.id);
     }
-  }, [user?.id, fetchPayments]);
+  }, [user?.id, fetchPayments, fetchNotifications, fetchConversations, fetchMessages]);
 
   const handleLogout = () => {
     logout();

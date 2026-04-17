@@ -21,8 +21,10 @@ export default function Notificaciones() {
   const { notifications, markNotificationAsRead, getUnreadCount, fetchNotifications } = useData();
 
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    if (user?.id) {
+      fetchNotifications(user.id);
+    }
+  }, [user?.id, fetchNotifications]);
 
   const myNotifications = notifications.filter((n) => n.userId === user?.id);
   const [filter, setFilter] = useState<'todas' | 'no-leidas'>('todas');
