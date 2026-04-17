@@ -38,7 +38,8 @@ export default function Mensajes() {
     fetchMessages,
     sendMessage,
     getConversationsByUserId,
-    getMessagesByConversationId
+    getMessagesByConversationId,
+    markMessagesAsRead
   } = useData();
 
   useEffect(() => {
@@ -168,14 +169,16 @@ export default function Mensajes() {
   };
 
   const getInitials = (userId: string) => {
-    const foundUser = getUserById(userId);
-    if (!foundUser) return 'U';
-    
-    const names = foundUser.nombre.split(' ');
-    if (names.length >= 2) {
-      return names[0].charAt(0) + names[1].charAt(0);
+    // Si somos nosotros mismos
+    if (userId === user?.id && user?.nombre) {
+      const names = user.nombre.split(' ');
+      if (names.length >= 2) {
+        return names[0].charAt(0).toUpperCase() + names[1].charAt(0).toUpperCase();
+      }
+      return names[0].charAt(0).toUpperCase();
     }
-    return names[0].charAt(0);
+    // Para otros usuarios mock, generar por ID o dar genérico
+    return 'U';
   };
 
   const MessageStatusIcon = ({ status }: { status: MessageType['status'] }) => {
