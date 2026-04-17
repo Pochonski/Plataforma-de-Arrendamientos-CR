@@ -73,8 +73,8 @@ export default function Mensajes() {
       return true;
     })
     .sort((a, b) => {
-      const aTime = a.lastMessageAt?.getTime() || 0;
-      const bTime = b.lastMessageAt?.getTime() || 0;
+      const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
       return bTime - aTime;
     });
 
@@ -84,7 +84,7 @@ export default function Mensajes() {
 
   const conversationMessages = selectedConversationId
     ? getMessagesByConversationId(selectedConversationId).sort((a, b) => 
-        a.timestamp.getTime() - b.timestamp.getTime()
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       )
     : [];
 
@@ -125,7 +125,8 @@ export default function Mensajes() {
     }
   };
 
-  const formatMessageTime = (date: Date) => {
+  const formatMessageTime = (dateParam: Date | string) => {
+    const date = new Date(dateParam);
     if (isToday(date)) {
       return format(date, 'HH:mm');
     } else if (isYesterday(date)) {
