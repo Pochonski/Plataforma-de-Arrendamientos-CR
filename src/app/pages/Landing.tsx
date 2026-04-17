@@ -258,7 +258,7 @@ export default function Landing() {
       </section>
 
       {/* Benefits Section */}
-      <section id="beneficios" className="py-24 relative">
+      <section id="beneficios" className="py-24 relative scroll-mt-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
             <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold">Propuesta de Valor</Badge>
@@ -289,7 +289,7 @@ export default function Landing() {
       </section>
 
       {/* How it Works */}
-      <section id="como-funciona" className="py-24 bg-primary/5 relative">
+      <section id="como-funciona" className="py-24 bg-primary/5 relative scroll-mt-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
             <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold">El Proceso</Badge>

@@ -74,6 +74,7 @@ export function PublicLayout() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/propiedades" className="hover:text-foreground transition-colors">Propiedades</Link></li>
                 <li><Link to="/#como-funciona" className="hover:text-foreground transition-colors">Cómo funciona</Link></li>
+                <li><Link to="/#beneficios" className="hover:text-foreground transition-colors">Beneficios</Link></li>
                 <li><Link to="#" className="hover:text-foreground transition-colors">Precios</Link></li>
               </ul>
             </div>
