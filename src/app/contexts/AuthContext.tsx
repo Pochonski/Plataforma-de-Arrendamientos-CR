@@ -82,16 +82,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino'): Promise<boolean> => {
-    // Mock registration
-    const newUser: User = {
-      id: Date.now().toString(),
-      nombre,
-      correo,
-      rol,
-    };
-    setUser(newUser);
-    // localstorage eliminado por requerimiento
-    return true;
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      if (!apiUrl) return false;
+
+      // Map role to backend format (dueño -> dueno)
+      const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
+
+      const response = await fetch(`${apiUrl}/usuarios`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_APIM_KEY || '',
+        },
+        body: JSON.stringify({
+          nombre,
+          correo,
+          contraseña, // En una app real, el hash se maneja en el backend o antes de enviar
+          rol: backendRol,
+          fechaRegistro: new Date().toISOString(),
+          propiedades: []
+        }),
+      });
+
+      if (response.ok) {
+        const createdUser = await response.json();
+        // Si el mock devuelve el objeto creado, lo usamos. Si no, usamos los datos enviados.
+        const userToSet = createdUser && createdUser.id ? createdUser : {
+          id: `usr-${Math.random().toString(36).substr(2, 4)}`,
+          nombre,
+          correo,
+          rol: backendRol
+        };
+        
+        setUser(normalizeUser(userToSet));
+        return true;
+      }
+    } catch (err) {
+      console.error("Error registrando usuario en Azure APIM", err);
+    }
+    return false;
   };
 
   const logout = () => {
