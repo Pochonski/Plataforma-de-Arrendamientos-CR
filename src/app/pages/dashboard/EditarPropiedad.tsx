@@ -122,13 +122,14 @@ export default function EditarPropiedad() {
     );
   }
 
-  if (!property || property.duenoId !== user?.id) {
+  if (!property || String(property.duenoId) !== String(user?.id)) {
+    console.log('Permission Check:', { propertyDuenoId: property?.duenoId, userId: user?.id, match: String(property?.duenoId) === String(user?.id) });
     return (
       <Card className="p-12 text-center">
         <AlertCircle className="size-16 mx-auto mb-4 text-muted-foreground opacity-50" />
         <h2 className="text-2xl font-bold mb-2">Propiedad no encontrada</h2>
         <p className="text-muted-foreground mb-6">
-          No tienes permiso para editar esta propiedad
+          No tienes permiso para editar esta propiedad (ID: {property?.id ?? 'N/A'}, Dueño: {property?.duenoId ?? 'N/A'}, Usuario: {user?.id ?? 'N/A'})
         </p>
         <Button onClick={() => navigate('/dashboard/propiedades')}>
           Volver a mis propiedades
