@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
@@ -26,26 +26,18 @@ import { useData } from '../contexts/DataContext';
 export default function Landing() {
   const { properties } = useData();
   const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
 
   // Manejar scroll a anclas manualmente para mayor robustez
   useEffect(() => {
-    const handleHashScroll = () => {
-      const hash = window.location.hash;
-      if (hash) {
-        const element = document.querySelector(hash);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
       }
-    };
-
-    // Ejecutar al montar
-    handleHashScroll();
-
-    // Escuchar cambios en el hash
-    window.addEventListener('hashchange', handleHashScroll);
-    return () => window.removeEventListener('hashchange', handleHashScroll);
-  }, []);
+    }
+  }, [location.hash, location.pathname]);
   
   // Obtener propiedades disponibles para mostrar
   const availableProperties = properties.filter(p => p.estado === 'disponible').slice(0, 6);
