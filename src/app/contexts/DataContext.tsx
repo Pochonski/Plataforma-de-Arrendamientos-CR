@@ -640,12 +640,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         msg.status !== 'read'
     );
     await Promise.all(unreadMessages.map(async (msg) => {
-      const res = await fetch(`${API_BASE}/mensajes/${msg.id}`, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify({ status: 'read' }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      try {
+        const res = await fetch(`${API_BASE}/mensajes/${msg.id}`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify({ status: 'read' }),
+        });
+        if (!res.ok) console.warn(`Mock PUT failed for message ${msg.id}`);
+      } catch (e) {
+        console.warn(`Mock PUT failed for message ${msg.id}`);
+      }
     }));
     setMessages(prev => prev.map(msg =>
       msg.conversationId === conversationId && msg.receiverId === userId
