@@ -81,8 +81,9 @@ export default function Propiedades() {
 
   // Local pagination since API returns all 10
   const itemsPerPage = 6;
-  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
-  const paginatedProperties = filteredProperties.slice(
+  const safeFiltered = filteredProperties ?? [];
+  const totalPages = Math.ceil(safeFiltered.length / itemsPerPage);
+  const paginatedProperties = safeFiltered.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
