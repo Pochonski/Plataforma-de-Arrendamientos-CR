@@ -20,7 +20,7 @@ import { Property } from '../types';
 import { toast } from 'sonner';
 
 export default function Propiedades() {
-  const { properties, getOrCreateConversation, getUserById } = useData();
+  const { properties, propertiesTotal, propertiesTotalPages, isLoadingProperties, fetchProperties } = useData();
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,11 +28,9 @@ export default function Propiedades() {
   const [selectedTipo, setSelectedTipo] = useState('todos');
   const [selectedPrecio, setSelectedPrecio] = useState('todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Pagination
+
+  // Pagination state (controlled by API pagination)
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   const provincias = [
     'San José',
@@ -78,14 +76,11 @@ export default function Propiedades() {
       matchesPrecio = property.precio >= min && property.precio <= max;
     }
 
-    return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio && property.estado === 'disponible';
+    return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio;
   });
 
-  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
-  const paginatedProperties = filteredProperties.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Use API pagination - don't slice locally
+  const paginatedProperties = filteredProperties;
 
   // Reset page when filters change
   const handlePageReset = () => setCurrentPage(1);
@@ -102,24 +97,12 @@ export default function Propiedades() {
       return;
     }
 
-    // Don't allow owner to message themselves
     if (user.id === property.duenoId) {
       toast.info('Esta es tu propiedad');
       return;
     }
 
-    const conversation = getOrCreateConversation(
-      [user.id, property.duenoId],
-      property.id,
-      'consulta_propiedad'
-    );
-
-    if (conversation) {
-      navigate('/dashboard/mensajes');
-      toast.success('Conversación iniciada');
-    } else {
-      toast.error('No se pudo iniciar la conversación');
-    }
+    toast.success('Funcionalidad de contacto en desarrollo');
   };
 
   const PropertyCard = ({ property, mode }: { property: Property; mode: 'grid' | 'list' }) => {
@@ -333,7 +316,7 @@ export default function Propiedades() {
         {/* Results Count */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
-            {filteredProperties.length} {filteredProperties.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}
+            {propertiesTotal} {propertiesTotal === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}
           </p>
           <Button variant="ghost" size="sm">
             <SlidersHorizontal className="size-4 mr-2" />
@@ -342,7 +325,7 @@ export default function Propiedades() {
         </div>
 
         {/* Properties Grid/List */}
-        {isLoading ? (
+        {isLoadingProperties ? (
           <LoadingSkeleton />
         ) : filteredProperties.length > 0 ? (
           <>
@@ -353,22 +336,30 @@ export default function Propiedades() {
             </div>
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {propertiesTotalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-8">
                 <Button
                   variant="outline"
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={() => {
+                    const newPage = Math.max(1, currentPage - 1);
+                    setCurrentPage(newPage);
+                    fetchProperties(newPage);
+                  }}
                 >
                   Anterior
                 </Button>
                 <span className="text-sm font-medium">
-                  Página {currentPage} de {totalPages}
+                  Página {currentPage} de {propertiesTotalPages}
                 </span>
                 <Button
                   variant="outline"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === propertiesTotalPages}
+                  onClick={() => {
+                    const newPage = Math.min(propertiesTotalPages, currentPage + 1);
+                    setCurrentPage(newPage);
+                    fetchProperties(newPage);
+                  }}
                 >
                   Siguiente
                 </Button>
