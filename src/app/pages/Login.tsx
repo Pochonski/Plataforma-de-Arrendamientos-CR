@@ -163,6 +163,8 @@ export default function Login() {
                       if (success) {
                         toast.success('¡Bienvenido con Google!');
                         navigate('/dashboard', { replace: true });
+                      } else {
+                        toast.error('No se pudo iniciar sesión con Google');
                       }
                     } catch (err) {
                       toast.error('Error al iniciar sesión con Google');

@@ -45,10 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = async (credentialResponse: any): Promise<boolean> => {
     try {
+      // Verificar que credentialResponse tenga la estructura esperada
+      if (!credentialResponse?.credential) {
+        console.error("Google OAuth: credential es undefined", credentialResponse);
+        return false;
+      }
+
       // Decodificar el token de Google
       const token = credentialResponse.credential;
       const payload = JSON.parse(atob(token.split('.')[1]));
-      
+
       // Crear usuario con datos de Google
       const googleUser: User = {
         id: payload.sub || payload.email,
@@ -56,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         correo: payload.email,
         rol: 'inquilino', // Por defecto, el usuario puede cambiar después
       };
-      
+
       setUser(googleUser);
       return true;
     } catch (err) {
