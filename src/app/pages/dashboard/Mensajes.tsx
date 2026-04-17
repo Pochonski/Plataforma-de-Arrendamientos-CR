@@ -61,11 +61,8 @@ export default function Mensajes() {
       if (filterType !== 'all' && conv.type !== filterType) return false;
       
       if (searchQuery) {
-        const otherUserId = conv.participants.find(p => p !== user?.id);
-        // In real app, we'd get user name from a users map
-        // For now just search by property
-        const property = conv.propertyId ? properties.find(p => p.id === conv.propertyId) : null;
-        return property?.titulo.toLowerCase().includes(searchQuery.toLowerCase());
+        const title = getConversationTitle(conv);
+        return title.toLowerCase().includes(searchQuery.toLowerCase());
       }
       
       return true;
@@ -129,8 +126,14 @@ export default function Mensajes() {
   };
 
   const getConversationTitle = (conv: any) => {
-    const property = conv.propertyId ? properties.find(p => p.id === conv.propertyId) : null;
-    return property?.titulo || 'Conversación';
+    const otherUserId = conv.participants.find(p => p !== user?.id);
+    
+    // Simulación de nombres para el demo basado en el ID
+    if (otherUserId === 'usr-002') return 'Admin (Dueño)';
+    if (otherUserId === 'usr-003') return 'Inquilino Principal';
+    if (otherUserId === 'usr-004') return 'Nuevo Inquilino';
+    
+    return `Usuario (${otherUserId})`;
   };
 
   const getConversationTypeLabel = (type: ConversationType) => {
