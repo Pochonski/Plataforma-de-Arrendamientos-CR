@@ -229,7 +229,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const addProperty = async (property: Omit<Property, 'id' | 'createdAt'>): Promise<Property> => {
+  const addProperty = useCallback(async (property: Omit<Property, 'id' | 'createdAt'>): Promise<Property> => {
     const res = await fetch(`${API_BASE}/propiedades`, {
       method: 'POST',
       headers: getHeaders(),
@@ -241,9 +241,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const newProperty: Property = await res.json();
     await fetchProperties(1); // Refresh first page
     return newProperty;
-  };
+  }, [fetchProperties]);
 
-  const updateProperty = async (id: string, updates: Partial<Property>) => {
+  const updateProperty = useCallback(async (id: string, updates: Partial<Property>) => {
     const res = await fetch(`${API_BASE}/propiedades/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
@@ -255,9 +255,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setProperties(prev =>
       prev.map(p => p.id === id ? { ...p, ...updates } : p)
     );
-  };
+  }, []);
 
-  const deleteProperty = async (id: string) => {
+  const deleteProperty = useCallback(async (id: string) => {
     const res = await fetch(`${API_BASE}/propiedades/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
@@ -267,9 +267,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     setProperties(prev => prev.filter(p => p.id !== id));
     setPropertiesTotal(prev => prev - 1);
-  };
+  }, []);
 
-  const getPropertyById = async (id: string): Promise<Property | undefined> => {
+  const getPropertyById = useCallback(async (id: string): Promise<Property | undefined> => {
     try {
       const res = await fetch(`${API_BASE}/propiedades/${id}`, {
         method: 'GET',
@@ -282,7 +282,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } catch {
       return undefined;
     }
-  };
+  }, []);
 
   // Invitations
   const fetchInvitations = useCallback(async () => {
@@ -306,7 +306,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const createInvitation = async (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>): Promise<Invitation> => {
+  const createInvitation = useCallback(async (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>): Promise<Invitation> => {
     const res = await fetch(`${API_BASE}/invitaciones`, {
       method: 'POST',
       headers: getHeaders(),
@@ -318,9 +318,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const newInvitation: Invitation = await res.json();
     await fetchInvitations();
     return newInvitation;
-  };
+  }, [fetchInvitations]);
 
-  const updateInvitation = async (id: string, updates: Partial<Invitation>) => {
+  const updateInvitation = useCallback(async (id: string, updates: Partial<Invitation>) => {
     const res = await fetch(`${API_BASE}/invitaciones/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
@@ -332,11 +332,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setInvitations(prev =>
       prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv)
     );
-  };
+  }, []);
 
-  const getInvitationByToken = async (token: string): Promise<Invitation | undefined> => {
-    // APIM does NOT have /invitaciones/token/{token}.
-    // Fetch all invitations from /invitaciones and filter by token.
+  const getInvitationByToken = useCallback(async (token: string): Promise<Invitation | undefined> => {
     try {
       const res = await fetch(`${API_BASE}/invitaciones`, {
         method: 'GET',
@@ -350,7 +348,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } catch {
       return undefined;
     }
-  };
+  }, []);
 
   // Contracts
   const fetchContracts = useCallback(async () => {
@@ -374,7 +372,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const createContract = async (contract: Omit<Contract, 'id'>): Promise<Contract> => {
+  const createContract = useCallback(async (contract: Omit<Contract, 'id'>): Promise<Contract> => {
     const res = await fetch(`${API_BASE}/contratos`, {
       method: 'POST',
       headers: getHeaders(),
@@ -386,9 +384,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const newContract: Contract = await res.json();
     await fetchContracts();
     return newContract;
-  };
+  }, [fetchContracts]);
 
-  const updateContract = async (id: string, updates: Partial<Contract>) => {
+  const updateContract = useCallback(async (id: string, updates: Partial<Contract>) => {
     const res = await fetch(`${API_BASE}/contratos/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
@@ -400,11 +398,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setContracts(prev =>
       prev.map(c => c.id === id ? { ...c, ...updates } : c)
     );
-  };
+  }, []);
 
-  const getContractByInquilinoId = async (inquilinoId: string): Promise<Contract | undefined> => {
-    // Calls GET /contratos/{inquilinoId} — APIM returns only this user's contract.
-    // Response is a single object (or null), NOT the full list.
+  const getContractByInquilinoId = useCallback(async (inquilinoId: string): Promise<Contract | undefined> => {
     try {
       const res = await fetch(`${API_BASE}/contratos/${inquilinoId}`, {
         method: 'GET',
@@ -414,14 +410,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return undefined;
 
       const raw = await res.json();
-      // APIM may return null or an empty body when no contract exists
       if (!raw || !raw.id) return undefined;
 
       return normalizeContract(raw);
     } catch {
       return undefined;
     }
-  };
+  }, []);
 
   // Payments
   const fetchPayments = useCallback(async (userId?: string) => {
@@ -445,7 +440,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const addPayment = async (payment: Omit<Payment, 'id'>): Promise<Payment> => {
+  const addPayment = useCallback(async (payment: Omit<Payment, 'id'>): Promise<Payment> => {
     const res = await fetch(`${API_BASE}/pagos`, {
       method: 'POST',
       headers: getHeaders(),
@@ -457,9 +452,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const newPayment: Payment = await res.json();
     await fetchPayments(payment.inquilinoId || payment.duenoId);
     return newPayment;
-  };
+  }, [fetchPayments]);
 
-  const updatePayment = async (id: string, updates: Partial<Payment>) => {
+  const updatePayment = useCallback(async (id: string, updates: Partial<Payment>) => {
     const res = await fetch(`${API_BASE}/pagos/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
@@ -471,7 +466,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setPayments(prev =>
       prev.map(p => p.id === id ? { ...p, ...updates } : p)
     );
-  };
+  }, []);
 
   // Notifications
   const fetchNotifications = useCallback(async (userId?: string) => {
@@ -499,7 +494,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const addNotification = async (notification: Omit<Notification, 'id'>) => {
+  const addNotification = useCallback(async (notification: Omit<Notification, 'id'>) => {
     const res = await fetch(`${API_BASE}/notificaciones`, {
       method: 'POST',
       headers: getHeaders(),
@@ -510,9 +505,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const newNotification: Notification = await res.json();
     setNotifications(prev => [newNotification, ...prev]);
-  };
+  }, []);
 
-  const markNotificationAsRead = async (id: string) => {
+  const markNotificationAsRead = useCallback(async (id: string) => {
     const res = await fetch(`${API_BASE}/notificaciones/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
@@ -524,17 +519,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, leida: true } : n)
     );
-  };
+  }, []);
 
-  const getUnreadCount = (userId: string) => {
+  const getUnreadCount = useCallback((_userId: string) => {
     return notifications.filter(n => !n.leida).length;
-  };
+  }, [notifications]);
 
-  const getUnreadMessagesCount = (_userId: string) => {
-    // Message reading state is tracked per conversation in the Mensajes component
-    // This is a placeholder - messages are managed locally in the component
+  const getUnreadMessagesCount = useCallback((_userId: string) => {
     return 0;
-  };
+  }, []);
 
   // Conversations
   const fetchConversations = useCallback(async (userId?: string) => {
@@ -565,7 +558,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return conversations;
   }, [conversations]);
 
-  const getOrCreateConversation = async (
+  const getOrCreateConversation = useCallback(async (
     participants: string[],
     propertyId: string,
     type: ConversationType
@@ -586,7 +579,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const newConversation: Conversation = await res.json();
     setConversations(prev => [...prev, newConversation]);
     return newConversation;
-  };
+  }, [conversations]);
 
   // Messages
   const fetchMessages = useCallback(async (userId?: string) => {
@@ -616,7 +609,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return messages.filter(msg => msg.conversationId === conversationId);
   }, [messages]);
 
-  const sendMessage = async (message: Omit<Message, 'id' | 'timestamp' | 'status'>): Promise<Message> => {
+  const sendMessage = useCallback(async (message: Omit<Message, 'id' | 'timestamp' | 'status'>): Promise<Message> => {
     const res = await fetch(`${API_BASE}/mensajes`, {
       method: 'POST',
       headers: getHeaders(),
@@ -631,9 +624,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         : conv
     ));
     return newMessage;
-  };
+  }, []);
 
-  const markMessagesAsRead = async (conversationId: string, userId: string) => {
+  const markMessagesAsRead = useCallback(async (conversationId: string, userId: string) => {
     const unreadMessages = messages.filter(
       msg => msg.conversationId === conversationId &&
         msg.receiverId === userId &&
@@ -661,10 +654,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ? { ...conv, unreadCount: { ...conv.unreadCount, [userId]: 0 } }
         : conv
     ));
-  };
+  }, [messages]);
 
   // Users
-  const getUserById = async (id: string): Promise<User | undefined> => {
+  const getUserById = useCallback(async (id: string): Promise<User | undefined> => {
     try {
       const res = await fetch(`${API_BASE}/usuarios/${id}`, {
         method: 'GET',
@@ -676,7 +669,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } catch {
       return undefined;
     }
-  };
+  }, []);
 
   // Initial fetch on mount
   useEffect(() => {

@@ -30,8 +30,6 @@ export default function Mensajes() {
   const { user } = useAuth();
   const { 
     properties, 
-    getPropertyById, 
-    getUserById,
     conversations,
     messages,
     fetchConversations,
@@ -66,7 +64,7 @@ export default function Mensajes() {
         const otherUserId = conv.participants.find(p => p !== user?.id);
         // In real app, we'd get user name from a users map
         // For now just search by property
-        const property = conv.propertyId ? getPropertyById(conv.propertyId) : null;
+        const property = conv.propertyId ? properties.find(p => p.id === conv.propertyId) : null;
         return property?.titulo.toLowerCase().includes(searchQuery.toLowerCase());
       }
       
@@ -131,7 +129,7 @@ export default function Mensajes() {
   };
 
   const getConversationTitle = (conv: any) => {
-    const property = conv.propertyId ? getPropertyById(conv.propertyId) : null;
+    const property = conv.propertyId ? properties.find(p => p.id === conv.propertyId) : null;
     return property?.titulo || 'Conversación';
   };
 
