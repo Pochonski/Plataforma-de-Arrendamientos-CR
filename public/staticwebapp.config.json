@@ -1,5 +1,15 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html"
-  }
+  },
+  "globalEnvironmentVariables": [
+    {
+      "name": "VITE_GOOGLE_CLIENT_ID",
+      "value": "703304000101-mv908iu4u9fqcpkmrnfg6u9fd0pkqk2o.apps.googleusercontent.com"
+    },
+    {
+      "name": "VITE_API_URL",
+      "value": "https://arrendamientos-cr-api.azure-api.net"
+    }
+  ]
 }
