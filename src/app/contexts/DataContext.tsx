@@ -123,6 +123,20 @@ const normalizePayment = (raw: any): Payment => ({
   motivoRechazo: raw.motivoRechazo,
 });
 
+const denormalizePayment = (p: Partial<Payment>): any => {
+  const raw: any = { ...p };
+  if (p.contratoId) { raw.idContrato = p.contratoId; delete raw.contratoId; }
+  if (p.propiedadId) { raw.idPropiedad = p.propiedadId; delete raw.propiedadId; }
+  if (p.inquilinoId) { raw.idInquilino = p.inquilinoId; delete raw.inquilinoId; }
+  if (p.duenoId) { raw.idDueno = p.duenoId; delete raw.duenoId; }
+  
+  // Formatear fechas para el JSON
+  if (p.fechaSubida instanceof Date) raw.fechaSubida = p.fechaSubida.toISOString();
+  if (p.fechaRevision instanceof Date) raw.fechaRevision = p.fechaRevision.toISOString();
+  
+  return raw;
+};
+
 const getHeaders = () => ({
   'Accept': 'application/json',
   'Content-Type': 'application/json',
@@ -502,10 +516,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addPayment = async (payment: Omit<Payment, 'id'>): Promise<Payment> => {
+    const raw = denormalizePayment(payment as any);
     const res = await fetch(`${API_BASE}/pagos`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify(payment),
+      body: JSON.stringify(raw),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -516,10 +531,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updatePayment = async (id: string, updates: Partial<Payment>) => {
+    const raw = denormalizePayment({ ...updates, id });
     const res = await fetch(`${API_BASE}/pagos/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: JSON.stringify(updates),
+      body: JSON.stringify(raw),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
