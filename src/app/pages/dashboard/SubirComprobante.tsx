@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
 import { Input } from '../../components/ui/input';
+import { Contract } from '../../types';
 import {
   Select,
   SelectContent,
@@ -20,8 +21,23 @@ export default function SubirComprobante() {
   const { user } = useAuth();
   const { getContractByInquilinoId, addPayment, properties } = useData();
   const navigate = useNavigate();
+  const [myContract, setMyContract] = useState<Contract | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const myContract = getContractByInquilinoId(user?.id || '');
+  useEffect(() => {
+    const loadContract = async () => {
+      if (!user?.id) {
+        setMyContract(null);
+        setIsLoading(false);
+        return;
+      }
+      const contract = await getContractByInquilinoId(user.id);
+      setMyContract(contract || null);
+      setIsLoading(false);
+    };
+    loadContract();
+  }, [user?.id, getContractByInquilinoId]);
+
   const property = myContract ? properties.find((p) => p.id === myContract.propiedadId) : null;
 
   const currentMonth = new Date().getMonth() + 1;
@@ -32,8 +48,21 @@ export default function SubirComprobante() {
   const [tipoPago, setTipoPago] = useState<'mensualidad' | 'deposito'>('mensualidad');
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center size-12 rounded-full bg-muted mb-4">
+            <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!myContract || !property) {
     return (

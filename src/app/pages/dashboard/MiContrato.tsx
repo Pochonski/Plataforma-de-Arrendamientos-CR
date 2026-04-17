@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Link } from 'react-router';
+import { Contract } from '../../types';
 import {
   FileText,
   Home,
@@ -18,9 +20,37 @@ import { downloadContractPDF } from '../../utils/export';
 export default function MiContrato() {
   const { user } = useAuth();
   const { getContractByInquilinoId, properties } = useData();
+  const [myContract, setMyContract] = useState<Contract | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const myContract = getContractByInquilinoId(user?.id || '');
+  useEffect(() => {
+    const loadContract = async () => {
+      if (!user?.id) {
+        setMyContract(null);
+        setIsLoading(false);
+        return;
+      }
+      const contract = await getContractByInquilinoId(user.id);
+      setMyContract(contract || null);
+      setIsLoading(false);
+    };
+    loadContract();
+  }, [user?.id, getContractByInquilinoId]);
+
   const property = myContract ? properties.find((p) => p.id === myContract.propiedadId) : null;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center size-12 rounded-full bg-muted mb-4">
+            <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-muted-foreground">Cargando contrato...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!myContract || !property) {
     return (
