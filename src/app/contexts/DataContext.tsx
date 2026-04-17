@@ -67,6 +67,27 @@ const normalizeInvitation = (raw: any): Invitation => ({
   moneda: (raw.moneda ?? 'CRC') as Currency,
 });
 
+const normalizePayment = (raw: any): Payment => ({
+  id: raw.id ?? '',
+  tipo: raw.tipo ?? 'mensualidad',
+  // APIM uses idContrato; frontend uses contratoId
+  contratoId: raw.contratoId ?? raw.idContrato ?? '',
+  // APIM uses idPropiedad; frontend uses propiedadId
+  propiedadId: raw.propiedadId ?? raw.idPropiedad ?? '',
+  // APIM uses idDueno; frontend uses duenoId
+  duenoId: raw.duenoId ?? raw.idDueno ?? '',
+  // APIM uses idInquilino; frontend uses inquilinoId
+  inquilinoId: raw.inquilinoId ?? raw.idInquilino ?? '',
+  mes: raw.mes ?? new Date().getMonth() + 1,
+  año: raw.año ?? new Date().getFullYear(),
+  monto: raw.monto ?? 0,
+  moneda: (raw.moneda ?? 'CRC') as Currency,
+  comprobante: raw.comprobante ?? '',
+  estado: raw.estado ?? 'pendiente',
+  fechaSubida: raw.fechaSubida ? new Date(raw.fechaSubida) : new Date(),
+  fechaRevision: raw.fechaRevision ? new Date(raw.fechaRevision) : undefined,
+  motivoRechazo: raw.motivoRechazo,
+});
 
 const getHeaders = () => ({
   'Accept': 'application/json',
@@ -414,7 +435,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      setPayments(Array.isArray(data) ? data : []);
+      setPayments(Array.isArray(data) ? data.map(normalizePayment) : []);
     } catch (err) {
       console.error('Error fetching payments:', err);
       setPayments([]);
