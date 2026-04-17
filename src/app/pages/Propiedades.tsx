@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { Skeleton } from '../components/ui/skeleton';
-import { Search, MapPin, SlidersHorizontal, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, MapPin, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Property } from '../types';
 import { toast } from 'sonner';
 
@@ -257,10 +257,7 @@ export default function Propiedades() {
             <Button variant="ghost" size="sm" onClick={handleClearFilters}>
               Limpiar filtros
             </Button>
-            <Button variant="ghost" size="sm">
-              <SlidersHorizontal className="size-4 mr-2" />
-              Más filtros
-            </Button>
+
           </div>
         </div>
 
