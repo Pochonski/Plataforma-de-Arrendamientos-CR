@@ -20,12 +20,32 @@ import {
   Lock,
   ArrowRight,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 
 export default function Landing() {
   const { properties } = useData();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Manejar scroll a anclas manualmente para mayor robustez
+  useEffect(() => {
+    const handleHashScroll = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const element = document.querySelector(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    };
+
+    // Ejecutar al montar
+    handleHashScroll();
+
+    // Escuchar cambios en el hash
+    window.addEventListener('hashchange', handleHashScroll);
+    return () => window.removeEventListener('hashchange', handleHashScroll);
+  }, []);
   
   // Obtener propiedades disponibles para mostrar
   const availableProperties = properties.filter(p => p.estado === 'disponible').slice(0, 6);
