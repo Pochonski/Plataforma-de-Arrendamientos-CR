@@ -27,14 +27,21 @@ import {
   Mail,
   MessageSquare,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function DashboardLayout() {
   const { user, logout } = useAuth();
-  const { getUnreadCount, getUnreadMessagesCount } = useData();
+  const { getUnreadCount, getUnreadMessagesCount, fetchPayments } = useData();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      // Refresh payments for the specific user upon entering the dashboard
+      fetchPayments(user.id);
+    }
+  }, [user?.id, fetchPayments]);
 
   const handleLogout = () => {
     logout();

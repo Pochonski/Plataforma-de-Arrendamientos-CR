@@ -127,7 +127,7 @@ interface DataContextType {
   // Payments
   payments: Payment[];
   isLoadingPayments: boolean;
-  fetchPayments: () => Promise<void>;
+  fetchPayments: (userId?: string) => Promise<void>;
   addPayment: (payment: Omit<Payment, 'id'>) => Promise<Payment>;
   updatePayment: (id: string, updates: Partial<Payment>) => Promise<void>;
 
@@ -424,10 +424,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Payments
-  const fetchPayments = useCallback(async () => {
+  const fetchPayments = useCallback(async (userId?: string) => {
     setIsLoadingPayments(true);
     try {
-      const res = await fetch(`${API_BASE}/pagos`, {
+      const url = userId ? `${API_BASE}/pagos/usuario/${userId}` : `${API_BASE}/pagos`;
+      const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
       });
