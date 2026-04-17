@@ -17,6 +17,7 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { ArrowLeft, Plus, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Property } from '../../types';
 
 export default function EditarPropiedad() {
   const { id } = useParams<{ id: string }>();
