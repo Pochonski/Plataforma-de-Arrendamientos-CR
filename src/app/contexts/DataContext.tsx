@@ -33,6 +33,26 @@ const normalizeProperty = (raw: any): Property => ({
   createdAt: new Date(raw.createdAt ?? raw.fechaCreacion ?? Date.now()),
 });
 
+const denormalizeProperty = (p: Partial<Property>): any => {
+  const raw: any = { ...p };
+  // Map duenoId -> idDueno
+  if (p.duenoId) {
+    raw.idDueno = p.duenoId;
+    delete (raw as any).duenoId;
+  }
+  // Map caracteristicas -> amenidades
+  if (p.caracteristicas) {
+    raw.amenidades = p.caracteristicas;
+    delete (raw as any).caracteristicas;
+  }
+  // Ensure we don't send Date objects to APIM (stringify doesn't always handle them as simple dates)
+  if (p.createdAt instanceof Date) {
+    raw.fechaCreacion = p.createdAt.toISOString();
+    delete (raw as any).createdAt;
+  }
+  return raw;
+};
+
 const normalizeContract = (raw: any): Contract => ({
   id: raw.id ?? '',
   invitacionId: raw.invitacionId ?? raw.idInvitacion ?? '',
@@ -246,24 +266,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addProperty = async (property: Omit<Property, 'id' | 'createdAt'>): Promise<Property> => {
+    const raw = denormalizeProperty(property as any);
     const res = await fetch(`${API_BASE}/propiedades`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify(property),
+      body: JSON.stringify(raw),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const newProperty: Property = await res.json();
+    const data = await res.json();
+    const newProperty = normalizeProperty(data);
     await fetchProperties(1); // Refresh first page
     return newProperty;
   };
 
   const updateProperty = async (id: string, updates: Partial<Property>) => {
-    const res = await fetch(`${API_BASE}/propiedades/${id}`, {
+    // APIM uses PUT /propiedades and expects the ID in the body
+    const raw = denormalizeProperty({ ...updates, id });
+    const res = await fetch(`${API_BASE}/propiedades`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: JSON.stringify(updates),
+      body: JSON.stringify(raw),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
