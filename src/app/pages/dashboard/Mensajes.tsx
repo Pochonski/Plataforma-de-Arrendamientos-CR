@@ -23,7 +23,7 @@ import {
   CheckCheck,
   Paperclip
 } from 'lucide-react';
-import { ConversationType, Message as MessageType } from '../../types';
+import { Conversation, ConversationType, Message as MessageType } from '../../types';
 import { toast } from 'sonner';
 
 export default function Mensajes() {
@@ -125,8 +125,8 @@ export default function Mensajes() {
     }
   };
 
-  const getConversationTitle = (conv: any) => {
-    const otherUserId = conv.participants.find(p => p !== user?.id);
+  const getConversationTitle = (conv: Conversation) => {
+    const otherUserId = conv.participants.find((p: string) => p !== user?.id);
     
     // Simulación de nombres para el demo basado en el ID
     if (otherUserId === 'usr-002') return 'Admin (Dueño)';
@@ -157,7 +157,7 @@ export default function Mensajes() {
     return <Icon className="size-4" />;
   };
 
-  const getUnreadCount = (conv: any) => {
+  const getUnreadCount = (conv: Conversation) => {
     return user ? conv.unreadCount[user.id] || 0 : 0;
   };
 
