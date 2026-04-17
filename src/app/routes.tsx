@@ -12,6 +12,10 @@ import PropiedadDetalle from './pages/PropiedadDetalle';
 import DesignDocs from './pages/DesignDocs';
 import AceptarInvitacion from './pages/AceptarInvitacion';
 import RecuperarContrasena from './pages/RecuperarContrasena';
+import { CentroAyuda } from './pages/CentroAyuda';
+import { Terminos } from './pages/Terminos';
+import { Privacidad } from './pages/Privacidad';
+import { Cookies } from './pages/Cookies';
 import NotFound from './pages/NotFound';
 
 // Dashboard pages
@@ -72,6 +76,10 @@ export const router = createBrowserRouter([
       { path: 'invitacion/:token', element: <AceptarInvitacion /> },
       { path: 'recuperar-contraseña', element: <RecuperarContrasena /> },
       { path: 'design-docs', element: <DesignDocs /> },
+      { path: 'centro-ayuda', element: <CentroAyuda /> },
+      { path: 'terminos', element: <Terminos /> },
+      { path: 'privacidad', element: <Privacidad /> },
+      { path: 'cookies', element: <Cookies /> },
     ],
   },
   {

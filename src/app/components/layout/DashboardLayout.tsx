@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Logo } from '../shared/Logo';
 import { ThemeToggle } from '../shared/ThemeToggle';
+import { DashboardFooter } from '../shared/DashboardFooter';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -224,6 +225,9 @@ export function DashboardLayout() {
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           <Outlet />
         </main>
+
+        {/* Footer */}
+        <DashboardFooter />
       </div>
     </div>
   );

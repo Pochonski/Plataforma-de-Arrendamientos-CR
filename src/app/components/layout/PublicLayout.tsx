@@ -93,25 +93,6 @@ export function PublicLayout() {
                 <li><Link to="/propiedades" className="hover:text-foreground transition-colors">Propiedades</Link></li>
                 <li><Link to="/#como-funciona" className="hover:text-foreground transition-colors">Cómo funciona</Link></li>
                 <li><Link to="/#beneficios" className="hover:text-foreground transition-colors">Beneficios</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Precios</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-3">Recursos</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="#" className="hover:text-foreground transition-colors">Centro de ayuda</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Blog</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Guías</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-3">Legal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="#" className="hover:text-foreground transition-colors">Términos de uso</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Privacidad</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Cookies</Link></li>
               </ul>
             </div>
           </div>

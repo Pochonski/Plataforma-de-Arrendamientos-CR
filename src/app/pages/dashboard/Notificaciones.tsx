@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Button } from '../../components/ui/button';
@@ -178,7 +179,7 @@ export default function Notificaciones() {
                         className="mt-2 h-8 px-3"
                         asChild
                       >
-                        <a href={notification.link}>Ver detalles</a>
+                        <Link to={notification.link}>Ver detalles</Link>
                       </Button>
                     )}
                   </div>
