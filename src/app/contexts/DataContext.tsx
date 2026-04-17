@@ -285,7 +285,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // APIM uses PUT /propiedades/{id}
     // We include the ID in the body as well, just in case the backend requires it
     const raw = denormalizeProperty({ ...updates, id });
-    console.log('Actualizando propiedad...', id, raw);
     
     const res = await fetch(`${API_BASE}/propiedades/${id}`, {
       method: 'PUT',
@@ -294,13 +293,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    console.log('API respondió 200 OK');
 
-    setProperties(prev => {
-      const updated = prev.map(p => p.id === id ? { ...p, ...updates } : p);
-      console.log('Nuevo estado de propiedades generado localmente');
-      return updated;
-    });
+    setProperties(prev =>
+      prev.map(p => p.id === id ? { ...p, ...updates } : p)
+    );
   };
 
   const deleteProperty = async (id: string) => {
