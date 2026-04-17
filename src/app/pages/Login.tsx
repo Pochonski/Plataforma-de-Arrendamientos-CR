@@ -173,7 +173,6 @@ export default function Login() {
                   onError={() => {
                     toast.error('Error con Google OAuth');
                   }}
-                  useOneTap
                 />
               </div>
 
