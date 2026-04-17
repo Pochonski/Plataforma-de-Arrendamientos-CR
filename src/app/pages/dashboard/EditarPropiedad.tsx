@@ -128,7 +128,7 @@ export default function EditarPropiedad() {
         <AlertCircle className="size-16 mx-auto mb-4 text-muted-foreground opacity-50" />
         <h2 className="text-2xl font-bold mb-2">Propiedad no encontrada</h2>
         <p className="text-muted-foreground mb-6">
-          La propiedad con ID "{id}" no existe o no pudo ser cargada.
+          La propiedad solicitada no existe o no pudo ser cargada.
         </p>
         <Button onClick={() => navigate('/dashboard/propiedades')}>
           Volver a mis propiedades
@@ -137,17 +137,13 @@ export default function EditarPropiedad() {
     );
   }
 
-  // Debug comparison: property.duenoId vs user.id
   if (property.duenoId !== user?.id) {
     return (
       <Card className="p-12 text-center">
         <AlertCircle className="size-16 mx-auto mb-4 text-muted-foreground opacity-50" />
         <h2 className="text-2xl font-bold mb-2">Acceso denegado</h2>
-        <p className="text-muted-foreground mb-2">
-          No tienes permiso para editar esta propiedad.
-        </p>
-        <p className="text-xs text-muted-foreground mb-6">
-          Propiedad de: "{property.duenoId}" | Tu ID: "{user?.id}"
+        <p className="text-muted-foreground mb-6">
+          No tienes los permisos necesarios para editar esta propiedad.
         </p>
         <Button onClick={() => navigate('/dashboard/propiedades')}>
           Volver a mis propiedades
