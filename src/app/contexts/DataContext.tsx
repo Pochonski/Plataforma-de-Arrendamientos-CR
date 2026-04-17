@@ -527,7 +527,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const getUnreadCount = (userId: string) => {
-    return notifications.filter(n => n.userId === userId && !n.leida).length;
+    return notifications.filter(n => !n.leida).length;
   };
 
   const getUnreadMessagesCount = (_userId: string) => {
@@ -562,7 +562,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const getConversationsByUserId = useCallback((userId: string): Conversation[] => {
-    return conversations.filter(conv => conv.participants.includes(userId));
+    return conversations;
   }, [conversations]);
 
   const getOrCreateConversation = async (

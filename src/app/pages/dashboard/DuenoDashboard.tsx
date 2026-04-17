@@ -37,7 +37,7 @@ export default function DuenoDashboard() {
 
   const myProperties = properties.filter((p) => p.duenoId === user?.id);
   const myInvitations = invitations.filter((inv) => inv.duenoId === user?.id);
-  const myPayments = payments.filter((p) => p.duenoId === user?.id);
+  const myPayments = payments;
 
   const pendingPayments = myPayments.filter((p) => p.estado === 'pendiente');
   const approvedPayments = myPayments.filter((p) => p.estado === 'aprobado');

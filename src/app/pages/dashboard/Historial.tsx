@@ -44,9 +44,7 @@ export default function Historial() {
   const [filterAño, setFilterAño] = useState<string>('todos');
   const [filterEstado, setFilterEstado] = useState<string>('todos');
 
-  const myPayments = user?.rol === 'dueño'
-    ? payments.filter((p) => p.duenoId === user?.id)
-    : payments.filter((p) => p.inquilinoId === user?.id);
+  const myPayments = payments;
 
   const filteredPayments = myPayments.filter((payment) => {
     const property = properties.find((p) => p.id === payment.propiedadId);

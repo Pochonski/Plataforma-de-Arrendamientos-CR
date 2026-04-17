@@ -26,7 +26,7 @@ export default function Notificaciones() {
     }
   }, [user?.id, fetchNotifications]);
 
-  const myNotifications = notifications.filter((n) => n.userId === user?.id);
+  const myNotifications = notifications;
   const [filter, setFilter] = useState<'todas' | 'no-leidas'>('todas');
 
   const filteredNotifications = myNotifications.filter((n) => {

@@ -51,7 +51,7 @@ export default function PagosRecibidos() {
   const [motivoRechazo, setMotivoRechazo] = useState('');
   const [filterEstado, setFilterEstado] = useState<string>('todos');
 
-  const myPayments = payments.filter((p) => p.duenoId === user?.id);
+  const myPayments = payments;
 
   const filteredPayments = myPayments.filter((payment) => {
     const property = properties.find((p) => p.id === payment.propiedadId);

@@ -45,7 +45,7 @@ export default function InquilinoDashboard() {
     loadContract();
   }, [user?.id, getContractByInquilinoId]);
 
-  const myPayments = payments.filter((p) => p.inquilinoId === user?.id);
+  const myPayments = payments;
   const property = myContract ? properties.find((p) => p.id === myContract.propiedadId) : null;
 
   const currentMonth = new Date().getMonth() + 1;
