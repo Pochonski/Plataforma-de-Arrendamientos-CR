@@ -21,6 +21,7 @@ export default function Registro() {
   const [correo, setCorreo] = useState('');
   const [contraseña, setContraseña] = useState('');
   const [confirmarContraseña, setConfirmarContraseña] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showRoleSelection, setShowRoleSelection] = useState(false);
@@ -39,7 +40,7 @@ export default function Registro() {
     e.preventDefault();
     setError('');
     
-    if (!nombre || !correo || !contraseña || !confirmarContraseña) {
+    if (!nombre || !correo || !contraseña || !confirmarContraseña || !telefono) {
       setError('Por favor completa todos los campos');
       return;
     }
@@ -62,7 +63,8 @@ export default function Registro() {
     setIsLoading(true);
     
     try {
-      const success = await register(nombre, correo, contraseña, rol);
+      console.log("Iniciando llamada a register con:", { nombre, correo, rol, telefono });
+      const success = await register(nombre, correo, contraseña, rol, telefono);
       if (success) {
         toast.success('¡Cuenta creada exitosamente!');
         navigate('/dashboard');
@@ -119,6 +121,22 @@ export default function Registro() {
                         className="pl-10"
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="telefono">Teléfono</Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground flex items-center justify-center font-bold text-[10px]">#</div>
+                      <Input
+                        id="telefono"
+                        type="tel"
+                        placeholder="8888-8888"
+                        className="pl-10"
+                        value={telefono}
+                        onChange={(e) => setTelefono(e.target.value)}
                         disabled={isLoading}
                       />
                     </div>
