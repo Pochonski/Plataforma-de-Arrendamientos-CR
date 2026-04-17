@@ -220,45 +220,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       // Handle both paginated {data, total, page, pageSize, totalPages} and plain array responses
       if (Array.isArray(data)) {
-        // Normalize field names
-        let result = data.map(normalizeProperty);
+        // Plain array — normalize and paginate ONLY (API will handle filters later)
+        const normalized = data.map(normalizeProperty);
         
-        // APPLY LOCAL FILTERING (Crucial for Mocks/Arrays)
-        if (filters) {
-          if (filters.search) {
-            const query = filters.search.toLowerCase();
-            result = result.filter(p => 
-              p.titulo.toLowerCase().includes(query) || 
-              p.descripcion.toLowerCase().includes(query) ||
-              p.canton.toLowerCase().includes(query) ||
-              p.distrito.toLowerCase().includes(query)
-            );
-          }
-          if (filters.provincia && filters.provincia !== 'todas') {
-            result = result.filter(p => p.provincia === filters.provincia);
-          }
-          if (filters.tipo && filters.tipo !== 'todos') {
-            result = result.filter(p => p.tipo === filters.tipo);
-          }
-          if (filters.precioMin !== undefined) {
-            result = result.filter(p => p.precio >= (filters.precioMin || 0));
-          }
-          if (filters.precioMax !== undefined) {
-            result = result.filter(p => p.precio <= (filters.precioMax || Infinity));
-          }
-        }
-
-        // Apply pagination on THE FILTERED RESULT
         const start = (page - 1) * PAGE_SIZE;
         const end = start + PAGE_SIZE;
-        const paginatedData = result.slice(start, end);
+        const paginatedData = normalized.slice(start, end);
 
         setProperties(paginatedData);
-        setPropertiesTotal(result.length);
+        setPropertiesTotal(normalized.length);
         setPropertiesPage(page);
-        setPropertiesTotalPages(Math.ceil(result.length / PAGE_SIZE));
+        setPropertiesTotalPages(Math.ceil(normalized.length / PAGE_SIZE));
       } else if (data.data && Array.isArray(data.data)) {
-        // Real paginated response from API that already filters/paginates
+        // Real paginated response from API (already filtered and paginated)
         setProperties(data.data.map(normalizeProperty));
         setPropertiesTotal(data.total || 0);
         setPropertiesPage(data.page || page);
