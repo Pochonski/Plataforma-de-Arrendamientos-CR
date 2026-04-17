@@ -55,10 +55,7 @@ export default function Mensajes() {
   const [filterType, setFilterType] = useState<ConversationType | 'all'>('all');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Stub for markMessagesAsRead - updates message status locally
-  const markMessagesAsRead = (_conversationId: string, _userId: string) => {
-    // Will be implemented when backend supports read status
-  };
+
 
   // Filter conversations
   const filteredConversations = conversations
