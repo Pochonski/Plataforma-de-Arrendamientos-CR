@@ -220,17 +220,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       // Handle both paginated {data, total, page, pageSize, totalPages} and plain array responses
       if (Array.isArray(data)) {
-        // Plain array — normalize and paginate ONLY (API will handle filters later)
+        // Plain array — show EXACTLY what the API returns (no local slicing)
         const normalized = data.map(normalizeProperty);
         
-        const start = (page - 1) * PAGE_SIZE;
-        const end = start + PAGE_SIZE;
-        const paginatedData = normalized.slice(start, end);
-
-        setProperties(paginatedData);
+        setProperties(normalized);
         setPropertiesTotal(normalized.length);
         setPropertiesPage(page);
-        setPropertiesTotalPages(Math.ceil(normalized.length / PAGE_SIZE));
+        // If it's a plain array, we assume it's the full current view
+        setPropertiesTotalPages(Math.ceil(normalized.length / PAGE_SIZE) || 1);
       } else if (data.data && Array.isArray(data.data)) {
         // Real paginated response from API (already filtered and paginated)
         setProperties(data.data.map(normalizeProperty));
