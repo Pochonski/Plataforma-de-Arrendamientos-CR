@@ -10,13 +10,14 @@ import {
   MapPin,
   Building2,
   CheckCircle2,
-  Mail,
   Phone,
   Share2,
   MessageSquare,
+  Loader2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import type { Property } from '../types';
 
 export default function PropiedadDetalle() {
   const { id } = useParams<{ id: string }>();
@@ -24,9 +25,32 @@ export default function PropiedadDetalle() {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [property, setProperty] = useState<Property | null | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const property = id ? getPropertyById(id) : null;
+  useEffect(() => {
+    if (!id) {
+      setProperty(null);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    getPropertyById(id)
+      .then((data) => setProperty(data ?? null))
+      .catch(() => setProperty(null))
+      .finally(() => setIsLoading(false));
+  }, [id]);
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="size-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Not found state
   if (!property) {
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -43,6 +67,9 @@ export default function PropiedadDetalle() {
       </div>
     );
   }
+
+  const imagenes = property.imagenes ?? [];
+  const caracteristicas = property.caracteristicas ?? [];
 
   const formatPrice = (precio: number, moneda: string) => {
     const symbol = moneda === 'USD' ? '$' : '₡';
@@ -79,16 +106,20 @@ export default function PropiedadDetalle() {
             {/* Image Gallery */}
             <Card className="overflow-hidden">
               <div className="aspect-[16/10] bg-muted relative">
-                {property.imagenes.length > 0 && (
+                {imagenes.length > 0 ? (
                   <ImageWithFallback
-                    src={property.imagenes[currentImageIndex]}
+                    src={imagenes[currentImageIndex]}
                     alt={property.titulo}
                     className="w-full h-full object-cover"
                   />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    <Building2 className="size-16 opacity-30" />
+                  </div>
                 )}
-                {property.imagenes.length > 1 && (
+                {imagenes.length > 1 && (
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    {property.imagenes.map((_, index) => (
+                    {imagenes.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentImageIndex(index)}
@@ -102,9 +133,9 @@ export default function PropiedadDetalle() {
                   </div>
                 )}
               </div>
-              {property.imagenes.length > 1 && (
+              {imagenes.length > 1 && (
                 <div className="p-4 grid grid-cols-4 gap-2">
-                  {property.imagenes.slice(0, 4).map((imagen, index) => (
+                  {imagenes.slice(0, 4).map((imagen, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
@@ -183,11 +214,11 @@ export default function PropiedadDetalle() {
                   </div>
                 </div>
 
-                {property.caracteristicas.length > 0 && (
+                {caracteristicas.length > 0 && (
                   <div className="border-t pt-6">
                     <h2 className="text-xl font-semibold mb-4">Características</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {property.caracteristicas.map((caracteristica, index) => (
+                      {caracteristicas.map((caracteristica, index) => (
                         <div key={index} className="flex items-center gap-2">
                           <CheckCircle2 className="size-5 text-primary flex-shrink-0" />
                           <span>{caracteristica}</span>
@@ -218,13 +249,10 @@ export default function PropiedadDetalle() {
                             toast.error('Debes iniciar sesión para iniciar una conversación');
                             return;
                           }
-
-                          // Don't allow owner to message themselves
                           if (user.id === property.duenoId) {
                             toast.info('Esta es tu propiedad');
                             return;
                           }
-
                           toast.success('Conversación iniciada');
                           navigate('/dashboard/mensajes');
                         }}
