@@ -93,12 +93,6 @@ export default function Mensajes() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationMessages]);
 
-  // Mark messages as read when conversation is selected
-  useEffect(() => {
-    if (selectedConversationId && user) {
-      markMessagesAsRead(selectedConversationId, user.id);
-    }
-  }, [selectedConversationId, user, markMessagesAsRead]);
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !selectedConversationId || !user || !selectedConversation) return;
@@ -252,7 +246,12 @@ export default function Mensajes() {
                   return (
                     <button
                       key={conv.id}
-                      onClick={() => setSelectedConversationId(conv.id)}
+                      onClick={() => {
+                        setSelectedConversationId(conv.id);
+                        if (user?.id) {
+                          markMessagesAsRead(conv.id, user.id);
+                        }
+                      }}
                       className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${
                         isSelected ? 'bg-muted' : ''
                       }`}
