@@ -103,8 +103,6 @@ export function PublicLayout() {
               <h3 className="font-semibold mb-3">Recursos</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/centro-ayuda" className="hover:text-foreground transition-colors">Centro de Ayuda</Link></li>
-                <li><Link to="/centro-ayuda" className="hover:text-foreground transition-colors">Guías</Link></li>
-                <li><Link to="/centro-ayuda" className="hover:text-foreground transition-colors">Blog</Link></li>
               </ul>
             </div>
 

@@ -9,8 +9,6 @@ const productoLinks = [
 
 const recursosLinks = [
   { label: 'Centro de Ayuda', path: '/centro-ayuda' },
-  { label: 'Guías', path: '/centro-ayuda' },
-  { label: 'Blog', path: '/centro-ayuda' },
 ];
 
 const empresaLinks = [
