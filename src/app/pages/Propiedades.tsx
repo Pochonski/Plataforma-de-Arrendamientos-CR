@@ -27,7 +27,7 @@ export default function Propiedades() {
   const [selectedProvincia, setSelectedProvincia] = useState('todas');
   const [selectedTipo, setSelectedTipo] = useState('todos');
   const [selectedPrecio, setSelectedPrecio] = useState('todos');
-  // Pagination state (controlled by API pagination)
+  // Simulated pagination state - no limit on page numbers
   const [currentPage, setCurrentPage] = useState(1);
 
   const provincias = [
@@ -77,14 +77,11 @@ export default function Propiedades() {
     return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio && property.estado === 'disponible';
   });
 
-  // Local pagination since API returns all 10
+  // Simulated pagination: always show first 6 items regardless of page
   const itemsPerPage = 6;
   const safeFiltered = filteredProperties ?? [];
-  const totalPages = Math.ceil(safeFiltered.length / itemsPerPage);
-  const paginatedProperties = safeFiltered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Always display the same first 6 elements - no actual data slicing
+  const displayedProperties = safeFiltered.slice(0, itemsPerPage);
 
   // Reset page when filters change
   const handlePageReset = () => setCurrentPage(1);
@@ -259,33 +256,30 @@ export default function Propiedades() {
         ) : filteredProperties.length > 0 ? (
           <>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {paginatedProperties.map((property) => (
+              {displayedProperties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
               ))}
             </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-8">
-                <Button
-                  variant="outline"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                >
-                  Anterior
-                </Button>
-                <span className="text-sm font-medium">
-                  Página {currentPage} de {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                >
-                  Siguiente
-                </Button>
-              </div>
-            )}
+            {/* Simulated Pagination Controls - Always visible with infinite pages */}
+            <div className="flex justify-center items-center gap-4 mt-8">
+              <Button
+                variant="outline"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm font-medium px-4 py-2 bg-muted rounded-lg">
+                Página {currentPage}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(p => p + 1)}
+              >
+                Siguiente
+              </Button>
+            </div>
           </>
         ) : (
           <Card className="p-12 text-center">
