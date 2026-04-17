@@ -1,9 +1,10 @@
-import { Link } from 'react-router';
+import { Link, useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import { Contract } from '../../types';
 import {
   FileText,
   CreditCard,
@@ -19,8 +20,24 @@ import {
 export default function InquilinoDashboard() {
   const { user } = useAuth();
   const { contracts, payments, properties, getContractByInquilinoId } = useData();
+  const [myContract, setMyContract] = useState<Contract | null>(null);
+  const [isLoadingContract, setIsLoadingContract] = useState(true);
 
-  const myContract = getContractByInquilinoId(user?.id || '');
+  useEffect(() => {
+    const loadContract = async () => {
+      if (!user?.id) {
+        setMyContract(null);
+        setIsLoadingContract(false);
+        return;
+      }
+      setIsLoadingContract(true);
+      const contract = await getContractByInquilinoId(user.id);
+      setMyContract(contract || null);
+      setIsLoadingContract(false);
+    };
+    loadContract();
+  }, [user?.id, getContractByInquilinoId]);
+
   const myPayments = payments.filter((p) => p.inquilinoId === user?.id);
   const property = myContract ? properties.find((p) => p.id === myContract.propiedadId) : null;
 
@@ -91,6 +108,19 @@ export default function InquilinoDashboard() {
   };
 
   const recentPayments = myPayments.slice(0, 5);
+
+  if (isLoadingContract) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center size-12 rounded-full bg-muted mb-4">
+            <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!myContract) {
     return (
