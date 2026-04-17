@@ -54,6 +54,7 @@ interface DataContextType {
   addNotification: (notification: Omit<Notification, 'id'>) => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
   getUnreadCount: (userId: string) => number;
+  getUnreadMessagesCount: (userId: string) => number;
 
   // Users
   getUserById: (id: string) => Promise<User | undefined>;
@@ -405,6 +406,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return notifications.filter(n => n.userId === userId && !n.leida).length;
   };
 
+  const getUnreadMessagesCount = (_userId: string) => {
+    // Message reading state is tracked per conversation in the Mensajes component
+    // This is a placeholder - messages are managed locally in the component
+    return 0;
+  };
+
   // Users
   const getUserById = async (id: string): Promise<User | undefined> => {
     try {
@@ -465,6 +472,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addNotification,
         markNotificationAsRead,
         getUnreadCount,
+        getUnreadMessagesCount,
         getUserById,
       }}
     >
