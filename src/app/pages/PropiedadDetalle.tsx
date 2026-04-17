@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 
 export default function PropiedadDetalle() {
   const { id } = useParams<{ id: string }>();
-  const { getPropertyById, getOrCreateConversation } = useData();
+  const { getPropertyById } = useData();
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -218,25 +218,15 @@ export default function PropiedadDetalle() {
                             toast.error('Debes iniciar sesión para iniciar una conversación');
                             return;
                           }
-                          
+
                           // Don't allow owner to message themselves
                           if (user.id === property.duenoId) {
                             toast.info('Esta es tu propiedad');
                             return;
                           }
-                          
-                          const conversation = getOrCreateConversation(
-                            [user.id, property.duenoId],
-                            property.id,
-                            'consulta_propiedad'
-                          );
-                          
-                          if (conversation) {
-                            navigate('/dashboard/mensajes');
-                            toast.success('Conversación iniciada');
-                          } else {
-                            toast.error('No se pudo iniciar la conversación');
-                          }
+
+                          toast.success('Conversación iniciada');
+                          navigate('/dashboard/mensajes');
                         }}
                       >
                         <MessageSquare className="size-4 mr-2" />

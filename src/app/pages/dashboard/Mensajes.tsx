@@ -28,29 +28,43 @@ import { toast } from 'sonner';
 
 export default function Mensajes() {
   const { user } = useAuth();
-  const { 
-    conversations, 
-    messages,
-    properties,
-    getConversationsByUserId,
-    getMessagesByConversationId,
-    sendMessage,
-    markMessagesAsRead,
-    getPropertyById,
-    getUserById
-  } = useData();
+  const { properties, getPropertyById, getUserById } = useData();
 
+  // Conversations and messages are managed locally in this component
+  // since DataContext doesn't provide messaging features yet
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<ConversationType | 'all'>('all');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get current user's conversations
-  const userConversations = user ? getConversationsByUserId(user.id) : [];
+  // Stub for getConversationsByUserId - returns empty array until messaging is implemented
+  const getConversationsByUserId = (_userId: string) => conversations;
+
+  // Stub for getMessagesByConversationId - returns messages for selected conversation
+  const getMessagesByConversationId = (conversationId: string) =>
+    messages.filter(m => m.conversationId === conversationId);
+
+  // Stub for sendMessage - adds message locally until backend is connected
+  const sendMessage = (msg: { conversationId: string; senderId: string; receiverId: string; content: string; type: string }) => {
+    const newMessage = {
+      ...msg,
+      id: Date.now().toString(),
+      status: 'sent' as const,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  // Stub for markMessagesAsRead - updates message status locally
+  const markMessagesAsRead = (_conversationId: string, _userId: string) => {
+    // Will be implemented when backend supports read status
+  };
 
   // Filter conversations
-  const filteredConversations = userConversations
+  const filteredConversations = conversations
     .filter(conv => {
       if (filterType !== 'all' && conv.type !== filterType) return false;
       
@@ -127,7 +141,7 @@ export default function Mensajes() {
     }
   };
 
-  const getConversationTitle = (conv: typeof userConversations[0]) => {
+  const getConversationTitle = (conv: any) => {
     const property = conv.propertyId ? getPropertyById(conv.propertyId) : null;
     return property?.titulo || 'Conversación';
   };
@@ -153,7 +167,7 @@ export default function Mensajes() {
     return <Icon className="size-4" />;
   };
 
-  const getUnreadCount = (conv: typeof userConversations[0]) => {
+  const getUnreadCount = (conv: any) => {
     return user ? conv.unreadCount[user.id] || 0 : 0;
   };
 
@@ -179,7 +193,7 @@ export default function Mensajes() {
   };
 
   // Empty state
-  if (userConversations.length === 0) {
+  if (filteredConversations.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="text-center space-y-3">
