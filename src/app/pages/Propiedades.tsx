@@ -56,6 +56,7 @@ export default function Propiedades() {
     { value: '1200000-999999999', label: 'Más de ₡1,200,000' },
   ];
 
+  // Filter properties (but keep for display count - simulated pagination uses full list)
   const filteredProperties = properties.filter((property) => {
     const matchesSearch =
       property.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -74,14 +75,14 @@ export default function Propiedades() {
       matchesPrecio = property.precio >= min && property.precio <= max;
     }
 
-    return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio && property.estado === 'disponible';
+    return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio;
   });
 
-  // Simulated pagination: always show first 6 items regardless of page
+  // Simulated pagination: always show exactly 6 items regardless of page
   const itemsPerPage = 6;
-  const safeFiltered = filteredProperties ?? [];
-  // Always display the same first 6 elements - no actual data slicing
-  const displayedProperties = safeFiltered.slice(0, itemsPerPage);
+  const safeAll = properties ?? [];
+  // Always display the same first 6 elements from the FULL list - no actual pagination slicing
+  const displayedProperties = safeAll.slice(0, itemsPerPage);
 
   // Reset page when filters change
   const handlePageReset = () => setCurrentPage(1);
