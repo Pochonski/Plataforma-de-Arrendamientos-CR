@@ -76,11 +76,16 @@ export default function Propiedades() {
       matchesPrecio = property.precio >= min && property.precio <= max;
     }
 
-    return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio;
+    return matchesSearch && matchesProvincia && matchesTipo && matchesPrecio && property.estado === 'disponible';
   });
 
-  // Use API pagination - don't slice locally
-  const paginatedProperties = filteredProperties;
+  // Local pagination since API returns all 10
+  const itemsPerPage = 6;
+  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const paginatedProperties = filteredProperties.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // Reset page when filters change
   const handlePageReset = () => setCurrentPage(1);
@@ -336,30 +341,22 @@ export default function Propiedades() {
             </div>
 
             {/* Pagination Controls */}
-            {propertiesTotalPages > 1 && (
+            {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-8">
                 <Button
                   variant="outline"
                   disabled={currentPage === 1}
-                  onClick={() => {
-                    const newPage = Math.max(1, currentPage - 1);
-                    setCurrentPage(newPage);
-                    fetchProperties(newPage);
-                  }}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 >
                   Anterior
                 </Button>
                 <span className="text-sm font-medium">
-                  Página {currentPage} de {propertiesTotalPages}
+                  Página {currentPage} de {totalPages}
                 </span>
                 <Button
                   variant="outline"
-                  disabled={currentPage === propertiesTotalPages}
-                  onClick={() => {
-                    const newPage = Math.min(propertiesTotalPages, currentPage + 1);
-                    setCurrentPage(newPage);
-                    fetchProperties(newPage);
-                  }}
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 >
                   Siguiente
                 </Button>
