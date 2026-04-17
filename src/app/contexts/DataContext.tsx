@@ -11,14 +11,6 @@ const getHeaders = () => ({
   ...(APIM_KEY && { 'Ocp-Apim-Subscription-Key': APIM_KEY }),
 });
 
-interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
 interface DataContextType {
   // Properties with pagination
   properties: Property[];
@@ -102,11 +94,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const data: PaginatedResponse<Property> = await res.json();
-      setProperties(data.data || []);
-      setPropertiesTotal(data.total || 0);
-      setPropertiesPage(data.page || page);
-      setPropertiesTotalPages(data.totalPages || 0);
+      const data = await res.json();
+
+      // Handle both paginated {data, total, page, pageSize, totalPages} and plain array responses
+      if (Array.isArray(data)) {
+        // Plain array from mock - simulate pagination locally
+        const start = (page - 1) * PAGE_SIZE;
+        const end = start + PAGE_SIZE;
+        const paginatedData = data.slice(start, end);
+
+        setProperties(paginatedData);
+        setPropertiesTotal(data.length);
+        setPropertiesPage(page);
+        setPropertiesTotalPages(Math.ceil(data.length / PAGE_SIZE));
+      } else if (data.data && Array.isArray(data.data)) {
+        // Paginated response from real API
+        setProperties(data.data);
+        setPropertiesTotal(data.total || 0);
+        setPropertiesPage(data.page || page);
+        setPropertiesTotalPages(data.totalPages || 0);
+      } else {
+        setProperties([]);
+      }
     } catch (err) {
       console.error('Error fetching properties:', err);
       setProperties([]);
