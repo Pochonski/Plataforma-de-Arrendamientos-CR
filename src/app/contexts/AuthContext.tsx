@@ -40,16 +40,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (correo: string, contraseña: string): Promise<boolean> => {
     try {
-      // Login usando Azure APIM desde variables de entorno
-      const apiUrl = (import.meta as any).env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/usuarios`);
-      const usuariosMock = await response.json();
-      
-      const foundUser = usuariosMock.find((u: any) => u.correo === correo);
-      if (foundUser) {
-        setUser(foundUser);
-        // localstorage eliminado, el estado muere al refrescar la página según requerimiento.
+      // Para demo: usar usuarios mock si no hay API configurada
+      const mockUser = MOCK_USERS.find((u) => u.correo === correo);
+      if (mockUser) {
+        setUser(mockUser);
         return true;
+      }
+      
+      // Intentar login con API de Azure APIM
+      const apiUrl = import.meta.env.VITE_API_URL;
+      if (apiUrl) {
+        const response = await fetch(`${apiUrl}/usuarios`);
+        if (response.ok) {
+          const usuariosMock = await response.json();
+          const foundUser = usuariosMock.find((u: any) => u.correo === correo);
+          if (foundUser) {
+            setUser(foundUser);
+            return true;
+          }
+        }
       }
     } catch (err) {
       console.error("Error validando usuario contra Azure APIM", err);
