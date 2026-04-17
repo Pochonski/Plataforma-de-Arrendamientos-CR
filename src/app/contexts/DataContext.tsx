@@ -427,7 +427,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const fetchPayments = useCallback(async (userId?: string) => {
     setIsLoadingPayments(true);
     try {
-      const url = userId ? `${API_BASE}/pagos/usuario/${userId}` : `${API_BASE}/pagos`;
+      const url = userId ? `${API_BASE}/pagos/${userId}` : `${API_BASE}/pagos`;
       const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
