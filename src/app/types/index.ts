@@ -6,6 +6,7 @@ export interface User {
   correo: string;
   rol: UserRole;
   avatar?: string;
+  telefono?: string;
 }
 
 export type Currency = 'CRC' | 'USD';

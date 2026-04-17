@@ -5,7 +5,7 @@ interface AuthContextType {
   user: User | null;
   login: (correo: string, contraseña: string) => Promise<boolean>;
   loginWithGoogle: (credentialResponse: any) => Promise<boolean>;
-  register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino') => Promise<boolean>;
+  register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   isAuthenticated: boolean;
@@ -105,21 +105,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       });
 
+      console.log("Respuesta de registro recibida:", response.status);
+
       if (response.ok) {
         const createdUser = await response.json();
-        // Si el mock devuelve el objeto creado, lo usamos. Si no, usamos los datos enviados.
-        const userToSet = createdUser && createdUser.id ? createdUser : {
-          id: `usr-${Math.random().toString(36).substr(2, 4)}`,
+        console.log("Cuerpo de la respuesta:", createdUser);
+
+        // Si el APIM devuelve el objeto, lo usamos
+        const userToSet = createdUser && (createdUser.id || createdUser.idUsuario) ? createdUser : {
+          id: `usr-${Date.now().toString().slice(-4)}`,
           nombre,
           correo,
-          rol: backendRol
+          rol: backendRol,
+          telefono: createdUser.telefono // Mapeo si existe
         };
         
-        setUser(normalizeUser(userToSet));
+        const normalized = normalizeUser(userToSet);
+        console.log("Usuario normalizado para el estado:", normalized);
+        
+        setUser(normalized);
         return true;
+      } else {
+        const errorText = await response.text();
+        console.error("Error en la respuesta del servidor:", errorText);
       }
     } catch (err) {
-      console.error("Error registrando usuario en Azure APIM", err);
+      console.error("Error crítico registrando usuario:", err);
     }
     return false;
   };
