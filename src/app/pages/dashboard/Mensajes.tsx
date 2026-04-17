@@ -37,8 +37,11 @@ export default function Mensajes() {
     sendMessage,
     getConversationsByUserId,
     getMessagesByConversationId,
-    markMessagesAsRead
+    markMessagesAsRead,
+    getUserById
   } = useData();
+
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (user?.id) {
@@ -46,6 +49,28 @@ export default function Mensajes() {
       fetchMessages(user.id);
     }
   }, [user?.id, fetchConversations, fetchMessages]);
+
+  // Cargar nombres de usuarios participantes
+  useEffect(() => {
+    const loadParticipantNames = async () => {
+      const otherParticipantIds = Array.from(new Set(
+        conversations.flatMap(c => c.participants).filter(id => id !== user?.id)
+      ));
+
+      for (const id of otherParticipantIds) {
+        if (!userNames[id]) {
+          const userData = await getUserById(id);
+          if (userData) {
+            setUserNames(prev => ({ ...prev, [id]: userData.nombre }));
+          }
+        }
+      }
+    };
+
+    if (conversations.length > 0) {
+      loadParticipantNames();
+    }
+  }, [conversations, user?.id, getUserById, userNames]);
 
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
@@ -128,12 +153,16 @@ export default function Mensajes() {
   const getConversationTitle = (conv: Conversation) => {
     const otherUserId = conv.participants.find((p: string) => p !== user?.id);
     
-    // Simulación de nombres para el demo basado en el ID
+    if (otherUserId && userNames[otherUserId]) {
+      return userNames[otherUserId];
+    }
+
+    // Fallbacks si no se ha cargado el nombre aún
     if (otherUserId === 'usr-002') return 'Admin (Dueño)';
     if (otherUserId === 'usr-003') return 'Inquilino Principal';
     if (otherUserId === 'usr-004') return 'Nuevo Inquilino';
     
-    return `Usuario (${otherUserId})`;
+    return otherUserId ? `Usuario (${otherUserId})` : 'Conversación';
   };
 
   const getConversationTypeLabel = (type: ConversationType) => {
