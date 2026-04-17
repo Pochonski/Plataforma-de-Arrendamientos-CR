@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { Property, Invitation, Payment, Contract, Notification, User } from '../types';
+import { Property, Invitation, Payment, Contract, Notification, User, Conversation, Message, ConversationType } from '../types';
 
 const API_BASE = (import.meta as any).env.VITE_API_URL || '';
 const APIM_KEY = (import.meta as any).env.VITE_APIM_SUBSCRIPTION_KEY || '';
@@ -58,6 +58,19 @@ interface DataContextType {
 
   // Users
   getUserById: (id: string) => Promise<User | undefined>;
+
+  // Conversations & Messages
+  conversations: Conversation[];
+  messages: Message[];
+  isLoadingConversations: boolean;
+  isLoadingMessages: boolean;
+  fetchConversations: () => Promise<void>;
+  fetchMessages: () => Promise<void>;
+  getConversationsByUserId: (userId: string) => Conversation[];
+  getMessagesByConversationId: (conversationId: string) => Message[];
+  sendMessage: (message: Omit<Message, 'id' | 'timestamp' | 'status'>) => Promise<Message>;
+  markMessagesAsRead: (conversationId: string, userId: string) => Promise<void>;
+  getOrCreateConversation: (participants: string[], propertyId: string, type: ConversationType) => Promise<Conversation>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -79,6 +92,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+
+  // Conversations & Messages state
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
   // Properties with pagination
   const fetchProperties = useCallback(async (page: number = 1) => {
@@ -412,6 +431,118 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return 0;
   };
 
+  // Conversations
+  const fetchConversations = useCallback(async () => {
+    setIsLoadingConversations(true);
+    try {
+      const res = await fetch(`${API_BASE}/conversaciones`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setConversations(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching conversations:', err);
+      setConversations([]);
+    } finally {
+      setIsLoadingConversations(false);
+    }
+  }, []);
+
+  const getConversationsByUserId = useCallback((userId: string): Conversation[] => {
+    return conversations.filter(conv => conv.participants.includes(userId));
+  }, [conversations]);
+
+  const getOrCreateConversation = async (
+    participants: string[],
+    propertyId: string,
+    type: ConversationType
+  ): Promise<Conversation> => {
+    const existing = conversations.find(conv => {
+      const sameParticipants = conv.participants.length === participants.length &&
+        participants.every(p => conv.participants.includes(p));
+      return conv.type === type && conv.propertyId === propertyId && sameParticipants;
+    });
+    if (existing) return existing;
+
+    const res = await fetch(`${API_BASE}/conversaciones`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ participants, propertyId, type }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const newConversation: Conversation = await res.json();
+    setConversations(prev => [...prev, newConversation]);
+    return newConversation;
+  };
+
+  // Messages
+  const fetchMessages = useCallback(async () => {
+    setIsLoadingMessages(true);
+    try {
+      const res = await fetch(`${API_BASE}/mensajes`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+      setMessages([]);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  }, []);
+
+  const getMessagesByConversationId = useCallback((conversationId: string): Message[] => {
+    return messages.filter(msg => msg.conversationId === conversationId);
+  }, [messages]);
+
+  const sendMessage = async (message: Omit<Message, 'id' | 'timestamp' | 'status'>): Promise<Message> => {
+    const res = await fetch(`${API_BASE}/mensajes`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(message),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const newMessage: Message = await res.json();
+    setMessages(prev => [...prev, newMessage]);
+    setConversations(prev => prev.map(conv =>
+      conv.id === message.conversationId
+        ? { ...conv, lastMessage: message.content, lastMessageAt: new Date() }
+        : conv
+    ));
+    return newMessage;
+  };
+
+  const markMessagesAsRead = async (conversationId: string, userId: string) => {
+    const unreadMessages = messages.filter(
+      msg => msg.conversationId === conversationId &&
+        msg.receiverId === userId &&
+        msg.status !== 'read'
+    );
+    await Promise.all(unreadMessages.map(async (msg) => {
+      const res = await fetch(`${API_BASE}/mensajes/${msg.id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ status: 'read' }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }));
+    setMessages(prev => prev.map(msg =>
+      msg.conversationId === conversationId && msg.receiverId === userId
+        ? { ...msg, status: 'read' as const }
+        : msg
+    ));
+    setConversations(prev => prev.map(conv =>
+      conv.id === conversationId
+        ? { ...conv, unreadCount: { ...conv.unreadCount, [userId]: 0 } }
+        : conv
+    ));
+  };
+
   // Users
   const getUserById = async (id: string): Promise<User | undefined> => {
     try {
@@ -434,6 +565,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     fetchContracts();
     fetchPayments();
     fetchNotifications();
+    fetchConversations();
+    fetchMessages();
   }, []);
 
   return (
@@ -474,6 +607,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getUnreadCount,
         getUnreadMessagesCount,
         getUserById,
+        conversations,
+        isLoadingConversations,
+        fetchConversations,
+        getConversationsByUserId,
+        getOrCreateConversation,
+        messages,
+        isLoadingMessages,
+        fetchMessages,
+        getMessagesByConversationId,
+        sendMessage,
+        markMessagesAsRead,
       }}
     >
       {children}
