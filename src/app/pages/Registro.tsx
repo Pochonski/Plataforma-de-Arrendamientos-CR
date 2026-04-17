@@ -4,8 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Logo } from '../components/shared/Logo';
-import { ThemeToggle } from '../components/shared/ThemeToggle';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { Card, CardContent } from '../components/ui/card';
 import {
@@ -90,10 +88,7 @@ export default function Registro() {
       <div className="min-h-screen flex flex-col lg:flex-row">
         {/* Left Side - Form */}
         <div className="flex-1 flex flex-col">
-          <div className="p-4 sm:p-6 flex items-center justify-between border-b lg:border-none">
-            <Logo />
-            <ThemeToggle />
-          </div>
+
 
           <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
             <div className="w-full max-w-md space-y-8">

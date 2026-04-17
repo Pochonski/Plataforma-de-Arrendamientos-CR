@@ -1,6 +1,6 @@
-import { PublicLayout } from '../components/layout/PublicLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { HelpCircle, Search, MessageCircle, Phone, Mail, Book, FileText, Users, Shield, CreditCard, Home, Key } from 'lucide-react';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { HelpCircle, Search, MessageCircle, Phone, Mail, Book, FileText, Users, Shield, Home, Key } from 'lucide-react';
 
 const faqCategories = [
   {
@@ -133,55 +133,54 @@ const contactOptions = [
   }
 ];
 
-export function CentroAyuda() {
+export default function DashboardCentroAyuda() {
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
-    <PublicLayout>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center size-16 rounded-full bg-primary/10 mb-4">
             <HelpCircle className="size-8 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">Centro de Ayuda</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold mb-3">Centro de Ayuda</h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             Encuentre respuestas a sus preguntas sobre Arrendamientos CR
           </p>
         </div>
 
         {/* Quick Search */}
-        <Card className="mb-12">
+        <Card className="mb-8">
           <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Buscar en la ayuda..."
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar en la ayuda..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
           </CardContent>
         </Card>
 
         {/* Contact Options */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {contactOptions.map((option, index) => (
             <a key={index} href={option.link} className="block">
               <Card className="h-full hover:border-primary transition-colors cursor-pointer">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center size-12 rounded-full bg-primary/10">
-                      <option.icon className="size-6 text-primary" />
+                    <div className="flex items-center justify-center size-10 rounded-full bg-primary/10">
+                      <option.icon className="size-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{option.title}</h3>
-                      <p className="text-sm text-muted-foreground">{option.description}</p>
+                      <h3 className="font-semibold text-sm">{option.title}</h3>
+                      <p className="text-xs text-muted-foreground">{option.description}</p>
                     </div>
                   </div>
-                  <p className="mt-4 text-primary font-medium">{option.content}</p>
+                  <p className="mt-3 text-primary font-medium text-sm">{option.content}</p>
                 </CardContent>
               </Card>
             </a>
@@ -189,13 +188,13 @@ export function CentroAyuda() {
         </div>
 
         {/* FAQ Categories */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-center mb-8">Preguntas Frecuentes</h2>
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-center mb-6">Preguntas Frecuentes</h2>
           
           {faqCategories.map((category, categoryIndex) => (
             <Card key={categoryIndex}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <category.icon className="size-5" />
                   {category.title}
                 </CardTitle>
@@ -203,10 +202,10 @@ export function CentroAyuda() {
                   {category.questions.length} preguntas en esta categoría
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {category.questions.map((item, questionIndex) => (
                   <div key={questionIndex} className="border-l-2 border-primary/20 pl-4">
-                    <h4 className="font-medium mb-2">{item.q}</h4>
+                    <h4 className="font-medium text-sm mb-1">{item.q}</h4>
                     <p className="text-sm text-muted-foreground">{item.a}</p>
                   </div>
                 ))}
@@ -216,16 +215,16 @@ export function CentroAyuda() {
         </div>
 
         {/* Still Need Help */}
-        <Card className="mt-12 bg-primary/5 border-primary/20">
+        <Card className="mt-8 bg-primary/5 border-primary/20">
           <CardContent className="pt-6 text-center">
-            <Book className="size-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">¿Aún necesita ayuda?</h3>
-            <p className="text-muted-foreground mb-4">
+            <Book className="size-10 text-primary mx-auto mb-3" />
+            <h3 className="text-lg font-semibold mb-2">¿Aún necesita ayuda?</h3>
+            <p className="text-sm text-muted-foreground mb-3">
               Nuestro equipo de soporte está listo para asistirle con cualquier consulta.
             </p>
             <a 
               href="mailto:soporte@arrendamientos-cr.com" 
-              className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+              className="inline-flex items-center gap-2 text-primary hover:underline font-medium text-sm"
             >
               <Mail className="size-4" />
               Contáctenos directamente
@@ -233,6 +232,5 @@ export function CentroAyuda() {
           </CardContent>
         </Card>
       </div>
-    </PublicLayout>
   );
 }

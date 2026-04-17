@@ -33,6 +33,10 @@ import NuevaInvitacion from './pages/dashboard/NuevaInvitacion';
 import MiContrato from './pages/dashboard/MiContrato';
 import Notificaciones from './pages/dashboard/Notificaciones';
 import Mensajes from './pages/dashboard/Mensajes';
+import DashboardCentroAyuda from './pages/dashboard/DashboardCentroAyuda';
+import DashboardTerminos from './pages/dashboard/DashboardTerminos';
+import DashboardPrivacidad from './pages/dashboard/DashboardPrivacidad';
+import DashboardCookies from './pages/dashboard/DashboardCookies';
 
 // Placeholder components for routes not yet implemented
 const Placeholder = ({ title }: { title: string }) => (
@@ -70,16 +74,14 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Landing /> },
       { path: 'login', element: <Login /> },
-      { path: 'registro', element: <Registro /> },
       { path: 'propiedades', element: <Propiedades /> },
-      { path: 'propiedades/:id', element: <PropiedadDetalle /> },
       { path: 'invitacion/:token', element: <AceptarInvitacion /> },
       { path: 'recuperar-contraseña', element: <RecuperarContrasena /> },
       { path: 'design-docs', element: <DesignDocs /> },
-      { path: 'centro-ayuda', element: <CentroAyuda /> },
-      { path: 'terminos', element: <Terminos /> },
-      { path: 'privacidad', element: <Privacidad /> },
-      { path: 'cookies', element: <Cookies /> },
+      { path: 'centro-ayuda', element: <DashboardCentroAyuda /> },
+      { path: 'terminos', element: <DashboardTerminos /> },
+      { path: 'privacidad', element: <DashboardPrivacidad /> },
+      { path: 'cookies', element: <DashboardCookies /> },
     ],
   },
   {
@@ -91,6 +93,10 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardHome /> },
+      { path: 'centro-ayuda', element: <DashboardCentroAyuda /> },
+      { path: 'terminos', element: <DashboardTerminos /> },
+      { path: 'privacidad', element: <DashboardPrivacidad /> },
+      { path: 'cookies', element: <DashboardCookies /> },
       { path: 'propiedades', element: <MisPropiedades /> },
       { path: 'propiedades/nueva', element: <NuevaPropiedad /> },
       { path: 'propiedades/:id/editar', element: <EditarPropiedad /> },
