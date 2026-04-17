@@ -455,7 +455,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const newPayment: Payment = await res.json();
-    await fetchPayments();
+    await fetchPayments(payment.inquilinoId || payment.duenoId);
     return newPayment;
   };
 
@@ -663,7 +663,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     fetchProperties(1);
     fetchInvitations();
     fetchContracts();
-    fetchPayments();
     fetchNotifications();
     fetchConversations();
     fetchMessages();
