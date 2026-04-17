@@ -53,8 +53,11 @@ const denormalizeProperty = (p: Partial<Property>): any => {
     delete (raw as any).duenoId;
   }
   
-  // We keep the name 'caracteristicas' as it is in our frontend Property type
-  // and it matches the user's preferred APIM schema for POST.
+  // Map caracteristicas -> amenidades (Matches your current APIM response)
+  if (p.caracteristicas) {
+    raw.amenidades = p.caracteristicas;
+    delete (raw as any).caracteristicas;
+  }
   
   // Ensure we don't send Date objects to APIM
   if (p.createdAt instanceof Date) {
