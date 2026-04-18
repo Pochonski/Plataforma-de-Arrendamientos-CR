@@ -15,11 +15,24 @@ import {
   AlertCircle,
   Check,
   Trash2,
+  RefreshCw,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Notificaciones() {
   const { user } = useAuth();
-  const { notifications, markNotificationAsRead, getUnreadCount, fetchNotifications } = useData();
+  const { notifications, markNotificationAsRead, getUnreadCount, fetchNotifications, isLoadingNotifications } = useData();
+
+  const handleRefresh = async () => {
+    if (user?.id) {
+      try {
+        await fetchNotifications(user.id);
+        toast.success('Notificaciones actualizadas');
+      } catch (error) {
+        toast.error('Error al actualizar');
+      }
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -100,11 +113,23 @@ export default function Notificaciones() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Notificaciones</h1>
-        <p className="text-muted-foreground mt-1">
-          Mantente al día con todas tus actualizaciones
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Notificaciones</h1>
+          <p className="text-muted-foreground mt-1">
+            Mantente al día con todas tus actualizaciones
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={handleRefresh} 
+          disabled={isLoadingNotifications}
+          className="w-full sm:w-auto"
+        >
+          <RefreshCw className={`size-4 mr-2 ${isLoadingNotifications ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
       </div>
 
       {/* Stats and Actions */}

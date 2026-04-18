@@ -29,18 +29,32 @@ import {
   Search,
   Download,
   Filter,
+  RefreshCw,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Historial() {
   const { user } = useAuth();
-  const { payments, properties, fetchPayments } = useData();
+  const { payments, properties, fetchPayments, isLoadingPayments } = useData();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleRefresh = async () => {
+    if (user?.id) {
+      try {
+        await fetchPayments(user.id);
+        toast.success('Historial actualizado');
+      } catch (error) {
+        toast.error('Error al actualizar');
+      }
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
       fetchPayments(user.id);
     }
   }, [user?.id, fetchPayments]);
+
   const [filterAño, setFilterAño] = useState<string>('todos');
   const [filterEstado, setFilterEstado] = useState<string>('todos');
 
@@ -108,13 +122,25 @@ export default function Historial() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Historial de Pagos</h1>
-        <p className="text-muted-foreground mt-1">
-          {user?.rol === 'dueño'
-            ? 'Visualiza todos los pagos recibidos'
-            : 'Visualiza todos tus pagos realizados'}
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Historial de Pagos</h1>
+          <p className="text-muted-foreground mt-1">
+            {user?.rol === 'dueño'
+              ? 'Visualiza todos los pagos recibidos'
+              : 'Visualiza todos tus pagos realizados'}
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={handleRefresh} 
+          disabled={isLoadingPayments}
+          className="w-full sm:w-auto"
+        >
+          <RefreshCw className={`size-4 mr-2 ${isLoadingPayments ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
       </div>
 
       {/* Stats */}

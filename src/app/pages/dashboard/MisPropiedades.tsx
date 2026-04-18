@@ -31,14 +31,24 @@ import {
   Eye,
   Building2,
   MapPin,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function MisPropiedades() {
   const { user } = useAuth();
-  const { properties, deleteProperty, contracts, updateContract, updateProperty } = useData();
+  const { properties, deleteProperty, contracts, updateContract, updateProperty, fetchProperties, isLoadingProperties } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const handleRefresh = async () => {
+    try {
+      await fetchProperties(1);
+      toast.success('Lista de propiedades actualizada');
+    } catch (error) {
+      toast.error('Error al actualizar');
+    }
+  };
   
   // Finish Contract State
   const [finishPropertyId, setFinishPropertyId] = useState<string | null>(null);
@@ -106,12 +116,23 @@ export default function MisPropiedades() {
             Gestiona todas tus propiedades en alquiler
           </p>
         </div>
-        <Button asChild size="lg">
-          <Link to="/dashboard/propiedades/nueva">
-            <Plus className="size-4 mr-2" />
-            Nueva propiedad
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            onClick={handleRefresh} 
+            disabled={isLoadingProperties}
+          >
+            <RefreshCw className={`size-4 mr-2 ${isLoadingProperties ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+          <Button asChild size="lg">
+            <Link to="/dashboard/propiedades/nueva">
+              <Plus className="size-4 mr-2" />
+              Nueva propiedad
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Search */}

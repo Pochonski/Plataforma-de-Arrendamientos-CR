@@ -34,14 +34,24 @@ import {
   Clock,
   XCircle,
   Ban,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Invitaciones() {
   const { user } = useAuth();
-  const { invitations, updateInvitation, properties } = useData();
+  const { invitations, updateInvitation, properties, fetchInvitations, isLoadingInvitations } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [cancelId, setCancelId] = useState<string | null>(null);
+
+  const handleRefresh = async () => {
+    try {
+      await fetchInvitations();
+      toast.success('Invitaciones actualizadas');
+    } catch (error) {
+      toast.error('Error al actualizar');
+    }
+  };
 
   const myInvitations = invitations.filter((inv) => inv.duenoId === user?.id);
 
@@ -155,12 +165,23 @@ export default function Invitaciones() {
             Gestiona las invitaciones para tus propiedades
           </p>
         </div>
-        <Button asChild size="lg">
-          <Link to="/dashboard/invitaciones/nueva">
-            <Plus className="size-4 mr-2" />
-            Nueva invitación
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            onClick={handleRefresh} 
+            disabled={isLoadingInvitations}
+          >
+            <RefreshCw className={`size-4 mr-2 ${isLoadingInvitations ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+          <Button asChild size="lg">
+            <Link to="/dashboard/invitaciones/nueva">
+              <Plus className="size-4 mr-2" />
+              Nueva invitación
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

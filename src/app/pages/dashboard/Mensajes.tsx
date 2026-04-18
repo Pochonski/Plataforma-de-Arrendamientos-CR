@@ -21,7 +21,8 @@ import {
   Building2,
   Check,
   CheckCheck,
-  Paperclip
+  Paperclip,
+  RefreshCw,
 } from 'lucide-react';
 import { Conversation, ConversationType, Message as MessageType } from '../../types';
 import { toast } from 'sonner';
@@ -38,10 +39,26 @@ export default function Mensajes() {
     getConversationsByUserId,
     getMessagesByConversationId,
     markMessagesAsRead,
-    getUserById
+    getUserById,
+    isLoadingConversations,
+    isLoadingMessages
   } = useData();
 
   const [userNames, setUserNames] = useState<Record<string, string>>({});
+
+  const handleRefresh = async () => {
+    if (user?.id) {
+      try {
+        await Promise.all([
+          fetchConversations(user.id),
+          fetchMessages(user.id)
+        ]);
+        toast.success('Mensajes actualizados');
+      } catch (error) {
+        toast.error('Error al actualizar');
+      }
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -238,9 +255,21 @@ export default function Mensajes() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Mensajes</h1>
-        <p className="text-muted-foreground">Comunícate con inquilinos y dueños</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Mensajes</h1>
+          <p className="text-muted-foreground">Comunícate con inquilinos y dueños</p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={handleRefresh} 
+          disabled={isLoadingConversations || isLoadingMessages}
+          className="w-full sm:w-auto"
+        >
+          <RefreshCw className={`size-4 mr-2 ${isLoadingConversations || isLoadingMessages ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
       </div>
 
       <Card className="overflow-hidden">

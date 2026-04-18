@@ -32,20 +32,33 @@ import {
   Search,
   Filter,
   Download,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadExcel } from '../../utils/export';
 
 export default function PagosRecibidos() {
   const { user } = useAuth();
-  const { payments, updatePayment, properties, updateContract, fetchPayments } = useData();
+  const { payments, updatePayment, properties, updateContract, fetchPayments, isLoadingPayments } = useData();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleRefresh = async () => {
+    if (user?.id) {
+      try {
+        await fetchPayments(user.id);
+        toast.success('Pagos actualizados');
+      } catch (error) {
+        toast.error('Error al actualizar');
+      }
+    }
+  };
   
   useEffect(() => {
     if (user?.id) {
       fetchPayments(user.id);
     }
   }, [user?.id, fetchPayments]);
+
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState('');
@@ -132,11 +145,23 @@ export default function PagosRecibidos() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Pagos Recibidos</h1>
-        <p className="text-muted-foreground mt-1">
-          Revisa y aprueba los comprobantes de pago
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Pagos Recibidos</h1>
+          <p className="text-muted-foreground mt-1">
+            Revisa y aprueba los comprobantes de pago
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={handleRefresh} 
+          disabled={isLoadingPayments}
+          className="w-full sm:w-auto"
+        >
+          <RefreshCw className={`size-4 mr-2 ${isLoadingPayments ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
       </div>
 
       {/* Stats */}

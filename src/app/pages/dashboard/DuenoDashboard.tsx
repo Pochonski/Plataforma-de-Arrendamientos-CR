@@ -23,11 +23,40 @@ import {
   Plus,
   TrendingUp,
   ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function DuenoDashboard() {
   const { user } = useAuth();
-  const { properties, invitations, payments, fetchPayments } = useData();
+  const { 
+    properties, 
+    invitations, 
+    payments, 
+    fetchPayments, 
+    fetchProperties, 
+    fetchInvitations,
+    isLoadingProperties,
+    isLoadingInvitations,
+    isLoadingPayments
+  } = useData();
+
+  const handleRefresh = async () => {
+    if (user?.id) {
+      try {
+        await Promise.all([
+          fetchProperties(),
+          fetchInvitations(),
+          fetchPayments(user.id)
+        ]);
+        toast.success('Dashboard actualizado');
+      } catch (error) {
+        toast.error('Error al actualizar');
+      }
+    }
+  };
+
+  const isRefreshing = isLoadingProperties || isLoadingInvitations || isLoadingPayments;
 
   useEffect(() => {
     if (user?.id) {
@@ -134,11 +163,23 @@ export default function DuenoDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">¡Bienvenido, {user?.nombre}!</h1>
-        <p className="text-muted-foreground">
-          Aquí tienes un resumen de tu actividad reciente
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">¡Bienvenido, {user?.nombre}!</h1>
+          <p className="text-muted-foreground">
+            Aquí tienes un resumen de tu actividad reciente
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={handleRefresh} 
+          disabled={isRefreshing}
+          className="w-full sm:w-auto"
+        >
+          <RefreshCw className={`size-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
       </div>
 
       {/* Stats Grid */}
