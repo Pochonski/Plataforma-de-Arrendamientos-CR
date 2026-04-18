@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino'): Promise<boolean> => {
+  const register = async (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string): Promise<boolean> => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
       if (!apiUrl) return false;
@@ -101,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           correo,
           contraseña, // En una app real, el hash se maneja en el backend o antes de enviar
           rol: backendRol,
+          telefono,
           fechaRegistro: new Date().toISOString(),
           propiedades: []
         }),
@@ -110,29 +111,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const responseText = await response.text();
-        if (!responseText) {
-          console.error("El servidor respondió 200 OK pero el cuerpo está vacío. Por favor, configura el Mock de APIM para devolver el objeto usuario creado.");
-          return false;
-        }
-
         let createdUser = null;
-        try {
-          createdUser = JSON.parse(responseText);
-        } catch (e) {
-          console.error("Error parseando la respuesta del servidor:", e);
-          return false;
+        
+        if (responseText) {
+          try {
+            createdUser = JSON.parse(responseText);
+          } catch (e) {
+            console.error("Error parseando la respuesta del servidor:", e);
+          }
         }
 
-        // Validamos que el objeto retornado tenga al menos un ID
+        // Si el APIM devolvió un objeto válido, lo usamos.
+        // Si no (cuerpo vacío/eco), usamos los datos que enviamos + el tempId de la URL.
         if (createdUser && (createdUser.id || createdUser.idUsuario)) {
           const normalized = normalizeUser(createdUser);
-          console.log("Registro exitoso, usuario recibido:", normalized);
+          console.log("Registro exitoso con datos del servidor:", normalized);
+          setUser(normalized);
+          return true;
+        } else {
+          // Fallback con los datos enviados y el ID de la URL
+          const fallbackUser = {
+            id: tempId,
+            nombre,
+            correo,
+            rol: backendRol,
+            telefono: telefono // Si lo enviamos en los parámetros
+          };
+          const normalized = normalizeUser(fallbackUser);
+          console.log("Registro exitoso (usando datos enviados como respaldo):", normalized);
           setUser(normalized);
           return true;
         }
-        
-        console.error("La API no devolvió un objeto de usuario válido:", createdUser);
-        return false;
       } else {
         const errorText = await response.text();
         console.error("Error en la respuesta del servidor:", errorText);
