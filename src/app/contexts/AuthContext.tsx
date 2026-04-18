@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Login con API de Azure APIM
       const apiUrl = import.meta.env.VITE_API_URL;
       if (apiUrl) {
-        const response = await fetch(`${apiUrl}/usuario`);
+        const response = await fetch(`${apiUrl}/usuarios`);
         if (response.ok) {
           const usuarios = await response.json();
           const foundUser = usuarios.find((u: any) => u.correo === correo);
