@@ -8,6 +8,20 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    sourcemap: true,
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'motion': ['motion', 'framer-motion'],
+          'ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs', '@radix-ui/react-select'],
+          'charts': ['recharts'],
+        }
+      }
+    }
+  },
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them

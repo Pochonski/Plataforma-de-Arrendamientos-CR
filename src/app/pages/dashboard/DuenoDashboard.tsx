@@ -21,7 +21,6 @@ import {
   Clock,
   XCircle,
   Plus,
-  TrendingUp,
   ArrowRight,
   RefreshCw,
 } from 'lucide-react';

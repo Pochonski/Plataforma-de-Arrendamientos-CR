@@ -34,16 +34,6 @@ import DashboardTerminos from './pages/dashboard/DashboardTerminos';
 import DashboardPrivacidad from './pages/dashboard/DashboardPrivacidad';
 import DashboardCookies from './pages/dashboard/DashboardCookies';
 
-// Placeholder components for routes not yet implemented
-const Placeholder = ({ title }: { title: string }) => (
-  <div className="flex items-center justify-center min-h-[400px]">
-    <div className="text-center">
-      <h1 className="text-2xl font-bold mb-2">{title}</h1>
-      <p className="text-muted-foreground">Esta página está en desarrollo</p>
-    </div>
-  </div>
-);
-
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();

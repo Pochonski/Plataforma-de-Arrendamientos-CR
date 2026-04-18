@@ -134,8 +134,6 @@ const contactOptions = [
 ];
 
 export default function DashboardCentroAyuda() {
-  const [searchQuery, setSearchQuery] = useState('');
-
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -148,22 +146,6 @@ export default function DashboardCentroAyuda() {
             Encuentre respuestas a sus preguntas sobre Arrendamientos CR
           </p>
         </div>
-
-        {/* Quick Search */}
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Buscar en la ayuda..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Contact Options */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

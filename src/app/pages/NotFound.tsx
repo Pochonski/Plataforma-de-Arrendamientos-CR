@@ -42,11 +42,9 @@ export default function NotFound() {
             </Button>
           </div>
 
-          <Button variant="ghost" asChild className="mt-4">
-            <button onClick={() => window.history.back()}>
-              <ArrowLeft className="size-4 mr-2" />
-              Volver atrás
-            </button>
+          <Button variant="ghost" className="mt-4" onClick={() => window.history.back()}>
+            <ArrowLeft className="size-4 mr-2" />
+            Volver atrás
           </Button>
         </CardContent>
       </Card>

@@ -80,7 +80,6 @@ export default function Registro() {
     }
   };
 
-  const passwordStrength = validatePassword(contraseña);
   const hasMinLength = contraseña.length >= 8;
   const hasUppercase = /[A-Z]/.test(contraseña);
   const hasNumber = /[0-9]/.test(contraseña);

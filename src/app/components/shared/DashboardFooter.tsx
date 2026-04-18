@@ -11,11 +11,6 @@ const recursosLinks = [
   { label: 'Centro de Ayuda', path: '/centro-ayuda' },
 ];
 
-const empresaLinks = [
-  { label: 'Sobre nosotros', path: '/#sobre-nosotros' },
-  { label: 'Contacto', path: '/#contacto' },
-];
-
 const legalLinks = [
   { label: 'Términos de Uso', path: '/terminos' },
   { label: 'Privacidad', path: '/privacidad' },

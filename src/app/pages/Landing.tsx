@@ -408,7 +408,7 @@ export default function Landing() {
                         <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center">
                             <TrendingUp className="size-5 text-primary" />
                         </div>
-                        <h5 className="font-bold">Evolución Digital</h5>
+                        <h4 className="font-bold">Evolución Digital</h4>
                     </div>
                     <p className="text-sm text-muted-foreground font-medium">
                         "Arrendamientos CR me permitió reducir el tiempo de gestión de cobros en un 80%."

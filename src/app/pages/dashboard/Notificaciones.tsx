@@ -14,7 +14,6 @@ import {
   XCircle,
   AlertCircle,
   Check,
-  Trash2,
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';

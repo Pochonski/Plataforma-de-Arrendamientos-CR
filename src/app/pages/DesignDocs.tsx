@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { 
   Home, 
   User, 
@@ -23,12 +22,9 @@ import {
   CheckCircle2,
   MapPin,
   TrendingUp,
-  Shield,
   Phone,
-  Eye,
   Calendar,
   DollarSign,
-  FileCheck,
   Clock,
   Send,
   Upload,
@@ -36,11 +32,9 @@ import {
   Edit,
   Trash2,
   Plus,
-  Filter,
   X,
   Check,
   ChevronRight,
-  Star,
   BedDouble,
   Bath,
   Maximize,

@@ -28,7 +28,6 @@ import {
   Clock,
   Search,
   Download,
-  Filter,
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';

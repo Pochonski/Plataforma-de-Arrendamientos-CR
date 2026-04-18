@@ -11,32 +11,30 @@ import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { 
-  Search, 
-  Send, 
-  Image as ImageIcon, 
-  MessageSquare, 
-  FileText,
+import {
+  Search,
+  Send,
+  MessageSquare,
   CreditCard,
   Building2,
   Check,
   CheckCheck,
   Paperclip,
   RefreshCw,
+  FileText,
 } from 'lucide-react';
 import { Conversation, ConversationType, Message as MessageType } from '../../types';
 import { toast } from 'sonner';
 
 export default function Mensajes() {
   const { user } = useAuth();
-  const { 
-    properties, 
+  const {
+    properties,
     conversations,
     messages,
     fetchConversations,
     fetchMessages,
     sendMessage,
-    getConversationsByUserId,
     getMessagesByConversationId,
     markMessagesAsRead,
     getUserById,
@@ -129,7 +127,7 @@ export default function Mensajes() {
     : null;
 
   const conversationMessages = selectedConversationId
-    ? getMessagesByConversationId(selectedConversationId).sort((a, b) => 
+    ? getMessagesByConversationId(selectedConversationId).sort((a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       )
     : [];
@@ -387,7 +385,7 @@ export default function Mensajes() {
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
                     {conversationMessages.map((msg) => {
-                      const isOwn = msg.senderId === user?.id;
+                      const isOwn = String(msg.senderId) === String(user?.id);
 
                       return (
                         <div

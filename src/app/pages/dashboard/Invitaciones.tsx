@@ -64,8 +64,8 @@ export default function Invitaciones() {
     );
   });
 
-  const activeCount = myInvitations.filter((inv) => inv.estado === 'pendiente').length;
-  const acceptedCount = myInvitations.filter((inv) => inv.estado === 'aceptada').length;
+  const activeCount = myInvitations.filter(i => i.estado === 'pendiente').length;
+  const acceptedCount = myInvitations.filter(i => i.estado === 'aceptada').length;
 
   const formatPrice = (precio: number, moneda: string) => {
     const symbol = moneda === 'USD' ? '$' : '₡';
