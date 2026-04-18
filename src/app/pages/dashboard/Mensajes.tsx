@@ -57,11 +57,20 @@ export default function Mensajes() {
         conversations.flatMap(c => c.participants).filter(id => id !== user?.id)
       ));
 
+      console.log('Cargando nombres para participantes:', otherParticipantIds);
+
       for (const id of otherParticipantIds) {
         if (!userNames[id]) {
-          const userData = await getUserById(id);
-          if (userData) {
-            setUserNames(prev => ({ ...prev, [id]: userData.nombre }));
+          try {
+            const userData = await getUserById(id);
+            if (userData?.nombre) {
+              console.log(`Nombre recuperado para ${id}:`, userData.nombre);
+              setUserNames(prev => ({ ...prev, [id]: userData.nombre }));
+            } else {
+              console.warn(`No se encontró nombre para el usuario ${id}`);
+            }
+          } catch (err) {
+            console.error(`Error cargando nombre para ${id}:`, err);
           }
         }
       }
@@ -156,11 +165,6 @@ export default function Mensajes() {
     if (otherUserId && userNames[otherUserId]) {
       return userNames[otherUserId];
     }
-
-    // Fallbacks si no se ha cargado el nombre aún
-    if (otherUserId === 'usr-002') return 'Admin (Dueño)';
-    if (otherUserId === 'usr-003') return 'Inquilino Principal';
-    if (otherUserId === 'usr-004') return 'Nuevo Inquilino';
     
     return otherUserId ? `Usuario (${otherUserId})` : 'Conversación';
   };
