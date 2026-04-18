@@ -88,8 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Map role to backend format (dueño -> dueno)
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
+      const tempId = `usr-${Math.floor(Math.random() * 10000)}`;
 
-      const response = await fetch(`${apiUrl}/usuario`, {
+      const response = await fetch(`${apiUrl}/usuario/${tempId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
