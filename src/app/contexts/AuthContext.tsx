@@ -108,23 +108,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Respuesta de registro recibida:", response.status);
 
       if (response.ok) {
-        const createdUser = await response.json();
-        console.log("Cuerpo de la respuesta:", createdUser);
+        const responseText = await response.text();
+        if (!responseText) {
+          console.error("El servidor respondió 200 OK pero el cuerpo está vacío. Por favor, configura el Mock de APIM para devolver el objeto usuario creado.");
+          return false;
+        }
 
-        // Si el APIM devuelve el objeto, lo usamos
-        const userToSet = createdUser && (createdUser.id || createdUser.idUsuario) ? createdUser : {
-          id: `usr-${Date.now().toString().slice(-4)}`,
-          nombre,
-          correo,
-          rol: backendRol,
-          telefono: createdUser.telefono // Mapeo si existe
-        };
+        let createdUser = null;
+        try {
+          createdUser = JSON.parse(responseText);
+        } catch (e) {
+          console.error("Error parseando la respuesta del servidor:", e);
+          return false;
+        }
+
+        // Validamos que el objeto retornado tenga al menos un ID
+        if (createdUser && (createdUser.id || createdUser.idUsuario)) {
+          const normalized = normalizeUser(createdUser);
+          console.log("Registro exitoso, usuario recibido:", normalized);
+          setUser(normalized);
+          return true;
+        }
         
-        const normalized = normalizeUser(userToSet);
-        console.log("Usuario normalizado para el estado:", normalized);
-        
-        setUser(normalized);
-        return true;
+        console.error("La API no devolvió un objeto de usuario válido:", createdUser);
+        return false;
       } else {
         const errorText = await response.text();
         console.error("Error en la respuesta del servidor:", errorText);
