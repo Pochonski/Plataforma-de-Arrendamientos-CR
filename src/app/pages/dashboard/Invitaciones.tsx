@@ -53,7 +53,11 @@ export default function Invitaciones() {
     }
   };
 
-  const myInvitations = invitations.filter((inv) => inv.duenoId === user?.id);
+  const myInvitations = invitations.filter((inv) => {
+    const propertyOwnerId = properties.find((p) => p.id === inv.propiedadId)?.duenoId;
+    const invDuenoId = inv.duenoId || propertyOwnerId;
+    return invDuenoId === user?.id;
+  });
 
   const filteredInvitations = myInvitations.filter((invitation) => {
     const property = properties.find((p) => p.id === invitation.propiedadId);
