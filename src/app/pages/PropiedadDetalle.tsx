@@ -18,6 +18,7 @@ import {
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import type { Property } from '../types';
+import { formatPrice } from '../utils/formatters';
 
 export default function PropiedadDetalle() {
   const { id } = useParams<{ id: string }>();
@@ -70,11 +71,6 @@ export default function PropiedadDetalle() {
 
   const imagenes = property.imagenes ?? [];
   const caracteristicas = property.caracteristicas ?? [];
-
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
-  };
 
   const getTipoLabel = (tipo: string) => {
     const tipos: Record<string, string> = {

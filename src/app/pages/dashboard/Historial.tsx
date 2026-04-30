@@ -31,6 +31,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPrice, getMonthName, getPaymentStatusBadge } from '../../utils/formatters';
 
 export default function Historial() {
   const { user } = useAuth();
@@ -68,47 +69,6 @@ export default function Historial() {
   });
 
   const años = Array.from(new Set(myPayments.map((p) => p.año))).sort((a, b) => b - a);
-
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
-  };
-
-  const getMonthName = (mes: number) => {
-    const months = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    return months[mes - 1];
-  };
-
-  const getPaymentStatusBadge = (estado: string) => {
-    switch (estado) {
-      case 'pendiente':
-        return (
-          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
-            <Clock className="size-3 mr-1" />
-            Pendiente
-          </Badge>
-        );
-      case 'aprobado':
-        return (
-          <Badge className="bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400">
-            <CheckCircle2 className="size-3 mr-1" />
-            Aprobado
-          </Badge>
-        );
-      case 'rechazado':
-        return (
-          <Badge className="bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
-            <XCircle className="size-3 mr-1" />
-            Rechazado
-          </Badge>
-        );
-      default:
-        return <Badge>{estado}</Badge>;
-    }
-  };
 
   const totalAprobado = filteredPayments
     .filter((p) => p.estado === 'aprobado')

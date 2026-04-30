@@ -37,6 +37,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPrice, getDaysRemaining } from '../../utils/formatters';
 
 export default function Invitaciones() {
   const { user } = useAuth();
@@ -66,11 +67,6 @@ export default function Invitaciones() {
 
   const activeCount = myInvitations.filter(i => i.estado === 'pendiente').length;
   const acceptedCount = myInvitations.filter(i => i.estado === 'aceptada').length;
-
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
-  };
 
   const getStatusBadge = (estado: string) => {
     switch (estado) {
@@ -105,13 +101,6 @@ export default function Invitaciones() {
       default:
         return <Badge>{estado}</Badge>;
     }
-  };
-
-  const getDaysRemaining = (fechaExpiracion: Date) => {
-    const now = new Date();
-    const diff = new Date(fechaExpiracion).getTime() - now.getTime();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days > 0 ? days : 0;
   };
 
   const copyInvitationLink = async (token: string) => {

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
+import { formatPrice } from '../utils/formatters';
 
 export default function Landing() {
   const { properties } = useData();
@@ -41,11 +42,6 @@ export default function Landing() {
   
   // Obtener propiedades disponibles para mostrar
   const availableProperties = properties.filter(p => p.estado === 'disponible').slice(0, 6);
-  
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
-  };
 
   const features = [
     {

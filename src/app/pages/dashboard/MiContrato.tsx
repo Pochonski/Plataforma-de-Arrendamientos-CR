@@ -16,6 +16,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { downloadContractPDF } from '../../utils/export';
+import { formatPrice } from '../../utils/formatters';
 
 export default function MiContrato() {
   const { user } = useAuth();
@@ -77,11 +78,6 @@ export default function MiContrato() {
       </div>
     );
   }
-
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
-  };
 
   const getStatusBadge = (estado: string) => {
     switch (estado) {

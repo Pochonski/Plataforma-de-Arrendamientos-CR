@@ -53,7 +53,6 @@ export function DashboardLayout() {
   };
 
   const handleNavigate = (path: string) => {
-    console.log('Clicking navigation to:', path);
     navigate(path);
     setMobileMenuOpen(false);
   };

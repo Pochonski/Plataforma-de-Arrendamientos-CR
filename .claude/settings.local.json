@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(pnpm build:*)",
-      "WebFetch(domain:agreeable-ground-0b1436910.6.azurestaticapps.net)"
+      "WebFetch(domain:agreeable-ground-0b1436910.6.azurestaticapps.net)",
+      "Bash(npx madge:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

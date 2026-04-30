@@ -18,6 +18,8 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Search, MapPin, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Property } from '../types';
 import { toast } from 'sonner';
+import { formatPrice } from '../utils/formatters';
+import { PROVINCIAS, TIPOS_PROPIEDAD } from '../utils/constants';
 
 export default function Propiedades() {
   const { properties, propertiesTotal, propertiesPage, propertiesTotalPages, isLoadingProperties, fetchProperties } = useData();
@@ -29,24 +31,6 @@ export default function Propiedades() {
   const [selectedProvincia, setSelectedProvincia] = useState('todas');
   const [selectedTipo, setSelectedTipo] = useState('todos');
   const [selectedPrecio, setSelectedPrecio] = useState('todos');
-
-  const provincias = [
-    'San José',
-    'Alajuela',
-    'Cartago',
-    'Heredia',
-    'Guanacaste',
-    'Puntarenas',
-    'Limón',
-  ];
-
-  const tipos = [
-    { value: 'casa', label: 'Casa' },
-    { value: 'apartamento', label: 'Apartamento' },
-    { value: 'local', label: 'Local comercial' },
-    { value: 'bodega', label: 'Bodega' },
-    { value: 'oficina', label: 'Oficina' },
-  ];
 
   const rangosPrecios = [
     { value: '0-300000', label: 'Menos de ₡300,000' },
@@ -90,11 +74,6 @@ export default function Propiedades() {
     setSelectedTipo('todos');
     setSelectedPrecio('todos');
     fetchProperties(1, {});
-  };
-
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
   };
 
   const handleContactOwner = (property: Property) => {
@@ -209,7 +188,7 @@ export default function Propiedades() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas las provincias</SelectItem>
-                {provincias.map((provincia) => (
+                {PROVINCIAS.map((provincia) => (
                   <SelectItem key={provincia} value={provincia}>
                     {provincia}
                   </SelectItem>
@@ -223,7 +202,7 @@ export default function Propiedades() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos los tipos</SelectItem>
-                {tipos.map((tipo) => (
+                {TIPOS_PROPIEDAD.map((tipo) => (
                   <SelectItem key={tipo.value} value={tipo.value}>
                     {tipo.label}
                   </SelectItem>

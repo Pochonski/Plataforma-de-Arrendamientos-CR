@@ -16,6 +16,7 @@ import {
 } from '../../components/ui/select';
 import { ArrowLeft, Upload, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPrice } from '../../utils/formatters';
 
 export default function SubirComprobante() {
   const { user } = useAuth();
@@ -104,11 +105,6 @@ export default function SubirComprobante() {
   ];
 
   const años = [currentYear - 1, currentYear, currentYear + 1];
-
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

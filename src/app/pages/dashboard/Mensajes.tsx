@@ -72,17 +72,12 @@ export default function Mensajes() {
         conversations.flatMap(c => c.participants).filter(id => id !== user?.id)
       ));
 
-      console.log('Cargando nombres para participantes:', otherParticipantIds);
-
       for (const id of otherParticipantIds) {
         if (!userNames[id]) {
           try {
             const userData = await getUserById(id);
             if (userData?.nombre) {
-              console.log(`Nombre recuperado para ${id}:`, userData.nombre);
               setUserNames(prev => ({ ...prev, [id]: userData.nombre }));
-            } else {
-              console.warn(`No se encontró nombre para el usuario ${id}`);
             }
           } catch (err) {
             console.error(`Error cargando nombre para ${id}:`, err);

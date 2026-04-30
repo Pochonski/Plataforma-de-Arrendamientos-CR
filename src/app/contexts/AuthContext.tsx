@@ -1,10 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 
+interface GoogleCredentialResponse {
+  credential?: string;
+  select_by?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   login: (correo: string, contraseña: string) => Promise<boolean>;
-  loginWithGoogle: (credentialResponse: any) => Promise<boolean>;
+  loginWithGoogle: (credentialResponse: GoogleCredentialResponse) => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
@@ -26,9 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // LocalStorage ha sido removido según las reglas del proyecto.
-    // El usuario debe iniciar sesión al cargar la página manualmente
-    // validándose con la API de Azure APIM en la función de login.
+    // Session restored on page load via API validation in login()
   }, []);
 
   const login = async (correo: string, contraseña: string): Promise<boolean> => {
@@ -53,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
-  const loginWithGoogle = async (credentialResponse: any): Promise<boolean> => {
+  const loginWithGoogle = async (credentialResponse: GoogleCredentialResponse): Promise<boolean> => {
     try {
       // Verificar que credentialResponse tenga la estructura esperada
       if (!credentialResponse?.credential) {
@@ -94,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_APIM_KEY || '',
+          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '',
         },
         body: JSON.stringify({
           nombre,
@@ -107,12 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       });
 
-      console.log("Respuesta de registro recibida:", response.status);
-
       if (response.ok) {
         const responseText = await response.text();
         let createdUser = null;
-        
         if (responseText) {
           try {
             createdUser = JSON.parse(responseText);
@@ -120,26 +120,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Error parseando la respuesta del servidor:", e);
           }
         }
-
-        // Si el APIM devolvió un objeto válido, lo usamos.
-        // Si no (cuerpo vacío/eco), usamos los datos que enviamos + el tempId de la URL.
         if (createdUser && (createdUser.id || createdUser.idUsuario)) {
-          const normalized = normalizeUser(createdUser);
-          console.log("Registro exitoso con datos del servidor:", normalized);
-          setUser(normalized);
+          setUser(normalizeUser(createdUser));
           return true;
         } else {
-          // Fallback con los datos enviados y el ID de la URL
           const fallbackUser = {
             id: tempId,
             nombre,
             correo,
             rol: backendRol,
-            telefono: telefono // Si lo enviamos en los parámetros
+            telefono,
           };
-          const normalized = normalizeUser(fallbackUser);
-          console.log("Registro exitoso (usando datos enviados como respaldo):", normalized);
-          setUser(normalized);
+          setUser(normalizeUser(fallbackUser));
           return true;
         }
       } else {
@@ -154,14 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    // localstorage eliminado
   };
 
   const updateUser = (updates: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      // localstorage eliminado
+      setUser({ ...user, ...updates });
     }
   };
 

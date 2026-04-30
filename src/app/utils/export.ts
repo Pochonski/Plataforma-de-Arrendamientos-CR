@@ -1,11 +1,25 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 
-/**
- * Módulo Profesional de Exportación (Excel & PDF)
- */
+export type ExcelRow = Record<string, string | number | boolean | Date | null>;
 
-export const downloadExcel = (data: Array<Record<string, any>>, filename: string) => {
+export interface ContractPDFInfo {
+  id: string;
+  inquilinoNombre: string;
+  monto: string;
+  fechaInicio: string;
+  estado: string;
+}
+
+export interface PropertyPDFInfo {
+  titulo: string;
+  descripcion: string;
+  distrito: string;
+  canton: string;
+  provincia: string;
+}
+
+export const downloadExcel = (data: ExcelRow[], filename: string) => {
   if (!data || data.length === 0) return;
 
   const validData = data.filter(row => row !== null && typeof row === 'object');
@@ -13,7 +27,7 @@ export const downloadExcel = (data: Array<Record<string, any>>, filename: string
 
   // Convert dates and objects into primitive strings for Excel
   const cleanData = validData.map(row => {
-    const newRow: Record<string, any> = {};
+    const newRow: Record<string, string | number | boolean | null> = {};
     for (const key of Object.keys(row)) {
       let value = row[key];
       if (value instanceof Date) {
@@ -30,12 +44,12 @@ export const downloadExcel = (data: Array<Record<string, any>>, filename: string
   const worksheet = XLSX.utils.json_to_sheet(cleanData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
-  
+
   // Create XLSX file and trigger download
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 };
 
-export const downloadContractPDF = (contractInfo: any, propertyInfo: any, title: string) => {
+export const downloadContractPDF = (contractInfo: ContractPDFInfo, propertyInfo: PropertyPDFInfo, title: string) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

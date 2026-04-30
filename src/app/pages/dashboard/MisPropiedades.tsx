@@ -34,6 +34,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPrice } from '../../utils/formatters';
 
 export default function MisPropiedades() {
   const { user } = useAuth();
@@ -86,11 +87,6 @@ export default function MisPropiedades() {
     updateProperty(finishPropertyId, { estado: 'disponible' });
     setFinishPropertyId(null);
     setDepositResolution(null);
-  };
-
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
   };
 
   const getEstadoBadge = (estado: string) => {

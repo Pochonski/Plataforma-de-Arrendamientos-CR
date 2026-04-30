@@ -1,15 +1,120 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Property, Invitation, Payment, Contract, Notification, User, Conversation, Message, ConversationType, PropertyStatus, PropertyType, Currency, ContractStatus, DepositStatus } from '../types';
 
-const API_BASE = (import.meta as any).env.VITE_API_URL || '';
-const APIM_KEY = (import.meta as any).env.VITE_APIM_SUBSCRIPTION_KEY || '';
+// APIM raw response types — field names as the backend returns them
+interface APIMProperty {
+  id?: string;
+  titulo?: string;
+  descripcion?: string;
+  precio?: number | string;
+  moneda?: string;
+  provincia?: string;
+  canton?: string;
+  distrito?: string;
+  tipo?: string;
+  estado?: string;
+  imagenes?: string[];
+  duenoId?: string;
+  idDueno?: string;
+  caracteristicas?: string[];
+  amenidades?: string[];
+  createdAt?: string;
+  fechaCreacion?: string;
+}
+
+interface APIMContract {
+  id?: string;
+  invitacionId?: string;
+  idInvitacion?: string;
+  propiedadId?: string;
+  idPropiedad?: string;
+  duenoId?: string;
+  idDueno?: string;
+  inquilinoId?: string;
+  idInquilino?: string;
+  montoMensual?: number;
+  montoDeposito?: number;
+  deposito?: number;
+  moneda?: string;
+  fechaInicio?: string;
+  estado?: string;
+  estadoDeposito?: string;
+}
+
+interface APIMInvitation {
+  id?: string;
+  token?: string;
+  propiedadId?: string;
+  idPropiedad?: string;
+  duenoId?: string;
+  idDueno?: string;
+  inquilinoCorreo?: string;
+  correoInvitado?: string;
+  inquilinoId?: string;
+  idInquilino?: string;
+  estado?: string;
+  fechaEmision?: string;
+  fechaEnvio?: string;
+  fechaExpiracion?: string;
+  montoAlquiler?: number;
+  montoMensual?: number;
+  montoDeposito?: number;
+  deposito?: number;
+  moneda?: string;
+}
+
+interface APIMPayment {
+  id?: string;
+  tipo?: string;
+  contratoId?: string;
+  idContrato?: string;
+  propiedadId?: string;
+  idPropiedad?: string;
+  duenoId?: string;
+  idDueno?: string;
+  inquilinoId?: string;
+  idInquilino?: string;
+  mes?: number;
+  año?: number;
+  monto?: number;
+  moneda?: string;
+  comprobante?: string;
+  estado?: string;
+  fechaSubida?: string;
+  fechaRevision?: string;
+  motivoRechazo?: string;
+}
+
+interface APIMMessage {
+  id?: string;
+  idMensaje?: string;
+  conversationId?: string;
+  idConversacion?: string;
+  conversacionId?: string;
+  senderId?: string;
+  idRemitente?: string;
+  remitenteId?: string;
+  receiverId?: string;
+  idDestinatario?: string;
+  destinatarioId?: string;
+  content?: string;
+  contenido?: string;
+  mensaje?: string;
+  type?: string;
+  tipo?: string;
+  status?: string;
+  estado?: string;
+  timestamp?: string;
+  fecha?: string;
+}
+
+const API_BASE = import.meta.env.VITE_API_URL || '';
+const APIM_KEY = import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '';
 const PAGE_SIZE = 6;
 
-// ---------------------------------------------------------------------------
 // Normalization helpers — map APIM field names → frontend type field names
-// ---------------------------------------------------------------------------
 
-const normalizeProperty = (raw: any): Property => {
+const normalizeProperty = (raw: APIMProperty): Property => {
   // Handle price conversion (especially for APIM mocks that send "string" or actual strings)
   let precio = 0;
   if (typeof raw.precio === 'number') {
@@ -67,7 +172,7 @@ const denormalizeProperty = (p: Partial<Property>): any => {
   return raw;
 };
 
-const normalizeContract = (raw: any): Contract => ({
+const normalizeContract = (raw: APIMContract): Contract => ({
   id: raw.id ?? '',
   invitacionId: raw.invitacionId ?? raw.idInvitacion ?? '',
   // APIM uses idPropiedad; frontend uses propiedadId
@@ -85,7 +190,7 @@ const normalizeContract = (raw: any): Contract => ({
   estadoDeposito: (raw.estadoDeposito ?? 'pendiente') as DepositStatus,
 });
 
-const normalizeInvitation = (raw: any): Invitation => ({
+const normalizeInvitation = (raw: APIMInvitation): Invitation => ({
   id: raw.id ?? '',
   token: raw.token ?? '',
   // APIM uses idPropiedad; frontend uses propiedadId
@@ -101,7 +206,7 @@ const normalizeInvitation = (raw: any): Invitation => ({
   moneda: (raw.moneda ?? 'CRC') as Currency,
 });
 
-const normalizePayment = (raw: any): Payment => ({
+const normalizePayment = (raw: APIMPayment): Payment => ({
   id: raw.id ?? '',
   tipo: raw.tipo ?? 'mensualidad',
   // APIM uses idContrato; frontend uses contratoId
@@ -677,7 +782,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return newConversation;
   };
 
-  const normalizeMessage = (m: any): Message => ({
+  const normalizeMessage = (m: APIMMessage): Message => ({
     id: m.id ?? m.idMensaje ?? Math.random().toString(),
     conversationId: m.conversationId ?? m.idConversacion ?? m.conversacionId ?? '',
     senderId: m.senderId ?? m.idRemitente ?? m.remitenteId ?? '',

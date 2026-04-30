@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadExcel } from '../../utils/export';
+import { formatPrice, getMonthName, getPaymentStatusBadge } from '../../utils/formatters';
 
 export default function PagosRecibidos() {
   const { user } = useAuth();
@@ -73,36 +74,6 @@ export default function PagosRecibidos() {
   });
 
   const pendingCount = myPayments.filter((p) => p.estado === 'pendiente').length;
-
-  const formatPrice = (precio: number, moneda: string) => {
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
-  };
-
-  const getMonthName = (mes: number) => {
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return months[mes - 1];
-  };
-
-  const getPaymentStatusBadge = (estado: string) => {
-    switch (estado) {
-      case 'pendiente':
-        return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"><Clock className="size-3 mr-1" />Pendiente</Badge>;
-      case 'aprobado':
-        return <Badge className="bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"><CheckCircle2 className="size-3 mr-1" />Aprobado</Badge>;
-      case 'rechazado':
-        return <Badge className="bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400"><XCircle className="size-3 mr-1" />Rechazado</Badge>;
-      default:
-        return <Badge>{estado}</Badge>;
-    }
-  };
-
-  const getPaymentTypeBadge = (tipo?: string) => {
-    if (tipo === 'deposito') {
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Depósito</Badge>;
-    }
-    return <Badge variant="outline">Mensualidad</Badge>;
-  };
 
   const handleApprove = (paymentId: string) => {
     const payment = payments.find(p => p.id === paymentId);
