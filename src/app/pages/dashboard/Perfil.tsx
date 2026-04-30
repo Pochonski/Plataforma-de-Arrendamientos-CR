@@ -15,13 +15,19 @@ export default function Perfil() {
   const [correo, setCorreo] = useState(user?.correo || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
 
-    if (!nombre.trim() || !correo.trim()) {
-      setError('Por favor completa todos los campos');
+    const errors: Record<string, string> = {};
+    if (!nombre.trim()) errors.nombre = 'Por favor completa tu nombre';
+    if (!correo.trim()) errors.correo = 'Por favor completa el correo';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -107,12 +113,20 @@ export default function Perfil() {
                     <Input
                       id="nombre"
                       placeholder="Tu nombre"
-                      className="pl-10"
+                      className={`pl-10 ${fieldErrors.nombre ? 'border-destructive' : ''}`}
                       value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
+                      onChange={(e) => {
+                        setNombre(e.target.value);
+                        if (fieldErrors.nombre) setFieldErrors(prev => ({ ...prev, nombre: '' }));
+                      }}
                       disabled={isLoading}
                     />
                   </div>
+                  {fieldErrors.nombre && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="size-3" /> {fieldErrors.nombre}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -123,12 +137,20 @@ export default function Perfil() {
                       id="correo"
                       type="email"
                       placeholder="tucorreo@ejemplo.com"
-                      className="pl-10"
+                      className={`pl-10 ${fieldErrors.correo ? 'border-destructive' : ''}`}
                       value={correo}
-                      onChange={(e) => setCorreo(e.target.value)}
+                      onChange={(e) => {
+                        setCorreo(e.target.value);
+                        if (fieldErrors.correo) setFieldErrors(prev => ({ ...prev, correo: '' }));
+                      }}
                       disabled={isLoading}
                     />
                   </div>
+                  {fieldErrors.correo && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="size-3" /> {fieldErrors.correo}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

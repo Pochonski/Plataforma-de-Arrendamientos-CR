@@ -24,6 +24,7 @@ export default function Registro() {
   const [telefono, setTelefono] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   
   const { register } = useAuth();
@@ -39,9 +40,17 @@ export default function Registro() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    if (!nombre || !correo || !contraseña || !confirmarContraseña || !telefono) {
-      setError('Por favor completa todos los campos');
+    setFieldErrors({});
+
+    const errors: Record<string, string> = {};
+    if (!nombre.trim()) errors.nombre = 'Por favor completa tu nombre';
+    if (!correo.trim()) errors.correo = 'Por favor completa el correo';
+    if (!telefono.trim()) errors.telefono = 'Por favor completa el teléfono';
+    if (!contraseña) errors.contraseña = 'Por favor completa la contraseña';
+    if (!confirmarContraseña) errors.confirmarContraseña = 'Por favor confirma la contraseña';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -63,7 +72,6 @@ export default function Registro() {
     setIsLoading(true);
     
     try {
-      console.log("Iniciando llamada a register con:", { nombre, correo, rol, telefono });
       const success = await register(nombre, correo, contraseña, rol, telefono);
       if (success) {
         toast.success('¡Cuenta creada exitosamente!');
@@ -117,12 +125,20 @@ export default function Registro() {
                         id="nombre"
                         type="text"
                         placeholder="Juan Pérez"
-                        className="pl-10"
+                        className={`pl-10 ${fieldErrors.nombre ? 'border-destructive' : ''}`}
                         value={nombre}
-                        onChange={(e) => setNombre(e.target.value)}
+                        onChange={(e) => {
+                          setNombre(e.target.value);
+                          if (fieldErrors.nombre) setFieldErrors(prev => ({ ...prev, nombre: '' }));
+                        }}
                         disabled={isLoading}
                       />
                     </div>
+                    {fieldErrors.nombre && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="size-3" /> {fieldErrors.nombre}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -133,12 +149,20 @@ export default function Registro() {
                         id="telefono"
                         type="tel"
                         placeholder="8888-8888"
-                        className="pl-10"
+                        className={`pl-10 ${fieldErrors.telefono ? 'border-destructive' : ''}`}
                         value={telefono}
-                        onChange={(e) => setTelefono(e.target.value)}
+                        onChange={(e) => {
+                          setTelefono(e.target.value);
+                          if (fieldErrors.telefono) setFieldErrors(prev => ({ ...prev, telefono: '' }));
+                        }}
                         disabled={isLoading}
                       />
                     </div>
+                    {fieldErrors.telefono && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="size-3" /> {fieldErrors.telefono}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -149,12 +173,20 @@ export default function Registro() {
                         id="correo"
                         type="email"
                         placeholder="tucorreo@ejemplo.com"
-                        className="pl-10"
+                        className={`pl-10 ${fieldErrors.correo ? 'border-destructive' : ''}`}
                         value={correo}
-                        onChange={(e) => setCorreo(e.target.value)}
+                        onChange={(e) => {
+                          setCorreo(e.target.value);
+                          if (fieldErrors.correo) setFieldErrors(prev => ({ ...prev, correo: '' }));
+                        }}
                         disabled={isLoading}
                       />
                     </div>
+                    {fieldErrors.correo && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="size-3" /> {fieldErrors.correo}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -165,12 +197,20 @@ export default function Registro() {
                         id="contraseña"
                         type="password"
                         placeholder="••••••••"
-                        className="pl-10"
+                        className={`pl-10 ${fieldErrors.contraseña ? 'border-destructive' : ''}`}
                         value={contraseña}
-                        onChange={(e) => setContraseña(e.target.value)}
+                        onChange={(e) => {
+                          setContraseña(e.target.value);
+                          if (fieldErrors.contraseña) setFieldErrors(prev => ({ ...prev, contraseña: '' }));
+                        }}
                         disabled={isLoading}
                       />
                     </div>
+                    {fieldErrors.contraseña && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="size-3" /> {fieldErrors.contraseña}
+                      </p>
+                    )}
                     {contraseña && (
                       <div className="space-y-1 text-xs">
                         <div className={hasMinLength ? 'text-green-600' : 'text-muted-foreground'}>
@@ -194,12 +234,20 @@ export default function Registro() {
                         id="confirmarContraseña"
                         type="password"
                         placeholder="••••••••"
-                        className="pl-10"
+                        className={`pl-10 ${fieldErrors.confirmarContraseña ? 'border-destructive' : ''}`}
                         value={confirmarContraseña}
-                        onChange={(e) => setConfirmarContraseña(e.target.value)}
+                        onChange={(e) => {
+                          setConfirmarContraseña(e.target.value);
+                          if (fieldErrors.confirmarContraseña) setFieldErrors(prev => ({ ...prev, confirmarContraseña: '' }));
+                        }}
                         disabled={isLoading}
                       />
                     </div>
+                    {fieldErrors.confirmarContraseña && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="size-3" /> {fieldErrors.confirmarContraseña}
+                      </p>
+                    )}
                   </div>
                 </div>
 

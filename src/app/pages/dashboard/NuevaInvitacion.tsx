@@ -15,6 +15,7 @@ import {
 } from '../../components/ui/select';
 import { ArrowLeft, Mail, AlertCircle, CheckCircle2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPrice } from '../../utils/formatters';
 
 export default function NuevaInvitacion() {
   const { user } = useAuth();
@@ -29,6 +30,7 @@ export default function NuevaInvitacion() {
   const [montoDeposito, setMontoDeposito] = useState('');
   const [moneda, setMoneda] = useState<'CRC' | 'USD'>('CRC');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [createdInvitation, setCreatedInvitation] = useState<any>(null);
 
@@ -37,9 +39,15 @@ export default function NuevaInvitacion() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
 
-    if (!propiedadId || !montoAlquiler || !montoDeposito) {
-      setError('Por favor completa todos los campos obligatorios');
+    const errors: Record<string, string> = {};
+    if (!propiedadId) errors.propiedadId = 'Por favor selecciona la propiedad';
+    if (!montoAlquiler) errors.montoAlquiler = 'Por favor ingresa el monto de alquiler';
+    if (!montoDeposito) errors.montoDeposito = 'Por favor ingresa el monto del depósito';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -103,12 +111,6 @@ export default function NuevaInvitacion() {
         }
       }
     }
-  };
-
-  const formatPrice = (precio: number | undefined, moneda: string | undefined) => {
-    if (precio == null) return '—';
-    const symbol = moneda === 'USD' ? '$' : '₡';
-    return `${symbol}${precio.toLocaleString('es-CR')}`;
   };
 
   if (createdInvitation) {
@@ -265,6 +267,7 @@ export default function NuevaInvitacion() {
                 value={propiedadId}
                 onValueChange={(value) => {
                   setPropiedadId(value);
+                  if (fieldErrors.propiedadId) setFieldErrors(prev => ({ ...prev, propiedadId: '' }));
                   const prop = properties.find((p) => p.id === value);
                   if (prop) {
                     setMontoAlquiler(prop.precio.toString());
@@ -274,7 +277,7 @@ export default function NuevaInvitacion() {
                 }}
                 disabled={isLoading || myProperties.length === 0}
               >
-                <SelectTrigger>
+                <SelectTrigger className={fieldErrors.propiedadId ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Selecciona una propiedad" />
                 </SelectTrigger>
                 <SelectContent>
@@ -285,6 +288,11 @@ export default function NuevaInvitacion() {
                   ))}
                 </SelectContent>
               </Select>
+              {fieldErrors.propiedadId && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="size-3" /> {fieldErrors.propiedadId}
+                </p>
+              )}
             </div>
 
             {selectedProperty && (
@@ -303,10 +311,19 @@ export default function NuevaInvitacion() {
                   id="monto"
                   type="number"
                   placeholder="850000"
+                  className={fieldErrors.montoAlquiler ? 'border-destructive' : ''}
                   value={montoAlquiler}
-                  onChange={(e) => setMontoAlquiler(e.target.value)}
+                  onChange={(e) => {
+                    setMontoAlquiler(e.target.value);
+                    if (fieldErrors.montoAlquiler) setFieldErrors(prev => ({ ...prev, montoAlquiler: '' }));
+                  }}
                   disabled={isLoading}
                 />
+                {fieldErrors.montoAlquiler && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="size-3" /> {fieldErrors.montoAlquiler}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -315,8 +332,12 @@ export default function NuevaInvitacion() {
                   id="deposito"
                   type="number"
                   placeholder="850000"
+                  className={fieldErrors.montoDeposito ? 'border-destructive' : ''}
                   value={montoDeposito}
-                  onChange={(e) => setMontoDeposito(e.target.value)}
+                  onChange={(e) => {
+                    setMontoDeposito(e.target.value);
+                    if (fieldErrors.montoDeposito) setFieldErrors(prev => ({ ...prev, montoDeposito: '' }));
+                  }}
                   disabled={isLoading}
                 />
                 <p className="text-xs text-muted-foreground">Por ley suele ser equivalente a un mes</p>

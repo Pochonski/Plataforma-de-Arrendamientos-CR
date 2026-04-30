@@ -16,6 +16,7 @@ export default function Login() {
   const [recordarme, setRecordarme] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -24,9 +25,14 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    if (!correo || !contraseña) {
-      setError('Por favor completa todos los campos');
+    setFieldErrors({});
+
+    const errors: Record<string, string> = {};
+    if (!correo.trim()) errors.correo = 'Por favor completa el correo';
+    if (!contraseña) errors.contraseña = 'Por favor completa la contraseña';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -80,12 +86,20 @@ export default function Login() {
                       id="correo"
                       type="email"
                       placeholder="tucorreo@ejemplo.com"
-                      className="pl-10"
+                      className={`pl-10 ${fieldErrors.correo ? 'border-destructive' : ''}`}
                       value={correo}
-                      onChange={(e) => setCorreo(e.target.value)}
+                      onChange={(e) => {
+                        setCorreo(e.target.value);
+                        if (fieldErrors.correo) setFieldErrors(prev => ({ ...prev, correo: '' }));
+                      }}
                       disabled={isLoading}
                     />
                   </div>
+                  {fieldErrors.correo && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="size-3" /> {fieldErrors.correo}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -96,12 +110,20 @@ export default function Login() {
                       id="contraseña"
                       type="password"
                       placeholder="••••••••"
-                      className="pl-10"
+                      className={`pl-10 ${fieldErrors.contraseña ? 'border-destructive' : ''}`}
                       value={contraseña}
-                      onChange={(e) => setContraseña(e.target.value)}
+                      onChange={(e) => {
+                        setContraseña(e.target.value);
+                        if (fieldErrors.contraseña) setFieldErrors(prev => ({ ...prev, contraseña: '' }));
+                      }}
                       disabled={isLoading}
                     />
                   </div>
+                  {fieldErrors.contraseña && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="size-3" /> {fieldErrors.contraseña}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -109,7 +131,9 @@ export default function Login() {
                     <Checkbox
                       id="recordarme"
                       checked={recordarme}
-                      onCheckedChange={(checked) => setRecordarme(checked as boolean)}
+                      onCheckedChange={(checked) => {
+                        if (checked !== 'indeterminate') setRecordarme(checked);
+                      }}
                     />
                     <label
                       htmlFor="recordarme"
