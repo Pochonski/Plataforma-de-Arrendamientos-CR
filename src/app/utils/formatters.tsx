@@ -45,3 +45,14 @@ export const getInitials = (nombre: string): string => {
     .join('')
     .toUpperCase();
 };
+
+export const getPaymentTypeBadge = (tipo: string): JSX.Element => {
+  switch (tipo) {
+    case 'mensualidad':
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400">Mensualidad</Badge>;
+    case 'deposito':
+      return <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400">Depósito</Badge>;
+    default:
+      return <Badge>{tipo}</Badge>;
+  }
+};

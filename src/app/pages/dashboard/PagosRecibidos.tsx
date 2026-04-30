@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadExcel } from '../../utils/export';
-import { formatPrice, getMonthName, getPaymentStatusBadge } from '../../utils/formatters';
+import { formatPrice, getMonthName, getPaymentStatusBadge, getPaymentTypeBadge } from '../../utils/formatters';
 
 export default function PagosRecibidos() {
   const { user } = useAuth();

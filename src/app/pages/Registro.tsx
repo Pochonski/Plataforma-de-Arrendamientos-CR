@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
-import { UserPlus, Mail, Lock, User, AlertCircle, Building2, Home } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, AlertCircle, Building2, Home, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Registro() {
@@ -26,7 +26,9 @@ export default function Registro() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showRoleSelection, setShowRoleSelection] = useState(false);
-  
+  const [showPassword, setShowPassword] = useState(true);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(true);
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -195,9 +197,9 @@ export default function Registro() {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                       <Input
                         id="contraseña"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="••••••••"
-                        className={`pl-10 ${fieldErrors.contraseña ? 'border-destructive' : ''}`}
+                        className={`pl-10 pr-10 ${fieldErrors.contraseña ? 'border-destructive' : ''}`}
                         value={contraseña}
                         onChange={(e) => {
                           setContraseña(e.target.value);
@@ -205,6 +207,13 @@ export default function Registro() {
                         }}
                         disabled={isLoading}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
                     </div>
                     {fieldErrors.contraseña && (
                       <p className="text-sm text-destructive flex items-center gap-1">
@@ -232,9 +241,9 @@ export default function Registro() {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                       <Input
                         id="confirmarContraseña"
-                        type="password"
+                        type={showConfirmPassword ? 'text' : 'password'}
                         placeholder="••••••••"
-                        className={`pl-10 ${fieldErrors.confirmarContraseña ? 'border-destructive' : ''}`}
+                        className={`pl-10 pr-10 ${fieldErrors.confirmarContraseña ? 'border-destructive' : ''}`}
                         value={confirmarContraseña}
                         onChange={(e) => {
                           setConfirmarContraseña(e.target.value);
@@ -242,6 +251,13 @@ export default function Registro() {
                         }}
                         disabled={isLoading}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
                     </div>
                     {fieldErrors.confirmarContraseña && (
                       <p className="text-sm text-destructive flex items-center gap-1">
