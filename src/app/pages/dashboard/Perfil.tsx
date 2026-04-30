@@ -1,23 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useData } from '../../contexts/DataContext';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
-import { User, Mail, Shield, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Shield, Save, AlertCircle, CheckCircle2, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Perfil() {
   const { user, updateUser } = useAuth();
-  const [nombre, setNombre] = useState(user?.nombre || '');
-  const [correo, setCorreo] = useState(user?.correo || '');
+  const { getUserById } = useData();
+  const [nombre, setNombre] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user?.id) {
+      getUserById(user.id).then((fetched) => {
+        if (fetched) {
+          setNombre(fetched.nombre);
+          setCorreo(fetched.correo);
+          setTelefono(fetched.telefono || '');
+        }
+      });
+    }
+  }, [user?.id, getUserById]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setFieldErrors({});
@@ -32,9 +47,10 @@ export default function Perfil() {
     }
 
     setIsLoading(true);
+    setError('');
 
     try {
-      updateUser({ nombre, correo });
+      await updateUser({ nombre, correo, telefono });
       toast.success('Perfil actualizado exitosamente');
     } catch (err) {
       setError('Error al actualizar el perfil');
@@ -151,6 +167,22 @@ export default function Perfil() {
                       <AlertCircle className="size-3" /> {fieldErrors.correo}
                     </p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="telefono">Teléfono</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <Input
+                      id="telefono"
+                      type="tel"
+                      placeholder="8888-8888"
+                      className="pl-10"
+                      value={telefono}
+                      onChange={(e) => setTelefono(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">

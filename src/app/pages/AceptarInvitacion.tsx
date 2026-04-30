@@ -49,15 +49,14 @@ export default function AceptarInvitacion() {
       return;
     }
 
-    const inv = getInvitationByToken(token);
-    if (inv) {
-      setInvitation(inv);
-      const prop = getPropertyById(inv.propiedadId);
-      const ownerData = getUserById(inv.duenoId);
-      setProperty(prop);
-      setOwner(ownerData);
-    }
-    setLoading(false);
+    getInvitationByToken(token).then((inv) => {
+      if (inv) {
+        setInvitation(inv);
+        getPropertyById(inv.propiedadId).then((prop) => setProperty(prop || null));
+        getUserById(inv.duenoId).then((ownerData) => setOwner(ownerData || null));
+      }
+      setLoading(false);
+    });
   }, [token, getInvitationByToken, getPropertyById, getUserById, navigate]);
 
   const handleAccept = async () => {
@@ -67,13 +66,13 @@ export default function AceptarInvitacion() {
 
     try {
       // Actualizar estado de la invitación
-      updateInvitation(invitation.id, {
+      await updateInvitation(invitation.id, {
         estado: 'aceptada',
         inquilinoId: user.id,
       });
 
       // Crear el contrato
-      createContract({
+      await createContract({
         invitacionId: invitation.id,
         propiedadId: invitation.propiedadId,
         duenoId: invitation.duenoId,
@@ -87,12 +86,12 @@ export default function AceptarInvitacion() {
       });
 
       // Actualizar estado de la propiedad a "alquilada" para que ya no aparezca disponible
-      updateProperty(property.id, {
+      await updateProperty(property.id, {
         estado: 'alquilada',
       });
 
       // Notificar al dueño
-      addNotification({
+      await addNotification({
         userId: invitation.duenoId,
         tipo: 'invitacion_aceptada',
         titulo: 'Invitación aceptada',

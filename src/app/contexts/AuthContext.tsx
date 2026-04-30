@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
+import { useData } from './DataContext';
 
 interface GoogleCredentialResponse {
   credential?: string;
@@ -144,14 +145,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
+  const { updateUser: updateUserApi } = useData();
+
   const logout = () => {
     setUser(null);
   };
 
-  const updateUser = (updates: Partial<User>) => {
-    if (user) {
-      setUser({ ...user, ...updates });
-    }
+  const updateUser = async (updates: Partial<User>) => {
+    if (!user) return;
+    const updated = await updateUserApi(user.id, updates);
+    setUser(updated);
   };
 
   return (

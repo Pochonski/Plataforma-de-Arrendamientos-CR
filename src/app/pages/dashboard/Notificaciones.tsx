@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Button } from '../../components/ui/button';
@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 export default function Notificaciones() {
   const { user } = useAuth();
   const { notifications, markNotificationAsRead, getUnreadCount, fetchNotifications, isLoadingNotifications } = useData();
+  const navigate = useNavigate();
 
   const handleRefresh = async () => {
     if (user?.id) {
@@ -109,6 +110,15 @@ export default function Notificaciones() {
     return 'Hace un momento';
   };
 
+  const handleNotificationClick = (notification: typeof myNotifications[0]) => {
+    if (!notification.leida) {
+      markNotificationAsRead(notification.id);
+    }
+    if (notification.link) {
+      navigate(notification.link);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -119,10 +129,10 @@ export default function Notificaciones() {
             Mantente al día con todas tus actualizaciones
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          size="lg" 
-          onClick={handleRefresh} 
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={handleRefresh}
           disabled={isLoadingNotifications}
           className="w-full sm:w-auto"
         >
@@ -170,9 +180,10 @@ export default function Notificaciones() {
           filteredNotifications.map((notification) => (
             <Card
               key={notification.id}
-              className={`transition-all ${
+              className={`transition-all cursor-pointer ${
                 !notification.leida ? 'border-primary/50 bg-primary/5' : ''
               }`}
+              onClick={() => handleNotificationClick(notification)}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
@@ -197,14 +208,16 @@ export default function Notificaciones() {
                     </div>
 
                     {notification.link && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="mt-2 h-8 px-3"
-                        asChild
-                      >
-                        <Link to={notification.link}>Ver detalles</Link>
-                      </Button>
+                      <div className="flex items-center gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-3"
+                          asChild
+                        >
+                          <Link to={notification.link}>Ver detalles</Link>
+                        </Button>
+                      </div>
                     )}
                   </div>
 
@@ -214,7 +227,10 @@ export default function Notificaciones() {
                         size="icon"
                         variant="ghost"
                         className="size-8"
-                        onClick={() => handleMarkAsRead(notification.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkAsRead(notification.id);
+                        }}
                       >
                         <Check className="size-4" />
                       </Button>

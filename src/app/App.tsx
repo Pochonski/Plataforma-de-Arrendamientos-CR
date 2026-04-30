@@ -8,12 +8,12 @@ import { router } from './routes';
 export default function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <AuthProvider>
-        <DataProvider>
+      <DataProvider>
+        <AuthProvider>
           <RouterProvider router={router} />
           <Toaster />
-        </DataProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </DataProvider>
     </ThemeProvider>
   );
 }

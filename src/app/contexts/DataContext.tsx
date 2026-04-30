@@ -298,11 +298,13 @@ interface DataContextType {
   fetchNotifications: (userId?: string) => Promise<void>;
   addNotification: (notification: Omit<Notification, 'id'>) => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
+  markNotificationAsUnread: (id: string) => Promise<void>;
   getUnreadCount: (userId: string) => number;
   getUnreadMessagesCount: (userId: string) => number;
 
   // Users
   getUserById: (id: string) => Promise<User | undefined>;
+  updateUser: (id: string, data: Partial<User>) => Promise<User>;
 
   // Conversations & Messages
   conversations: Conversation[];
@@ -490,7 +492,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const newInvitation: Invitation = await res.json();
+    const raw = await res.json();
+    const newInvitation = normalizeInvitation(raw as APIMInvitation);
     await fetchInvitations();
     return newInvitation;
   };
@@ -716,6 +719,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const markNotificationAsUnread = async (id: string) => {
+    const res = await fetch(`${API_BASE}/notificaciones/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ leida: false }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, leida: false } : n)
+    );
+  };
+
   const getUnreadCount = (userId: string) => {
     return notifications.filter(n => !n.leida).length;
   };
@@ -886,6 +903,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUser = async (id: string, data: Partial<User>): Promise<User> => {
+    const res = await fetch(`${API_BASE}/usuario/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const updated: User = await res.json();
+    return updated;
+  };
+
   // Initial fetch on mount
   useEffect(() => {
     fetchProperties(1);
@@ -928,9 +957,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         fetchNotifications,
         addNotification,
         markNotificationAsRead,
+        markNotificationAsUnread,
         getUnreadCount,
         getUnreadMessagesCount,
         getUserById,
+        updateUser,
         conversations,
         isLoadingConversations,
         fetchConversations,

@@ -36,7 +36,7 @@ export default function NuevaInvitacion() {
 
   const selectedProperty = properties.find((p) => p.id === propiedadId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setFieldErrors({});
@@ -59,7 +59,7 @@ export default function NuevaInvitacion() {
     setIsLoading(true);
 
     try {
-      const invitation = createInvitation({
+      const invitation = await createInvitation({
         propiedadId,
         duenoId: user?.id || '',
         inquilinoCorreo: inquilinoCorreo || undefined,
