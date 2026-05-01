@@ -4,7 +4,21 @@
       "Bash(pnpm build:*)",
       "WebFetch(domain:agreeable-ground-0b1436910.6.azurestaticapps.net)",
       "Bash(npx madge:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(az functionapp function:*)",
+      "Bash(az functionapp:*)",
+      "Read(//c/Users/josep/OneDrive - Secsa/Documentos/Joseph/TEC/SEM 1 2026/Diseño de software/Proyecto 1/Arrendamientos CR/arrendamientos-api/**)",
+      "Bash(func function:*)",
+      "Bash(dir /s /b)",
+      "Bash(func azure:*)",
+      "Bash(cat .env)",
+      "Bash(cat .env.local)",
+      "Bash(az staticwebapp backends unlink:*)",
+      "Bash(az webapp auth show:*)",
+      "Bash(az webapp auth update:*)",
+      "Bash(curl.exe:*)",
+      "Bash(az staticwebapp functions list:*)",
+      "Bash(az staticwebapp backends:*)"
     ]
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
@@ -44,12 +44,18 @@ export default function MisPropiedades() {
 
   const handleRefresh = async () => {
     try {
-      await fetchProperties(1);
+      await fetchProperties(1, { duenoId: user?.id });
       toast.success('Lista de propiedades actualizada');
     } catch (error) {
       toast.error('Error al actualizar');
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProperties(1, { duenoId: user.id });
+    }
+  }, [user?.id, fetchProperties]);
   
   // Finish Contract State
   const [finishPropertyId, setFinishPropertyId] = useState<string | null>(null);

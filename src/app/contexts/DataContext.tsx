@@ -254,6 +254,7 @@ interface FilterParams {
   tipo?: string;
   precioMin?: number;
   precioMax?: number;
+  duenoId?: string;
 }
 
 interface DataContextType {
@@ -362,6 +363,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (filters.tipo && filters.tipo !== 'todos') params.append('tipo', filters.tipo);
         if (filters.precioMin !== undefined) params.append('precioMin', filters.precioMin.toString());
         if (filters.precioMax !== undefined) params.append('precioMax', filters.precioMax.toString());
+        if (filters.duenoId) params.append('duenoId', filters.duenoId);
       }
 
       const res = await fetch(`${API_BASE}/propiedades?${params}`, {
