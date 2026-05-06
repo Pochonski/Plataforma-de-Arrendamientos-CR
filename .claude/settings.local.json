@@ -18,7 +18,8 @@
       "Bash(az webapp auth update:*)",
       "Bash(curl.exe:*)",
       "Bash(az staticwebapp functions list:*)",
-      "Bash(az staticwebapp backends:*)"
+      "Bash(az staticwebapp backends:*)",
+      "Bash(git push:*)"
     ]
   }
 }
