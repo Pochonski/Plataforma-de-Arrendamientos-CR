@@ -109,6 +109,7 @@ interface APIMMessage {
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
+const APIM_URL = import.meta.env.VITE_APIM_URL || '';
 const APIM_KEY = import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '';
 const PAGE_SIZE = 6;
 
@@ -366,7 +367,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (filters.duenoId) params.append('duenoId', filters.duenoId);
       }
 
-      const res = await fetch(`${API_BASE}/propiedades?${params}`, {
+      const res = await fetch(`${APIM_URL}/propiedades?${params}`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -404,7 +405,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addProperty = async (property: Omit<Property, 'id' | 'createdAt'>): Promise<Property> => {
     const raw = denormalizeProperty(property as any);
-    const res = await fetch(`${API_BASE}/propiedades`, {
+    const res = await fetch(`${APIM_URL}/propiedades`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(raw),
@@ -423,7 +424,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // We include the ID in the body as well, just in case the backend requires it
     const raw = denormalizeProperty({ ...updates, id });
     
-    const res = await fetch(`${API_BASE}/propiedades/${id}`, {
+    const res = await fetch(`${APIM_URL}/propiedades/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(raw),
@@ -437,7 +438,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteProperty = async (id: string) => {
-    const res = await fetch(`${API_BASE}/propiedades/${id}`, {
+    const res = await fetch(`${APIM_URL}/propiedades/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -450,7 +451,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const getPropertyById = async (id: string): Promise<Property | undefined> => {
     try {
-      const res = await fetch(`${API_BASE}/propiedades/${id}`, {
+      const res = await fetch(`${APIM_URL}/propiedades/${id}`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -467,7 +468,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const fetchInvitations = useCallback(async () => {
     setIsLoadingInvitations(true);
     try {
-      const res = await fetch(`${API_BASE}/invitaciones`, {
+      const res = await fetch(`${APIM_URL}/invitaciones`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -486,7 +487,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createInvitation = async (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>): Promise<Invitation> => {
-    const res = await fetch(`${API_BASE}/invitaciones`, {
+    const res = await fetch(`${APIM_URL}/invitaciones`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(invitation),
@@ -501,7 +502,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateInvitation = async (id: string, updates: Partial<Invitation>) => {
-    const res = await fetch(`${API_BASE}/invitaciones/${id}`, {
+    const res = await fetch(`${APIM_URL}/invitaciones/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(updates),
@@ -518,7 +519,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // APIM does NOT have /invitaciones/token/{token}.
     // Fetch all invitations from /invitaciones and filter by token.
     try {
-      const res = await fetch(`${API_BASE}/invitaciones`, {
+      const res = await fetch(`${APIM_URL}/invitaciones`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -536,7 +537,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const fetchContracts = useCallback(async () => {
     setIsLoadingContracts(true);
     try {
-      const res = await fetch(`${API_BASE}/contratos`, {
+      const res = await fetch(`${APIM_URL}/contratos`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -555,7 +556,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createContract = async (contract: Omit<Contract, 'id'>): Promise<Contract> => {
-    const res = await fetch(`${API_BASE}/contratos`, {
+    const res = await fetch(`${APIM_URL}/contratos`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(contract),
@@ -569,7 +570,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateContract = async (id: string, updates: Partial<Contract>) => {
-    const res = await fetch(`${API_BASE}/contratos/${id}`, {
+    const res = await fetch(`${APIM_URL}/contratos/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(updates),
@@ -586,7 +587,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Calls GET /contratos/{inquilinoId} — APIM returns only this user's contract.
     // Response is a single object (or null), NOT the full list.
     try {
-      const res = await fetch(`${API_BASE}/contratos/${inquilinoId}`, {
+      const res = await fetch(`${APIM_URL}/contratos/${inquilinoId}`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -607,7 +608,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const fetchPayments = useCallback(async (userId?: string) => {
     setIsLoadingPayments(true);
     try {
-      const url = userId ? `${API_BASE}/pagos/${userId}` : `${API_BASE}/pagos`;
+      const url = userId ? `${APIM_URL}/pagos/${userId}` : `${APIM_URL}/pagos`;
       const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
@@ -627,7 +628,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addPayment = async (payment: Omit<Payment, 'id'>): Promise<Payment> => {
     const raw = denormalizePayment(payment as any);
-    const res = await fetch(`${API_BASE}/pagos`, {
+    const res = await fetch(`${APIM_URL}/pagos`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(raw),
@@ -643,7 +644,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updatePayment = async (id: string, updates: Partial<Payment>) => {
     try {
       const raw = denormalizePayment({ ...updates, id });
-      const res = await fetch(`${API_BASE}/pagos/${id}`, {
+      const res = await fetch(`${APIM_URL}/pagos/${id}`, {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify(raw),
@@ -668,7 +669,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const fetchNotifications = useCallback(async (userId?: string) => {
     setIsLoadingNotifications(true);
     try {
-      const endpoint = userId ? `${API_BASE}/notificaciones/${userId}` : `${API_BASE}/notificaciones`;
+      const endpoint = userId ? `${APIM_URL}/notificaciones/${userId}` : `${APIM_URL}/notificaciones`;
       const res = await fetch(endpoint, {
         method: 'GET',
         headers: getHeaders(),
@@ -695,7 +696,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addNotification = async (notification: Omit<Notification, 'id'>) => {
-    const res = await fetch(`${API_BASE}/notificaciones`, {
+    const res = await fetch(`${APIM_URL}/notificaciones`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(notification),
@@ -708,7 +709,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const markNotificationAsRead = async (id: string) => {
-    const res = await fetch(`${API_BASE}/notificaciones/${id}`, {
+    const res = await fetch(`${APIM_URL}/notificaciones/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ leida: true }),
@@ -722,7 +723,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const markNotificationAsUnread = async (id: string) => {
-    const res = await fetch(`${API_BASE}/notificaciones/${id}`, {
+    const res = await fetch(`${APIM_URL}/notificaciones/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ leida: false }),
@@ -749,7 +750,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const fetchConversations = useCallback(async (userId?: string) => {
     setIsLoadingConversations(true);
     try {
-      const endpoint = userId ? `${API_BASE}/conversaciones/${userId}` : `${API_BASE}/conversaciones`;
+      const endpoint = userId ? `${APIM_URL}/conversaciones/${userId}` : `${APIM_URL}/conversaciones`;
       const res = await fetch(endpoint, {
         method: 'GET',
         headers: getHeaders(),
@@ -790,7 +791,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
     if (existing) return existing;
 
-    const res = await fetch(`${API_BASE}/conversaciones`, {
+    const res = await fetch(`${APIM_URL}/conversaciones`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ participants, propertyId, type }),
@@ -815,7 +816,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const fetchMessages = useCallback(async (userId?: string) => {
     setIsLoadingMessages(true);
     try {
-      const endpoint = userId ? `${API_BASE}/mensajes/${userId}` : `${API_BASE}/mensajes`;
+      const endpoint = userId ? `${APIM_URL}/mensajes/${userId}` : `${APIM_URL}/mensajes`;
       const res = await fetch(endpoint, {
         method: 'GET',
         headers: getHeaders(),
@@ -844,7 +845,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [messages]);
 
   const sendMessage = async (message: Omit<Message, 'id' | 'timestamp' | 'status'>): Promise<Message> => {
-    const res = await fetch(`${API_BASE}/mensajes`, {
+    const res = await fetch(`${APIM_URL}/mensajes`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(message),
@@ -868,7 +869,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
     await Promise.all(unreadMessages.map(async (msg) => {
       try {
-        const res = await fetch(`${API_BASE}/mensajes/${msg.id}`, {
+        const res = await fetch(`${APIM_URL}/mensajes/${msg.id}`, {
           method: 'PUT',
           headers: getHeaders(),
           body: JSON.stringify({ status: 'read' }),
