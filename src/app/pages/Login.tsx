@@ -101,7 +101,12 @@ export default function Login() {
                    : existingUser.Rol === 'arrendatario' ? 'inquilino'
                    : existingUser.Rol || existingUser.rol || 'inquilino',
               };
-              setUser(normalizedUser);
+              // Use loginWithGoogle with isExisting=true to properly set user in AuthContext
+              await loginWithGoogle({ credential: '' }, normalizedUser.rol as 'dueño' | 'inquilino', {
+                id: normalizedUser.id,
+                nombre: normalizedUser.nombre,
+                correo: normalizedUser.correo,
+              }, true);
               toast.success('¡Bienvenido con Google!');
               navigate('/dashboard', { replace: true });
               return;
