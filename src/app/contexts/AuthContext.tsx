@@ -69,11 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     googleUserData: GoogleUserData
   ): Promise<boolean> => {
     try {
-      if (!credentialResponse?.credential) {
-        console.error("Google OAuth: credential es undefined", credentialResponse);
-        return false;
-      }
-
       const apiUrl = import.meta.env.VITE_API_URL;
       if (!apiUrl) {
         console.error("Google OAuth: VITE_API_URL no está configurado");
