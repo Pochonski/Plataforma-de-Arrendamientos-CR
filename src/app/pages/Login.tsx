@@ -82,19 +82,29 @@ export default function Login() {
       // Check if user already exists in DB
       const apiUrl = import.meta.env.VITE_API_URL;
       if (apiUrl) {
-        const response = await fetch(`${apiUrl}/usuarios`);
-        if (response.ok) {
-          const usuarios = await response.json();
-          const existingUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
-          if (existingUser) {
-            // User exists, login directly
-            const success = await loginWithGoogle({ credential: '' }, existingUser.Rol === 'dueno' ? 'dueño' : 'inquilino', googleUserData);
-            if (success) {
+        try {
+          const response = await fetch(`${apiUrl}/usuarios`);
+          if (response.ok) {
+            const usuarios = await response.json();
+            const existingUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
+            if (existingUser) {
+              // User exists, login directly with their data from DB
+              const normalizedUser = {
+                id: existingUser.Id || existingUser.id,
+                nombre: existingUser.Nombre || existingUser.nombre,
+                correo: existingUser.Correo || existingUser.correo,
+                rol: existingUser.Rol === 'dueno' || existingUser.Rol === 'arrendador' ? 'dueño'
+                   : existingUser.Rol === 'arrendatario' ? 'inquilino'
+                   : existingUser.Rol || existingUser.rol || 'inquilino',
+              };
+              setUser(normalizedUser);
               toast.success('¡Bienvenido con Google!');
               navigate('/dashboard', { replace: true });
               return;
             }
           }
+        } catch (e) {
+          console.error('Error checking existing user:', e);
         }
       }
 

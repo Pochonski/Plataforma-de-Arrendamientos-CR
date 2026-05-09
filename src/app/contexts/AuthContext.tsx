@@ -16,7 +16,7 @@ interface GoogleUserData {
 interface AuthContextType {
   user: User | null;
   login: (correo: string, contraseña: string) => Promise<boolean>;
-  loginWithGoogle: (credentialResponse: GoogleCredentialResponse, rol: 'dueño' | 'inquilino', googleUserData: GoogleUserData) => Promise<boolean>;
+  loginWithGoogle: (credentialResponse: GoogleCredentialResponse, rol: 'dueño' | 'inquilino', googleUserData: GoogleUserData, isExisting?: boolean) => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
@@ -66,13 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async (
     credentialResponse: GoogleCredentialResponse,
     rol: 'dueño' | 'inquilino',
-    googleUserData: GoogleUserData
+    googleUserData: GoogleUserData,
+    isExisting?: boolean
   ): Promise<boolean> => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
       if (!apiUrl) {
         console.error("Google OAuth: VITE_API_URL no está configurado");
         return false;
+      }
+
+      // If user already exists, just set the user data and return
+      if (isExisting) {
+        setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
+        return true;
       }
 
       // Map role to backend format (dueño -> dueno)
@@ -109,17 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
         return true;
       } else if (response.status === 409) {
-        // User already exists, fetch their data and log in
-        const getResponse = await fetch(`${apiUrl}/usuarios`);
-        if (getResponse.ok) {
-          const usuarios = await getResponse.json();
-          const existingUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
-          if (existingUser) {
-            setUser(normalizeUser(existingUser));
-            return true;
-          }
-        }
-        // If we can't find them, at least log in locally
+        // User already exists - use local user data directly, no need to re-fetch
         setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
         return true;
       } else {
