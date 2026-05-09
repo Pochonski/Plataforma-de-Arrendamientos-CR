@@ -83,7 +83,7 @@ export default function Login() {
       const apiUrl = import.meta.env.VITE_API_URL;
       if (apiUrl) {
         try {
-          const response = await fetch(`${apiUrl}/usuarios`);
+          const response = await fetch(`${apiUrl}/usuarios`, { cache: 'no-store' });
           if (response.ok) {
             const usuarios = await response.json();
             const existingUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
