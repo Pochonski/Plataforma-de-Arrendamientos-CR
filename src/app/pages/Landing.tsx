@@ -184,6 +184,7 @@ export default function Landing() {
                 <Shield className="size-4 text-primary" />
                 <span>Gestión Encriptada</span>
               </div>
+
             </div>
           </motion.div>
         </div>

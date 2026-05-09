@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -9,6 +9,15 @@ import { Checkbox } from '../components/ui/checkbox';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { Card, CardContent } from '../components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { Building2, Home } from 'lucide-react';
 
 export default function Login() {
   const [correo, setCorreo] = useState('');
@@ -19,9 +28,54 @@ export default function Login() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [pendingGoogleUser, setPendingGoogleUser] = useState<{ id: string; nombre: string; correo: string } | null>(null);
+
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    setIsLoading(true);
+    try {
+      const token = credentialResponse.credential as string;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+
+      const googleUserData = {
+        id: payload.sub || payload.email,
+        nombre: payload.name,
+        correo: payload.email,
+      };
+
+      setPendingGoogleUser(googleUserData);
+      setShowRoleSelection(true);
+    } catch (err) {
+      toast.error('Error al procesar login de Google');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleRoleSelection = async (rol: 'dueño' | 'inquilino') => {
+    if (!pendingGoogleUser) return;
+
+    setIsLoading(true);
+    try {
+      const success = await loginWithGoogle({ credential: '' }, rol, pendingGoogleUser);
+      if (success) {
+        toast.success('¡Bienvenido con Google!');
+        navigate('/dashboard', { replace: true });
+      } else {
+        toast.error('No se pudo crear la cuenta con Google');
+      }
+    } catch (err) {
+      toast.error('Error al crear cuenta con Google');
+    } finally {
+      setIsLoading(false);
+      setShowRoleSelection(false);
+      setPendingGoogleUser(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,22 +237,7 @@ export default function Login() {
                 </div>
 
                 <GoogleLogin
-                  onSuccess={async (credentialResponse) => {
-                    setIsLoading(true);
-                    try {
-                      const success = await loginWithGoogle(credentialResponse);
-                      if (success) {
-                        toast.success('¡Bienvenido con Google!');
-                        navigate('/dashboard', { replace: true });
-                      } else {
-                        toast.error('No se pudo iniciar sesión con Google');
-                      }
-                    } catch (err) {
-                      toast.error('Error al iniciar sesión con Google');
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
+                  onSuccess={handleGoogleSuccess}
                   onError={() => {
                     toast.error('Error con Google OAuth');
                   }}
@@ -248,6 +287,60 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      {/* Role Selection Dialog for Google Login */}
+      <Dialog open={showRoleSelection} onOpenChange={setShowRoleSelection}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Selecciona tu rol</DialogTitle>
+            <DialogDescription>
+              Elige cómo vas a utilizar la plataforma. Esto nos ayudará a personalizar tu experiencia.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+            <Card
+              className="cursor-pointer hover:border-primary hover:shadow-lg transition-all"
+              onClick={() => handleGoogleRoleSelection('dueño')}
+            >
+              <CardContent className="p-6 space-y-4 text-center">
+                <div className="inline-flex items-center justify-center size-16 rounded-full bg-primary/10 text-primary">
+                  <Building2 className="size-8" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-1">Soy Dueño</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Busco gestionar mis propiedades y administrar contratos de alquiler
+                  </p>
+                </div>
+                <Button className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Creando cuenta...' : 'Continuar como dueño'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:border-primary hover:shadow-lg transition-all"
+              onClick={() => handleGoogleRoleSelection('inquilino')}
+            >
+              <CardContent className="p-6 space-y-4 text-center">
+                <div className="inline-flex items-center justify-center size-16 rounded-full bg-primary/10 text-primary">
+                  <Home className="size-8" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-1">Soy Inquilino</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Busco encontrar una propiedad y gestionar mi alquiler
+                  </p>
+                </div>
+                <Button className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Creando cuenta...' : 'Continuar como inquilino'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
