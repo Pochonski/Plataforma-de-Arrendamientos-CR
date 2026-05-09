@@ -86,7 +86,8 @@ export default function Login() {
           const response = await fetch(`${apiUrl}/usuarios`, { cache: 'no-store' });
           if (response.ok) {
             const usuarios = await response.json();
-            const existingUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
+            const normalizedEmail = googleUserData.correo.toLowerCase();
+            const existingUser = usuarios.find((u: any) => (u.Correo || u.correo || '').toLowerCase() === normalizedEmail);
             if (existingUser) {
               // User exists, login directly with their data from DB
               const normalizedUser = {
