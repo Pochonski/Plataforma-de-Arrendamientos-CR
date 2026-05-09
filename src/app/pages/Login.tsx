@@ -87,7 +87,10 @@ export default function Login() {
           if (response.ok) {
             const usuarios = await response.json();
             const normalizedEmail = googleUserData.correo.toLowerCase();
-            const existingUser = usuarios.find((u: any) => (u.Correo || u.correo || '').toLowerCase() === normalizedEmail);
+            const existingUser = usuarios.find((u: any) =>
+              (u.Correo || u.correo || '').toLowerCase() === normalizedEmail ||
+              (u.id || u.Id) === googleUserData.id
+            );
             if (existingUser) {
               // User exists, login directly with their data from DB
               const normalizedUser = {
