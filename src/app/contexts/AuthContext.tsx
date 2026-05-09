@@ -108,6 +108,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fallback to local user if DB fetch fails
         setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
         return true;
+      } else if (response.status === 409) {
+        // User already exists, fetch their data and log in
+        const getResponse = await fetch(`${apiUrl}/usuarios`);
+        if (getResponse.ok) {
+          const usuarios = await getResponse.json();
+          const existingUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
+          if (existingUser) {
+            setUser(normalizeUser(existingUser));
+            return true;
+          }
+        }
+        // If we can't find them, at least log in locally
+        setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
+        return true;
       } else {
         const errorText = await response.text();
         console.error("Google OAuth: Error creando usuario:", errorText);

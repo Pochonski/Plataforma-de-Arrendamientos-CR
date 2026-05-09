@@ -79,6 +79,26 @@ export default function Login() {
         correo: payload.email,
       };
 
+      // Check if user already exists in DB
+      const apiUrl = import.meta.env.VITE_API_URL;
+      if (apiUrl) {
+        const response = await fetch(`${apiUrl}/usuarios`);
+        if (response.ok) {
+          const usuarios = await response.json();
+          const existingUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
+          if (existingUser) {
+            // User exists, login directly
+            const success = await loginWithGoogle({ credential: '' }, existingUser.Rol === 'dueno' ? 'dueño' : 'inquilino', googleUserData);
+            if (success) {
+              toast.success('¡Bienvenido con Google!');
+              navigate('/dashboard', { replace: true });
+              return;
+            }
+          }
+        }
+      }
+
+      // User doesn't exist, show role selection
       setPendingGoogleUser(googleUserData);
       setShowRoleSelection(true);
     } catch (err) {
