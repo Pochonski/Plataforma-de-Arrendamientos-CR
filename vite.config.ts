@@ -7,7 +7,6 @@ export default defineConfig({
   base: '/',
   server: {
     port: 5173,
-    allowedHosts: ['drastic-raquel-bigotedly.ngrok-free.dev'],
   },
   build: {
     sourcemap: true,
