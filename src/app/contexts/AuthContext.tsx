@@ -95,13 +95,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok) {
-        const googleUser: User = {
-          id: googleUserData.id,
-          nombre: googleUserData.nombre,
-          correo: googleUserData.correo,
-          rol: rol,
-        };
-        setUser(googleUser);
+        // Fetch the actual user from DB to get normalized data
+        const getResponse = await fetch(`${apiUrl}/usuarios`);
+        if (getResponse.ok) {
+          const usuarios = await getResponse.json();
+          const createdUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
+          if (createdUser) {
+            setUser(normalizeUser(createdUser));
+            return true;
+          }
+        }
+        // Fallback to local user if DB fetch fails
+        setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
         return true;
       } else {
         const errorText = await response.text();
