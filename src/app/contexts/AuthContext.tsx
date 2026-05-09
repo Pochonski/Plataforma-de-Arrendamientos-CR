@@ -77,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Map role to backend format (dueño -> dueno)
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
-      const tempId = `usr-${Math.floor(Math.random() * 10000)}`;
 
       // Create user in the backend
       const response = await fetch(`${apiUrl}/usuario/${googleUserData.id}`, {
@@ -87,14 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           'Ocp-Apim-Subscription-Key': import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '',
         },
         body: JSON.stringify({
-          id: googleUserData.id,
-          nombre: googleUserData.nombre,
-          correo: googleUserData.correo,
-          contraseña: '', // No password needed for Google users
-          rol: backendRol,
-          telefono: '',
-          fechaRegistro: new Date().toISOString(),
-          propiedades: []
+          Id: googleUserData.id,
+          Nombre: googleUserData.nombre,
+          Correo: googleUserData.correo,
+          Contraseña: '',
+          Rol: backendRol,
+          Telefono: '',
+          FechaRegistro: new Date().toISOString(),
+          Propiedades: []
         }),
       });
 
