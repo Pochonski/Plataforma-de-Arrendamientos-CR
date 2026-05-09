@@ -7,10 +7,16 @@ interface GoogleCredentialResponse {
   select_by?: string;
 }
 
+interface GoogleUserData {
+  id: string;
+  nombre: string;
+  correo: string;
+}
+
 interface AuthContextType {
   user: User | null;
   login: (correo: string, contraseña: string) => Promise<boolean>;
-  loginWithGoogle: (credentialResponse: GoogleCredentialResponse) => Promise<boolean>;
+  loginWithGoogle: (credentialResponse: GoogleCredentialResponse, rol: 'dueño' | 'inquilino', googleUserData: GoogleUserData) => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
@@ -57,28 +63,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
-  const loginWithGoogle = async (credentialResponse: GoogleCredentialResponse): Promise<boolean> => {
+  const loginWithGoogle = async (
+    credentialResponse: GoogleCredentialResponse,
+    rol: 'dueño' | 'inquilino',
+    googleUserData: GoogleUserData
+  ): Promise<boolean> => {
     try {
-      // Verificar que credentialResponse tenga la estructura esperada
       if (!credentialResponse?.credential) {
         console.error("Google OAuth: credential es undefined", credentialResponse);
         return false;
       }
 
-      // Decodificar el token de Google
-      const token = credentialResponse.credential;
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const apiUrl = import.meta.env.VITE_API_URL;
+      if (!apiUrl) {
+        console.error("Google OAuth: VITE_API_URL no está configurado");
+        return false;
+      }
 
-      // Crear usuario con datos de Google
-      const googleUser: User = {
-        id: payload.sub || payload.email,
-        nombre: payload.name,
-        correo: payload.email,
-        rol: 'inquilino', // Por defecto, el usuario puede cambiar después
-      };
+      // Map role to backend format (dueño -> dueno)
+      const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
+      const tempId = `usr-${Math.floor(Math.random() * 10000)}`;
 
-      setUser(googleUser);
-      return true;
+      // Create user in the backend
+      const response = await fetch(`${apiUrl}/usuario/${googleUserData.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '',
+        },
+        body: JSON.stringify({
+          id: googleUserData.id,
+          nombre: googleUserData.nombre,
+          correo: googleUserData.correo,
+          contraseña: '', // No password needed for Google users
+          rol: backendRol,
+          telefono: '',
+          fechaRegistro: new Date().toISOString(),
+          propiedades: []
+        }),
+      });
+
+      if (response.ok) {
+        const googleUser: User = {
+          id: googleUserData.id,
+          nombre: googleUserData.nombre,
+          correo: googleUserData.correo,
+          rol: rol,
+        };
+        setUser(googleUser);
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error("Google OAuth: Error creando usuario:", errorText);
+        return false;
+      }
     } catch (err) {
       console.error("Error con login de Google:", err);
       return false;
