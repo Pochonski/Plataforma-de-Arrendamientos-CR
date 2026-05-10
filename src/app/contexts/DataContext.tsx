@@ -635,7 +635,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      setPayments(Array.isArray(data) ? data.map(normalizePayment) : []);
+      let normalized = Array.isArray(data) ? data.map(normalizePayment) : [];
+      // Filter client-side as fallback when backend doesn't filter by userId
+      if (userId) {
+        normalized = normalized.filter(p => p.duenoId === userId || p.inquilinoId === userId);
+      }
+      setPayments(normalized);
     } catch (err) {
       console.error('Error fetching payments:', err);
       setPayments([]);
@@ -700,10 +705,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await res.json();
-      const normalizedData = Array.isArray(data) ? data.map(n => ({
+      let normalizedData = Array.isArray(data) ? data.map(n => ({
         ...n,
         fecha: new Date(n.fecha)
       })) : [];
+      // Filter client-side as fallback when backend doesn't filter by userId
+      if (userId) {
+        normalizedData = normalizedData.filter(n => n.userId === userId || n.duenoId === userId || n.inquilinoId === userId);
+      }
       setNotifications(normalizedData);
     } catch (err) {
       console.error('Error fetching notifications:', err);
@@ -779,11 +788,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
         throw new Error(`HTTP ${res.status}`);
       }
       const data = await res.json();
-      const normalizedData = Array.isArray(data) ? data.map(c => ({
+      let normalizedData = Array.isArray(data) ? data.map(c => ({
         ...c,
         lastMessageAt: c.lastMessageAt ? new Date(c.lastMessageAt) : undefined,
         createdAt: new Date(c.createdAt)
       })) : [];
+      // Filter client-side as fallback when backend doesn't filter by userId
+      if (userId) {
+        normalizedData = normalizedData.filter(c => c.participants.includes(userId));
+      }
       setConversations(normalizedData);
     } catch (err) {
       console.error('Error fetching conversations:', err);
@@ -794,7 +807,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const getConversationsByUserId = useCallback((userId: string): Conversation[] => {
-    return conversations;
+    return conversations.filter(c => c.participants.includes(userId));
   }, [conversations]);
 
   const getOrCreateConversation = async (
@@ -841,7 +854,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const normalizedData = Array.isArray(data) ? data.map(normalizeMessage) : [];
+      let normalizedData = Array.isArray(data) ? data.map(normalizeMessage) : [];
+      // Filter client-side as fallback when backend doesn't filter by userId
+      if (userId) {
+        normalizedData = normalizedData.filter(m => m.senderId === userId || m.receiverId === userId);
+      }
       setMessages(normalizedData);
     } catch (err) {
       console.error('Error fetching messages:', err);
