@@ -274,7 +274,8 @@ interface DataContextType {
   // Invitations
   invitations: Invitation[];
   isLoadingInvitations: boolean;
-  fetchInvitations: () => Promise<void>;
+  fetchInvitations: (userId: string) => Promise<void>;
+  getInvitationById: (invitationId: string) => Promise<Invitation | undefined>;
   createInvitation: (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>) => Promise<Invitation>;
   updateInvitation: (id: string, updates: Partial<Invitation>) => Promise<void>;
   getInvitationByToken: (token: string) => Promise<Invitation | undefined>;
@@ -285,7 +286,7 @@ interface DataContextType {
   fetchContracts: () => Promise<void>;
   createContract: (contract: Omit<Contract, 'id'>) => Promise<Contract>;
   updateContract: (id: string, updates: Partial<Contract>) => Promise<void>;
-  getContractByInquilinoId: (inquilinoId: string) => Promise<Contract | undefined>;
+  getContractById: (contractId: string) => Promise<Contract | undefined>;
 
   // Payments
   payments: Payment[];
@@ -468,10 +469,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Invitations
-  const fetchInvitations = useCallback(async (userId?: string) => {
+  const fetchInvitations = useCallback(async (userId: string) => {
     setIsLoadingInvitations(true);
     try {
-      const res = await fetch(`${APIM_URL}/invitaciones`, {
+      const res = await fetch(`${APIM_URL}/invitaciones/${userId}`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -480,10 +481,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       const data = await res.json();
       let normalized = Array.isArray(data) ? data.map(normalizeInvitation) : [];
-      // Filter client-side if userId is provided (handles mock/backend data without server-side filtering)
-      if (userId) {
-        normalized = normalized.filter(inv => inv.duenoId === userId);
-      }
       setInvitations(normalized);
     } catch (err) {
       console.error('Error fetching invitations:', err);
@@ -493,7 +490,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const createInvitation = async (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>): Promise<Invitation> => {
+  const getInvitationById = async (invitationId: string): Promise<Invitation | undefined> => {
+    try {
+      const res = await fetch(`${APIM_URL}/invitaciones/${invitationId}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!res.ok) return undefined;
+      const raw = await res.json();
+      return normalizeInvitation(raw as APIMInvitation);
+    } catch {
+      return undefined;
+    }
+  };
+
+  const createInvitation = async (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>) => Promise<Invitation> => {
     const res = await fetch(`${APIM_URL}/invitaciones`, {
       method: 'POST',
       headers: getHeaders(),
@@ -504,7 +516,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const raw = await res.json();
     const newInvitation = normalizeInvitation(raw as APIMInvitation);
-    await fetchInvitations();
+    await fetchInvitations(invitation.duenoId);
     return newInvitation;
   };
 
@@ -601,11 +613,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const getContractByInquilinoId = async (inquilinoId: string): Promise<Contract | undefined> => {
-    // Calls GET /contratos/{inquilinoId} — APIM returns only this user's contract.
-    // Response is a single object (or null), NOT the full list.
+  const getContractById = async (contractId: string): Promise<Contract | undefined> => {
     try {
-      const res = await fetch(`${APIM_URL}/contratos/${inquilinoId}`, {
+      const res = await fetch(`${APIM_URL}/contratos/${contractId}`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -613,7 +623,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return undefined;
 
       const raw = await res.json();
-      // APIM may return null or an empty body when no contract exists
       if (!raw || !raw.id) return undefined;
 
       return normalizeContract(raw);
@@ -983,7 +992,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         fetchContracts,
         createContract,
         updateContract,
-        getContractByInquilinoId,
+        getContractById,
         payments,
         isLoadingPayments,
         fetchPayments,
