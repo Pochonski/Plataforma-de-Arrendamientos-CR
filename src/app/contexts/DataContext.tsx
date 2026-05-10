@@ -415,7 +415,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const data = await res.json();
     const newProperty = normalizeProperty(data);
-    await fetchProperties(1); // Refresh first page
+    // Refresh filtered by owner so context state stays correct per user
+    if (property.duenoId) {
+      await fetchProperties(1, { duenoId: property.duenoId });
+    }
     return newProperty;
   };
 
@@ -465,7 +468,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Invitations
-  const fetchInvitations = useCallback(async () => {
+  const fetchInvitations = useCallback(async (userId?: string) => {
     setIsLoadingInvitations(true);
     try {
       const res = await fetch(`${APIM_URL}/invitaciones`, {
@@ -476,8 +479,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      // Normalize APIM field names → frontend types
-      setInvitations(Array.isArray(data) ? data.map(normalizeInvitation) : []);
+      let normalized = Array.isArray(data) ? data.map(normalizeInvitation) : [];
+      // Filter client-side if userId is provided (handles mock/backend data without server-side filtering)
+      if (userId) {
+        normalized = normalized.filter(inv => inv.duenoId === userId);
+      }
+      setInvitations(normalized);
     } catch (err) {
       console.error('Error fetching invitations:', err);
       setInvitations([]);
@@ -534,7 +541,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Contracts
-  const fetchContracts = useCallback(async () => {
+  const fetchContracts = useCallback(async (userId?: string) => {
     setIsLoadingContracts(true);
     try {
       const res = await fetch(`${APIM_URL}/contratos`, {
@@ -544,9 +551,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
+      let normalized = Array.isArray(res) ? [] : [];
+      // res.ok is true but res is a Response object, need to get JSON first
       const data = await res.json();
-      // Normalize APIM field names → frontend types
-      setContracts(Array.isArray(data) ? data.map(normalizeContract) : []);
+      normalized = Array.isArray(data) ? data.map(normalizeContract) : [];
+      // Filter client-side if userId is provided
+      if (userId) {
+        normalized = normalized.filter(c => c.duenoId === userId || c.inquilinoId === userId);
+      }
+      setContracts(normalized);
     } catch (err) {
       console.error('Error fetching contracts:', err);
       setContracts([]);
@@ -565,7 +578,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const newContract: Contract = await res.json();
-    await fetchContracts();
+    // Re-fetch for owner: pass duenoId to fetchContracts
+    if (contract.duenoId) {
+      await fetchContracts(contract.duenoId);
+    } else {
+      await fetchContracts();
+    }
     return newContract;
   };
 
@@ -737,7 +755,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const getUnreadCount = (userId: string) => {
-    return notifications.filter(n => !n.leida).length;
+    return notifications.filter(n => n.duenoId === userId || n.inquilinoId === userId || n.userId === userId).filter(n => !n.leida).length;
   };
 
   const getUnreadMessagesCount = (_userId: string) => {
@@ -918,12 +936,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return updated;
   };
 
-  // Initial fetch on mount
+  // Initial fetch on mount — only fetch when userId is available (called explicitly from DashboardLayout)
   useEffect(() => {
-    fetchProperties(1);
-    fetchInvitations();
-    fetchContracts();
-  }, [fetchProperties, fetchInvitations, fetchContracts]);
+    // Don't auto-fetch on mount — wait for explicit user-based fetches from DashboardLayout
+    // fetchProperties, fetchInvitations, fetchContracts are called with userId from DashboardLayout
+  }, []);
 
   return (
     <DataContext.Provider

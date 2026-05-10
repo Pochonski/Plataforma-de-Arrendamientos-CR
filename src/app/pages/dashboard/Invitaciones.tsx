@@ -46,16 +46,19 @@ export default function Invitaciones() {
   const [cancelId, setCancelId] = useState<string | null>(null);
 
   const handleRefresh = async () => {
+    if (!user?.id) return;
     try {
-      await fetchInvitations();
+      await fetchInvitations(user.id);
       toast.success('Invitaciones actualizadas');
     } catch (error) {
       toast.error('Error al actualizar');
     }
   };
 
-  // Bypass robusto para datos mockeados: mostramos todas las invitaciones si el usuario es dueño
-  const myInvitations = user?.rol === 'dueño' ? invitations : [];
+  // Only show invitations belonging to this owner
+  const myInvitations = user?.rol === 'dueño' && user?.id
+    ? invitations.filter(inv => inv.duenoId === user.id)
+    : [];
 
   const filteredInvitations = myInvitations.filter((invitation) => {
     const property = properties.find((p) => p.id === invitation.propiedadId);

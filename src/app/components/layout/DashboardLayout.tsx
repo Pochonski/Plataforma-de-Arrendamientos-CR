@@ -39,13 +39,18 @@ export function DashboardLayout() {
 
   useEffect(() => {
     if (user?.id) {
-      // Refresh context for the specific user upon entering the dashboard
+      // Refresh context data for the specific user upon entering the dashboard
+      // Each fetch is filtered by user.id so we only get that user's data
       fetchPayments(user.id);
       fetchNotifications(user.id);
       fetchConversations(user.id);
       fetchMessages(user.id);
+      // Only fetch properties if we have a duenoId (owners have properties)
+      if (user.rol === 'dueño') {
+        fetchProperties(1, { duenoId: user.id });
+      }
     }
-  }, [user?.id, fetchPayments, fetchNotifications, fetchConversations, fetchMessages]);
+  }, [user?.id, fetchPayments, fetchNotifications, fetchConversations, fetchMessages, fetchProperties, user?.rol]);
 
   const handleLogout = () => {
     logout();
