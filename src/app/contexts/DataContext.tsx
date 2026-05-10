@@ -505,7 +505,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const createInvitation = async (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>) => Promise<Invitation> => {
+  const createInvitation = async (invitation: Omit<Invitation, 'id' | 'token' | 'fechaEmision' | 'fechaExpiracion' | 'estado'>): Promise<Invitation> => {
     const res = await fetch(`${APIM_URL}/invitaciones`, {
       method: 'POST',
       headers: getHeaders(),
