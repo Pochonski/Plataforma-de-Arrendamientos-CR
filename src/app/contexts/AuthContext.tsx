@@ -76,7 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      // If user already exists, just set the user data and return
+      // If user already exists, use the DB id passed via googleUserData.id
+      // (for existing users, we pass the database id in googleUserData.id)
       if (isExisting) {
         setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
         return true;
