@@ -281,6 +281,8 @@ export default function Login() {
                     toast.error('Error con Google OAuth');
                   }}
                   useOneTap={false}
+                  text="signin_with"
+                  shape="rectangular"
                 />
               </div>
 
