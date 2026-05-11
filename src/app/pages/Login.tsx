@@ -285,6 +285,7 @@ export default function Login() {
                   shape="rectangular"
                   logo_alignment="left"
                   width={240}
+                  click_listener={null}
                 />
               </div>
 
