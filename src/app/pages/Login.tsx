@@ -283,6 +283,8 @@ export default function Login() {
                   useOneTap={false}
                   text="signin_with"
                   shape="rectangular"
+                  logo_alignment="left"
+                  width={240}
                 />
               </div>
 
