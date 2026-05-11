@@ -19,7 +19,13 @@
       "Bash(curl.exe:*)",
       "Bash(az staticwebapp functions list:*)",
       "Bash(az staticwebapp backends:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(curl *)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "gcloud"
+  ]
 }
