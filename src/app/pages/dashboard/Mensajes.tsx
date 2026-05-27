@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
+import { useSocket } from '../../hooks/useSocket';
 import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { ScrollArea } from '../../components/ui/scroll-area';
-import { Separator } from '../../components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import {
   Search,
@@ -22,6 +22,8 @@ import {
   Paperclip,
   RefreshCw,
   FileText,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { Conversation, ConversationType, Message as MessageType } from '../../types';
 import { toast } from 'sonner';
@@ -97,18 +99,51 @@ export default function Mensajes() {
   const [filterType, setFilterType] = useState<ConversationType | 'all'>('all');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // ─── Real-time: Socket.io para nuevo_mensaje ───────────────────────────────
+  const handleNuevoMensaje = useCallback(async (payload: {
+    mensaje_id: string;
+    conversacion_id: string;
+    remitente_id: string;
+    remitente_nombre: string;
+    contenido: string;
+    enviado_en: string;
+  }) => {
+    if (!user?.id) return;
 
+    // Refrescar mensajes y conversaciones para la conversación afectada
+    try {
+      await Promise.all([
+        fetchMessages(user.id),
+        fetchConversations(user.id),
+      ]);
+
+      // Toast solo si el mensaje es de otra conversación (no la abierta actualmente)
+      if (payload.conversacion_id !== selectedConversationId) {
+        toast.info(`Nuevo mensaje de ${payload.remitente_nombre}`, {
+          description: payload.contenido.substring(0, 80),
+        });
+      }
+    } catch {
+      // silent error — datos se actualizan en el siguiente refresh manual
+    }
+  }, [user?.id, fetchMessages, fetchConversations, selectedConversationId]);
+
+  const { connected: socketConnected } = useSocket({
+    userId: user?.id ?? null,
+    onNuevoMensaje: handleNuevoMensaje,
+  });
+  // ─────────────────────────────────────────────────────────────────────────────
 
   // Filter conversations
   const filteredConversations = conversations
     .filter(conv => {
       if (filterType !== 'all' && conv.type !== filterType) return false;
-      
+
       if (searchQuery) {
         const title = getConversationTitle(conv);
         return title.toLowerCase().includes(searchQuery.toLowerCase());
       }
-      
+
       return true;
     })
     .sort((a, b) => {
@@ -117,7 +152,7 @@ export default function Mensajes() {
       return bTime - aTime;
     });
 
-  const selectedConversation = selectedConversationId 
+  const selectedConversation = selectedConversationId
     ? conversations.find(c => c.id === selectedConversationId)
     : null;
 
@@ -171,11 +206,11 @@ export default function Mensajes() {
 
   const getConversationTitle = (conv: Conversation) => {
     const otherUserId = conv.participants.find((p: string) => p !== user?.id);
-    
+
     if (otherUserId && userNames[otherUserId]) {
       return userNames[otherUserId];
     }
-    
+
     return otherUserId ? `Usuario (${otherUserId})` : 'Conversación';
   };
 
@@ -213,7 +248,15 @@ export default function Mensajes() {
       }
       return names[0].charAt(0).toUpperCase();
     }
-    // Para otros usuarios mock, generar por ID o dar genérico
+    // Para otros usuarios, usar el nombre si está disponible
+    const nombre = userNames[userId];
+    if (nombre) {
+      const names = nombre.split(' ');
+      if (names.length >= 2) {
+        return names[0].charAt(0).toUpperCase() + names[1].charAt(0).toUpperCase();
+      }
+      return names[0].charAt(0).toUpperCase();
+    }
     return 'U';
   };
 
@@ -253,16 +296,34 @@ export default function Mensajes() {
           <h1 className="text-2xl font-bold">Mensajes</h1>
           <p className="text-muted-foreground">Comunícate con inquilinos y dueños</p>
         </div>
-        <Button 
-          variant="outline" 
-          size="lg" 
-          onClick={handleRefresh} 
-          disabled={isLoadingConversations || isLoadingMessages}
-          className="w-full sm:w-auto"
-        >
-          <RefreshCw className={`size-4 mr-2 ${isLoadingConversations || isLoadingMessages ? 'animate-spin' : ''}`} />
-          Actualizar
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Indicador de conexión en tiempo real */}
+          <div
+            className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border ${
+              socketConnected
+                ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800'
+                : 'bg-muted text-muted-foreground border-border'
+            }`}
+            title={socketConnected ? 'Tiempo real activo' : 'Tiempo real desconectado'}
+          >
+            {socketConnected ? (
+              <Wifi className="size-3" />
+            ) : (
+              <WifiOff className="size-3" />
+            )}
+            <span>{socketConnected ? 'En vivo' : 'Desconectado'}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleRefresh}
+            disabled={isLoadingConversations || isLoadingMessages}
+            className="flex-1 sm:flex-none"
+          >
+            <RefreshCw className={`size-4 mr-2 ${isLoadingConversations || isLoadingMessages ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
 
       <Card className="overflow-hidden">
