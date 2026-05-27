@@ -38,14 +38,21 @@ const normalizeUser = (raw: any): User => ({
 
 /**
  * Genera un JWT HS256 con claim sub=userId y name=nombre.
- * Se usa para autenticar conexiones WebSocket (ms-notificaciones)
- * y Socket.io (ms-mensajes).
  *
- * El secreto se lee de la variable de entorno VITE_JWT_SECRET.
- * Tiempo de expiración: 24 horas.
+ * NOTA DE SEGURIDAD: En producción real el token debería ser emitido
+ * exclusivamente por el servidor (endpoint POST /login → token firmado).
+ * Este enfoque client-side es válido para una demo universitaria donde:
+ *   (a) el shared secret ya está en env vars de los App Services (ms-mensajes,
+ *       ms-notificaciones), y (b) no existe endpoint de login con contraseña.
+ * Si VITE_JWT_SECRET no está configurada, no se genera token (fail-closed).
+ *
+ * @throws si VITE_JWT_SECRET no está definida en el entorno
  */
 async function generarToken(userId: string, nombre: string): Promise<string> {
-  const secretStr = import.meta.env.VITE_JWT_SECRET || 'secret_seguro_aqui_123456789';
+  const secretStr = import.meta.env.VITE_JWT_SECRET;
+  if (!secretStr) {
+    throw new Error('[Auth] VITE_JWT_SECRET no está configurada — no se puede generar token JWT');
+  }
   const secret = new TextEncoder().encode(secretStr);
 
   return new SignJWT({ name: nombre })

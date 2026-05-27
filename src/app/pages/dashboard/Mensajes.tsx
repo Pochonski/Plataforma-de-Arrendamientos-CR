@@ -29,7 +29,7 @@ import { Conversation, ConversationType, Message as MessageType } from '../../ty
 import { toast } from 'sonner';
 
 export default function Mensajes() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const {
     properties,
     conversations,
@@ -130,6 +130,7 @@ export default function Mensajes() {
 
   const { connected: socketConnected } = useSocket({
     userId: user?.id ?? null,
+    token,                          // JWT verificado por el middleware de ms-mensajes
     onNuevoMensaje: handleNuevoMensaje,
   });
   // ─────────────────────────────────────────────────────────────────────────────

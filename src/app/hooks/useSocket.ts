@@ -1,16 +1,23 @@
 /**
  * Hook de Socket.io para mensajería en tiempo real.
  *
- * Flujo:
- *   1. Se conecta a VITE_SOCKET_URL (ms-mensajes) usando transport websocket.
- *   2. Al establecerse la conexión, emite el evento 'autenticar' con el userId
- *      para unirse a la sala privada del usuario.
- *   3. Escucha el evento 'nuevo_mensaje' y llama al callback `onNuevoMensaje`.
+ * Seguridad:
+ *   - El JWT se envía en socket.handshake.auth.token (no en el body del evento).
+ *   - ms-mensajes valida el token en un middleware `io.use()` y deriva el userId
+ *     del claim `sub` del token — el servidor NUNCA confía en el userId enviado
+ *     por el cliente en el evento 'autenticar'.
+ *   - Si no hay token, el hook no crea la conexión (fail-closed).
  *
- * El hook se reconecta automáticamente hasta 5 veces si la conexión se pierde.
+ * Flujo:
+ *   1. Conecta a VITE_SOCKET_URL con { auth: { token } }.
+ *   2. Al establecerse la conexión, emite 'autenticar' para que el servidor una
+ *      la sala (el servidor ignora el userId del evento y usa el del token).
+ *   3. Escucha 'nuevo_mensaje' y llama al callback onNuevoMensaje.
+ *
+ * Reconexión automática: hasta 5 intentos con backoff 2 s → 10 s.
  * Si VITE_SOCKET_URL no está configurada, no hace nada (graceful degradation).
  */
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '';
@@ -26,32 +33,42 @@ export interface NuevoMensajePayload {
 }
 
 interface UseSocketOptions {
-  /** ID del usuario autenticado. El hook solo se activa cuando no es null. */
+  /** ID del usuario autenticado (solo para el evento legacy 'autenticar'). */
   userId: string | null;
+  /**
+   * JWT HS256 emitido tras el login (claim sub=userId).
+   * Se envía en socket.handshake.auth.token para que el servidor verifique
+   * la identidad. Si es null, el hook no crea la conexión.
+   */
+  token: string | null;
   /** Callback invocado cada vez que llega un evento 'nuevo_mensaje'. */
   onNuevoMensaje?: (payload: NuevoMensajePayload) => void;
 }
 
 interface UseSocketReturn {
-  /** true cuando la conexión Socket.io está establecida y el usuario autenticado. */
+  /** true cuando la conexión Socket.io está establecida y autenticada por el servidor. */
   connected: boolean;
 }
 
-export function useSocket({ userId, onNuevoMensaje }: UseSocketOptions): UseSocketReturn {
+export function useSocket({ userId, token, onNuevoMensaje }: UseSocketOptions): UseSocketReturn {
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
 
-  // Usar ref para el callback para evitar stale closures sin re-crear el efecto
+  // Ref para el callback — evita stale closures sin re-crear el efecto
   const callbackRef = useRef(onNuevoMensaje);
   useEffect(() => {
     callbackRef.current = onNuevoMensaje;
   }, [onNuevoMensaje]);
 
   useEffect(() => {
-    if (!userId || !SOCKET_URL) return;
+    // No conectar si faltan credenciales o URL
+    if (!userId || !token || !SOCKET_URL) return;
 
     const socket = io(SOCKET_URL, {
       transports: ['websocket'],
+      // JWT en el handshake — el servidor lo valida en io.use() y extrae el userId
+      // del claim `sub`. El cliente no puede hacerse pasar por otro usuario.
+      auth: { token },
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
@@ -62,6 +79,8 @@ export function useSocket({ userId, onNuevoMensaje }: UseSocketOptions): UseSock
 
     socket.on('connect', () => {
       console.log('[Socket] Conectado:', socket.id);
+      // Emitir 'autenticar' para que el servidor una la sala.
+      // El servidor ignora el userId enviado aquí y usa el del token JWT.
       socket.emit('autenticar', userId);
     });
 
@@ -93,7 +112,7 @@ export function useSocket({ userId, onNuevoMensaje }: UseSocketOptions): UseSock
       socketRef.current = null;
       setConnected(false);
     };
-  }, [userId]); // Solo re-crea si cambia el userId
+  }, [userId, token]); // Re-crea si cambia el usuario o el token
 
   return { connected };
 }
