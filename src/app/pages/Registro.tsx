@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registroSchema, type RegistroFormData } from '@/lib/validations';
+import { registroFormSchema } from '@/lib/validations';
 import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -20,9 +20,6 @@ import {
 import { UserPlus, Mail, Lock, User, AlertCircle, Building2, Home, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
-const formSchema = registroSchema.omit({ rol: true });
-type FormValues = z.infer<typeof formSchema>;
-
 export default function Registro() {
   const [showPassword, setShowPassword] = useState(true);
   const [showConfirmPassword, setShowConfirmPassword] = useState(true);
@@ -32,8 +29,8 @@ export default function Registro() {
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof registroFormSchema>>({
+    resolver: zodResolver(registroFormSchema),
     defaultValues: {
       nombre: '',
       correo: '',

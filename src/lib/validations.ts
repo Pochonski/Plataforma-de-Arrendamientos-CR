@@ -8,23 +8,30 @@ export const loginSchema = z.object({
 export type LoginFormData = z.infer<typeof loginSchema>;
 
 // ─── Registro ─────────────────────────────────────────────────────────────────
-export const registroSchema = z
-  .object({
-    nombre: z.string({ error: 'Por favor completa tu nombre' }).min(2, 'El nombre debe tener al menos 2 caracteres'),
-    correo: z.string({ error: 'Por favor completa el correo' }).email('Correo electrónico inválido'),
-    telefono: z.string({ error: 'Por favor completa el teléfono' }).min(8, 'El teléfono debe tener al menos 8 dígitos'),
-    contraseña: z
-      .string({ error: 'Por favor completa la contraseña' })
-      .min(8, 'La contraseña debe tener al menos 8 caracteres')
-      .regex(/[A-Z]/, 'La contraseña debe contener al menos una mayúscula')
-      .regex(/[0-9]/, 'La contraseña debe contener al menos un número'),
-    confirmarContraseña: z.string({ error: 'Por favor confirma la contraseña' }),
-    rol: z.enum(['dueño', 'inquilino'] as const, { error: 'Selecciona un rol' }),
-  })
-  .refine((data) => data.contraseña === data.confirmarContraseña, {
-    message: 'Las contraseñas no coinciden',
-    path: ['confirmarContraseña'],
-  });
+const registroFields = {
+  nombre: z.string({ error: 'Por favor completa tu nombre' }).min(2, 'El nombre debe tener al menos 2 caracteres'),
+  correo: z.string({ error: 'Por favor completa el correo' }).email('Correo electrónico inválido'),
+  telefono: z.string({ error: 'Por favor completa el teléfono' }).min(8, 'El teléfono debe tener al menos 8 dígitos'),
+  contraseña: z
+    .string({ error: 'Por favor completa la contraseña' })
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .regex(/[A-Z]/, 'La contraseña debe contener al menos una mayúscula')
+    .regex(/[0-9]/, 'La contraseña debe contener al menos un número'),
+  confirmarContraseña: z.string({ error: 'Por favor confirma la contraseña' }),
+};
+
+export const registroFormSchema = z.object(registroFields).refine(
+  (data) => data.contraseña === data.confirmarContraseña,
+  { message: 'Las contraseñas no coinciden', path: ['confirmarContraseña'] },
+);
+
+export const registroSchema = z.object({
+  ...registroFields,
+  rol: z.enum(['dueño', 'inquilino'] as const, { error: 'Selecciona un rol' }),
+}).refine(
+  (data) => data.contraseña === data.confirmarContraseña,
+  { message: 'Las contraseñas no coinciden', path: ['confirmarContraseña'] },
+);
 export type RegistroFormData = z.infer<typeof registroSchema>;
 
 // ─── Propiedad (crear / editar) ──────────────────────────────────────────────
