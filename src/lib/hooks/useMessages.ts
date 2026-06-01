@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as messagesApi from '@/lib/api/messages';
+import { fetchConversations, fetchConversation, createConversation, fetchMessages, sendMessage, markMessagesRead } from '@/lib/api/messages';
 import type { Conversation, ConversationType, Message } from '@/app/types';
 
 const CONVERSATIONS_KEY = 'conversations';
@@ -8,14 +8,14 @@ const MESSAGES_KEY = 'messages';
 export function useConversations(userId?: string) {
   return useQuery({
     queryKey: [CONVERSATIONS_KEY, userId],
-    queryFn: () => messagesApi.fetchConversations(userId),
+    queryFn: () => fetchConversations(userId),
   });
 }
 
 export function useConversation(id: string) {
   return useQuery({
     queryKey: [CONVERSATIONS_KEY, id],
-    queryFn: () => messagesApi.fetchConversation(id),
+    queryFn: () => fetchConversation(id),
     enabled: !!id,
   });
 }
@@ -31,7 +31,7 @@ export function useCreateConversation() {
       participants: string[];
       propertyId: string;
       type: ConversationType;
-    }) => messagesApi.createConversation(participants, propertyId, type),
+    }) => createConversation(participants, propertyId, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CONVERSATIONS_KEY] });
     },
@@ -41,7 +41,7 @@ export function useCreateConversation() {
 export function useMessages(userId?: string) {
   return useQuery({
     queryKey: [MESSAGES_KEY, userId],
-    queryFn: () => messagesApi.fetchMessages(userId),
+    queryFn: () => fetchMessages(userId),
   });
 }
 
@@ -49,7 +49,7 @@ export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (message: Omit<Message, 'id' | 'timestamp' | 'status'>) =>
-      messagesApi.sendMessage(message),
+      sendMessage(message),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [MESSAGES_KEY] });
       queryClient.invalidateQueries({ queryKey: [CONVERSATIONS_KEY] });
@@ -61,7 +61,7 @@ export function useMarkMessagesRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ conversationId, userId }: { conversationId: string; userId: string }) =>
-      messagesApi.markMessagesRead(conversationId, userId),
+      markMessagesRead(conversationId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [MESSAGES_KEY] });
       queryClient.invalidateQueries({ queryKey: [CONVERSATIONS_KEY] });

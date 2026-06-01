@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as notificationsApi from '@/lib/api/notifications';
+import { fetchNotifications, createNotification, markNotificationRead, markNotificationUnread } from '@/lib/api/notifications';
 import type { Notification } from '@/app/types';
 
 const NOTIFICATIONS_KEY = 'notifications';
@@ -7,7 +7,7 @@ const NOTIFICATIONS_KEY = 'notifications';
 export function useNotifications(userId?: string) {
   return useQuery({
     queryKey: [NOTIFICATIONS_KEY, userId],
-    queryFn: () => notificationsApi.fetchNotifications(userId),
+    queryFn: () => fetchNotifications(userId),
   });
 }
 
@@ -15,7 +15,7 @@ export function useCreateNotification() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (notification: Omit<Notification, 'id'>) =>
-      notificationsApi.createNotification(notification),
+      createNotification(notification),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
     },
@@ -25,7 +25,7 @@ export function useCreateNotification() {
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => notificationsApi.markNotificationRead(id),
+    mutationFn: (id: string) => markNotificationRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
     },
@@ -35,7 +35,7 @@ export function useMarkNotificationRead() {
 export function useMarkNotificationUnread() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => notificationsApi.markNotificationUnread(id),
+    mutationFn: (id: string) => markNotificationUnread(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
     },
