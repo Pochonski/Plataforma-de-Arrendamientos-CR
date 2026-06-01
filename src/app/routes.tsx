@@ -1,9 +1,11 @@
 import { createBrowserRouter, Navigate } from 'react-router';
+import { lazy } from 'react';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
+import { LazyRoute } from './components/shared/LazyRoute';
 import { useAuth } from './contexts/AuthContext';
 
-// Public pages
+// Public pages (eager)
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
@@ -14,25 +16,27 @@ import AceptarInvitacion from './pages/AceptarInvitacion';
 import RecuperarContrasena from './pages/RecuperarContrasena';
 import NotFound from './pages/NotFound';
 
-// Dashboard pages
+// Dashboard landing pages (eager)
 import DuenoDashboard from './pages/dashboard/DuenoDashboard';
 import InquilinoDashboard from './pages/dashboard/InquilinoDashboard';
-import MisPropiedades from './pages/dashboard/MisPropiedades';
-import NuevaPropiedad from './pages/dashboard/NuevaPropiedad';
-import EditarPropiedad from './pages/dashboard/EditarPropiedad';
-import SubirComprobante from './pages/dashboard/SubirComprobante';
-import PagosRecibidos from './pages/dashboard/PagosRecibidos';
-import Perfil from './pages/dashboard/Perfil';
-import Historial from './pages/dashboard/Historial';
-import Invitaciones from './pages/dashboard/Invitaciones';
-import NuevaInvitacion from './pages/dashboard/NuevaInvitacion';
-import MiContrato from './pages/dashboard/MiContrato';
-import Notificaciones from './pages/dashboard/Notificaciones';
-import Mensajes from './pages/dashboard/Mensajes';
-import DashboardCentroAyuda from './pages/dashboard/DashboardCentroAyuda';
-import DashboardTerminos from './pages/dashboard/DashboardTerminos';
-import DashboardPrivacidad from './pages/dashboard/DashboardPrivacidad';
-import DashboardCookies from './pages/dashboard/DashboardCookies';
+
+// Dashboard sub-pages (lazy)
+const MisPropiedades = lazy(() => import('./pages/dashboard/MisPropiedades'));
+const NuevaPropiedad = lazy(() => import('./pages/dashboard/NuevaPropiedad'));
+const EditarPropiedad = lazy(() => import('./pages/dashboard/EditarPropiedad'));
+const SubirComprobante = lazy(() => import('./pages/dashboard/SubirComprobante'));
+const PagosRecibidos = lazy(() => import('./pages/dashboard/PagosRecibidos'));
+const Perfil = lazy(() => import('./pages/dashboard/Perfil'));
+const Historial = lazy(() => import('./pages/dashboard/Historial'));
+const Invitaciones = lazy(() => import('./pages/dashboard/Invitaciones'));
+const NuevaInvitacion = lazy(() => import('./pages/dashboard/NuevaInvitacion'));
+const MiContrato = lazy(() => import('./pages/dashboard/MiContrato'));
+const Notificaciones = lazy(() => import('./pages/dashboard/Notificaciones'));
+const Mensajes = lazy(() => import('./pages/dashboard/Mensajes'));
+const DashboardCentroAyuda = lazy(() => import('./pages/dashboard/DashboardCentroAyuda'));
+const DashboardTerminos = lazy(() => import('./pages/dashboard/DashboardTerminos'));
+const DashboardPrivacidad = lazy(() => import('./pages/dashboard/DashboardPrivacidad'));
+const DashboardCookies = lazy(() => import('./pages/dashboard/DashboardCookies'));
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -66,10 +70,10 @@ export const router = createBrowserRouter([
       { path: 'invitacion/:token', element: <AceptarInvitacion /> },
       { path: 'recuperar-contraseña', element: <RecuperarContrasena /> },
       { path: 'design-docs', element: <DesignDocs /> },
-      { path: 'centro-ayuda', element: <DashboardCentroAyuda /> },
-      { path: 'terminos', element: <DashboardTerminos /> },
-      { path: 'privacidad', element: <DashboardPrivacidad /> },
-      { path: 'cookies', element: <DashboardCookies /> },
+      { path: 'centro-ayuda', element: <LazyRoute component={DashboardCentroAyuda} /> },
+      { path: 'terminos', element: <LazyRoute component={DashboardTerminos} /> },
+      { path: 'privacidad', element: <LazyRoute component={DashboardPrivacidad} /> },
+      { path: 'cookies', element: <LazyRoute component={DashboardCookies} /> },
     ],
   },
   {
@@ -81,22 +85,22 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardHome /> },
-      { path: 'centro-ayuda', element: <DashboardCentroAyuda /> },
-      { path: 'terminos', element: <DashboardTerminos /> },
-      { path: 'privacidad', element: <DashboardPrivacidad /> },
-      { path: 'cookies', element: <DashboardCookies /> },
-      { path: 'propiedades', element: <MisPropiedades /> },
-      { path: 'propiedades/nueva', element: <NuevaPropiedad /> },
-      { path: 'propiedades/:id/editar', element: <EditarPropiedad /> },
-      { path: 'invitaciones', element: <Invitaciones /> },
-      { path: 'invitaciones/nueva', element: <NuevaInvitacion /> },
-      { path: 'pagos', element: <PagosRecibidos /> },
-      { path: 'pago', element: <SubirComprobante /> },
-      { path: 'contrato', element: <MiContrato /> },
-      { path: 'historial', element: <Historial /> },
-      { path: 'notificaciones', element: <Notificaciones /> },
-      { path: 'mensajes', element: <Mensajes /> },
-      { path: 'perfil', element: <Perfil /> },
+      { path: 'centro-ayuda', element: <LazyRoute component={DashboardCentroAyuda} /> },
+      { path: 'terminos', element: <LazyRoute component={DashboardTerminos} /> },
+      { path: 'privacidad', element: <LazyRoute component={DashboardPrivacidad} /> },
+      { path: 'cookies', element: <LazyRoute component={DashboardCookies} /> },
+      { path: 'propiedades', element: <LazyRoute component={MisPropiedades} /> },
+      { path: 'propiedades/nueva', element: <LazyRoute component={NuevaPropiedad} /> },
+      { path: 'propiedades/:id/editar', element: <LazyRoute component={EditarPropiedad} /> },
+      { path: 'invitaciones', element: <LazyRoute component={Invitaciones} /> },
+      { path: 'invitaciones/nueva', element: <LazyRoute component={NuevaInvitacion} /> },
+      { path: 'pagos', element: <LazyRoute component={PagosRecibidos} /> },
+      { path: 'pago', element: <LazyRoute component={SubirComprobante} /> },
+      { path: 'contrato', element: <LazyRoute component={MiContrato} /> },
+      { path: 'historial', element: <LazyRoute component={Historial} /> },
+      { path: 'notificaciones', element: <LazyRoute component={Notificaciones} /> },
+      { path: 'mensajes', element: <LazyRoute component={Mensajes} /> },
+      { path: 'perfil', element: <LazyRoute component={Perfil} /> },
     ],
   },
   {

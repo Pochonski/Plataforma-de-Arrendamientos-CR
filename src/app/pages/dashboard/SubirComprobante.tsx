@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useForm, Controller } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { comprobanteSchema, type ComprobanteFormData } from '@/lib/validations';
+import { useContracts, useProperty, useCreatePayment } from '@/lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
 import { Input } from '../../components/ui/input';
-import { Contract } from '../../types';
 import {
   Select,
   SelectContent,
@@ -14,45 +17,114 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
-import { ArrowLeft, Upload, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
+import { ArrowLeft, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice } from '../../utils/formatters';
 
 export default function SubirComprobante() {
   const { user } = useAuth();
-  const { getContractByInquilinoId, addPayment, properties } = useData();
   const navigate = useNavigate();
-  const [myContract, setMyContract] = useState<Contract | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadContract = async () => {
-      if (!user?.id) {
-        setMyContract(null);
-        setIsLoading(false);
-        return;
-      }
-      const contract = await getContractByInquilinoId(user.id);
-      setMyContract(contract || null);
-      setIsLoading(false);
-    };
-    loadContract();
-  }, [user?.id, getContractByInquilinoId]);
+  const { data: contracts = [], isLoading: isLoadingContracts } = useContracts(user?.id);
+  const myContract = contracts.find((c) => c.inquilinoId === user?.id) || null;
 
-  const property = myContract ? properties.find((p) => p.id === myContract.propiedadId) : null;
+  const { data: property } = useProperty(myContract?.propiedadId || '');
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
-  const [mes, setMes] = useState(currentMonth.toString());
-  const [año, setAño] = useState(currentYear.toString());
-  const [tipoPago, setTipoPago] = useState<'mensualidad' | 'deposito'>('mensualidad');
+  const form = useForm<ComprobanteFormData>({
+    resolver: zodResolver(comprobanteSchema),
+    defaultValues: {
+      mes: currentMonth.toString(),
+      año: currentYear.toString(),
+      tipoPago: 'mensualidad',
+    },
+  });
+
+  const tipoPago = form.watch('tipoPago');
+
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
-  if (isLoading) {
+  const createPayment = useCreatePayment();
+
+  const meses = [
+    { value: '1', label: 'Enero' },
+    { value: '2', label: 'Febrero' },
+    { value: '3', label: 'Marzo' },
+    { value: '4', label: 'Abril' },
+    { value: '5', label: 'Mayo' },
+    { value: '6', label: 'Junio' },
+    { value: '7', label: 'Julio' },
+    { value: '8', label: 'Agosto' },
+    { value: '9', label: 'Septiembre' },
+    { value: '10', label: 'Octubre' },
+    { value: '11', label: 'Noviembre' },
+    { value: '12', label: 'Diciembre' },
+  ];
+
+  const años = [currentYear - 1, currentYear, currentYear + 1];
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('El archivo debe ser menor a 5MB');
+        return;
+      }
+
+      if (!file.type.match(/image\/(jpeg|jpg|png|webp)/)) {
+        toast.error('Solo se permiten imágenes JPG, PNG o WEBP');
+        return;
+      }
+
+      setFileName(file.name);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setComprobante(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const onSubmit: SubmitHandler<ComprobanteFormData> = (data) => {
+    if (!comprobante) {
+      toast.error('Por favor selecciona un comprobante');
+      return;
+    }
+
+    if (!myContract) return;
+
+    createPayment.mutate(
+      {
+        contratoId: myContract.id,
+        propiedadId: myContract.propiedadId,
+        inquilinoId: myContract.inquilinoId,
+        duenoId: myContract.duenoId,
+        tipo: data.tipoPago,
+        mes: data.tipoPago === 'mensualidad' ? parseInt(data.mes) : 0,
+        año: data.tipoPago === 'mensualidad' ? parseInt(data.año) : 0,
+        monto: data.tipoPago === 'mensualidad' ? myContract.montoMensual : myContract.montoDeposito,
+        moneda: myContract.moneda,
+        comprobante,
+        estado: 'pendiente',
+        fechaSubida: new Date(),
+      },
+      {
+        onSuccess: () => {
+          toast.success('Comprobante subido exitosamente');
+          navigate('/dashboard');
+        },
+        onError: () => {
+          toast.error('Error al subir el comprobante. Intenta de nuevo.');
+        },
+      },
+    );
+  };
+
+  if (isLoadingContracts) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -89,86 +161,8 @@ export default function SubirComprobante() {
     );
   }
 
-  const meses = [
-    { value: '1', label: 'Enero' },
-    { value: '2', label: 'Febrero' },
-    { value: '3', label: 'Marzo' },
-    { value: '4', label: 'Abril' },
-    { value: '5', label: 'Mayo' },
-    { value: '6', label: 'Junio' },
-    { value: '7', label: 'Julio' },
-    { value: '8', label: 'Agosto' },
-    { value: '9', label: 'Septiembre' },
-    { value: '10', label: 'Octubre' },
-    { value: '11', label: 'Noviembre' },
-    { value: '12', label: 'Diciembre' },
-  ];
-
-  const años = [currentYear - 1, currentYear, currentYear + 1];
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError('El archivo debe ser menor a 5MB');
-        return;
-      }
-
-      if (!file.type.match(/image\/(jpeg|jpg|png|webp)/)) {
-        setError('Solo se permiten imágenes JPG, PNG o WEBP');
-        return;
-      }
-
-      setError('');
-      setFileName(file.name);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setComprobante(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!comprobante) {
-      setError('Por favor selecciona un comprobante');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      addPayment({
-        contratoId: myContract.id,
-        propiedadId: myContract.propiedadId,
-        inquilinoId: myContract.inquilinoId,
-        duenoId: myContract.duenoId,
-        tipo: tipoPago,
-        mes: tipoPago === 'mensualidad' ? parseInt(mes) : 0,
-        año: tipoPago === 'mensualidad' ? parseInt(año) : 0,
-        monto: tipoPago === 'mensualidad' ? myContract.montoMensual : myContract.montoDeposito,
-        moneda: myContract.moneda,
-        comprobante,
-        estado: 'pendiente',
-        fechaSubida: new Date(),
-      });
-
-      toast.success('Comprobante subido exitosamente');
-      navigate('/dashboard');
-    } catch (err) {
-      setError('Error al subir el comprobante. Intenta de nuevo.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-4" />
@@ -180,17 +174,15 @@ export default function SubirComprobante() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form */}
         <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {createPayment.isError && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                 <AlertCircle className="size-4 flex-shrink-0" />
-                <span>{error}</span>
+                <span>Error al subir el comprobante. Intenta de nuevo.</span>
               </div>
             )}
 
-            {/* Period Selection */}
             <Card>
               <CardHeader>
                 <CardTitle>Detalles del pago</CardTitle>
@@ -199,52 +191,70 @@ export default function SubirComprobante() {
                 {myContract.estadoDeposito === 'pendiente' && (
                   <div className="space-y-2 mb-4">
                     <Label htmlFor="tipoPago">Tipo de pago</Label>
-                    <Select value={tipoPago} onValueChange={(v: 'mensualidad' | 'deposito') => setTipoPago(v)} disabled={isLoading}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mensualidad">Mensualidad</SelectItem>
-                        <SelectItem value="deposito">Depósito de Garantía</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="tipoPago"
+                      control={form.control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange} disabled={createPayment.isPending}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mensualidad">Mensualidad</SelectItem>
+                            <SelectItem value="deposito">Depósito de Garantía</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                 )}
 
                 {tipoPago === 'mensualidad' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                    <Label htmlFor="mes">Mes</Label>
-                    <Select value={mes} onValueChange={setMes} disabled={isLoading}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {meses.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>
-                            {m.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <Label htmlFor="mes">Mes</Label>
+                      <Controller
+                        name="mes"
+                        control={form.control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange} disabled={createPayment.isPending}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {meses.map((m) => (
+                                <SelectItem key={m.value} value={m.value}>
+                                  {m.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="año">Año</Label>
-                    <Select value={año} onValueChange={setAño} disabled={isLoading}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {años.map((a) => (
-                          <SelectItem key={a} value={a.toString()}>
-                            {a}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Label htmlFor="año">Año</Label>
+                      <Controller
+                        name="año"
+                        control={form.control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange} disabled={createPayment.isPending}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {años.map((a) => (
+                                <SelectItem key={a} value={a.toString()}>
+                                  {a}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
                 )}
 
                 <div className="p-4 rounded-lg bg-muted space-y-1">
@@ -256,7 +266,6 @@ export default function SubirComprobante() {
               </CardContent>
             </Card>
 
-            {/* File Upload */}
             <Card>
               <CardHeader>
                 <CardTitle>Comprobante</CardTitle>
@@ -273,7 +282,7 @@ export default function SubirComprobante() {
                         type="file"
                         accept="image/jpeg,image/jpg,image/png,image/webp"
                         onChange={handleFileChange}
-                        disabled={isLoading}
+                        disabled={createPayment.isPending}
                         className="flex-1"
                       />
                       {comprobante && (
@@ -314,7 +323,6 @@ export default function SubirComprobante() {
               </CardContent>
             </Card>
 
-            {/* Instructions */}
             <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
               <CardContent className="p-4">
                 <div className="flex gap-3">
@@ -334,25 +342,23 @@ export default function SubirComprobante() {
               </CardContent>
             </Card>
 
-            {/* Actions */}
             <div className="flex gap-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate(-1)}
-                disabled={isLoading}
+                disabled={createPayment.isPending}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading || !comprobante}>
+              <Button type="submit" disabled={createPayment.isPending || !comprobante}>
                 <Upload className="size-4 mr-2" />
-                {isLoading ? 'Subiendo...' : 'Subir comprobante'}
+                {createPayment.isPending ? 'Subiendo...' : 'Subir comprobante'}
               </Button>
             </div>
           </form>
         </div>
 
-        {/* Sidebar - Contract Info */}
         <div className="space-y-6">
           <Card>
             <CardHeader>

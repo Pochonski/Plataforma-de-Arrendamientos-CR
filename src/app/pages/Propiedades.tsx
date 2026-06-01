@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useData } from '../contexts/DataContext';
+import { useProperties, useDebounce } from '../../lib/hooks';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -22,15 +22,22 @@ import { formatPrice } from '../utils/formatters';
 import { PROVINCIAS, TIPOS_PROPIEDAD } from '../utils/constants';
 
 export default function Propiedades() {
-  const { properties, propertiesTotal, propertiesPage, propertiesTotalPages, isLoadingProperties, fetchProperties } = useData();
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   
-  // Filter states
+  const [page, setPage] = useState(1);
+  
+  // Filter states (immediate UI)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProvincia, setSelectedProvincia] = useState('todas');
   const [selectedTipo, setSelectedTipo] = useState('todos');
   const [selectedPrecio, setSelectedPrecio] = useState('todos');
+
+  // Debounced filter values (used for API calls)
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedProvincia = useDebounce(selectedProvincia, 300);
+  const debouncedTipo = useDebounce(selectedTipo, 300);
+  const debouncedPrecio = useDebounce(selectedPrecio, 300);
 
   const rangosPrecios = [
     { value: '0-300000', label: 'Menos de ₡300,000' },
@@ -40,31 +47,35 @@ export default function Propiedades() {
     { value: '1200000-999999999', label: 'Más de ₡1,200,000' },
   ];
 
-  // Build filters object for API
-  const buildFilters = () => {
-    const filters: any = {};
-    if (searchQuery.trim()) filters.search = searchQuery.trim();
-    if (selectedProvincia !== 'todas') filters.provincia = selectedProvincia;
-    if (selectedTipo !== 'todos') filters.tipo = selectedTipo;
-    if (selectedPrecio !== 'todos') {
-      const [min, max] = selectedPrecio.split('-').map(Number);
-      filters.precioMin = min;
-      filters.precioMax = max;
+  const filters = useMemo(() => {
+    const f: Record<string, any> = {};
+    if (debouncedSearch.trim()) f.search = debouncedSearch.trim();
+    if (debouncedProvincia !== 'todas') f.provincia = debouncedProvincia;
+    if (debouncedTipo !== 'todos') f.tipo = debouncedTipo;
+    if (debouncedPrecio !== 'todos') {
+      const [min, max] = debouncedPrecio.split('-').map(Number);
+      f.precioMin = min;
+      f.precioMax = max;
     }
-    return filters;
-  };
+    return f;
+  }, [debouncedSearch, debouncedProvincia, debouncedTipo, debouncedPrecio]);
 
-  // Handle page change with filters
-  const handlePageChange = (page: number) => {
-    const filters = buildFilters();
-    fetchProperties(page, filters);
-    window.scrollTo({ top: 300, behavior: 'smooth' }); // Scroll to grid start roughly
-  };
+  // Reset to page 1 when debounced filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
-  // Handle filter changes - reset to page 1
-  const handleFilterChange = () => {
-    const filters = buildFilters();
-    fetchProperties(1, filters);
+  const { data: propsData, isLoading: isLoadingProperties } = useProperties(page, filters);
+
+  const properties = propsData?.data ?? [];
+  const propertiesTotal = propsData?.total ?? 0;
+  const propertiesPage = propsData?.page ?? page;
+  const propertiesTotalPages = propsData?.totalPages ?? 0;
+
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 300, behavior: 'smooth' });
   };
 
   // Clear all filters
@@ -73,7 +84,7 @@ export default function Propiedades() {
     setSelectedProvincia('todas');
     setSelectedTipo('todos');
     setSelectedPrecio('todos');
-    fetchProperties(1, {});
+    setPage(1);
   };
 
   const handleContactOwner = (property: Property) => {
@@ -167,11 +178,6 @@ export default function Propiedades() {
                 className="pl-10 h-12 text-base"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleFilterChange();
-                  }
-                }}
               />
             </div>
           </div>
@@ -182,7 +188,7 @@ export default function Propiedades() {
         {/* Filters */}
         <div className="flex flex-col lg:flex-row gap-4 mb-8">
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Select value={selectedProvincia} onValueChange={(val) => { setSelectedProvincia(val); handleFilterChange(); }}>
+            <Select value={selectedProvincia} onValueChange={setSelectedProvincia}>
               <SelectTrigger>
                 <SelectValue placeholder="Provincia" />
               </SelectTrigger>
@@ -196,7 +202,7 @@ export default function Propiedades() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedTipo} onValueChange={(val) => { setSelectedTipo(val); handleFilterChange(); }}>
+            <Select value={selectedTipo} onValueChange={setSelectedTipo}>
               <SelectTrigger>
                 <SelectValue placeholder="Tipo de propiedad" />
               </SelectTrigger>
@@ -210,7 +216,7 @@ export default function Propiedades() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedPrecio} onValueChange={(val) => { setSelectedPrecio(val); handleFilterChange(); }}>
+            <Select value={selectedPrecio} onValueChange={setSelectedPrecio}>
               <SelectTrigger>
                 <SelectValue placeholder="Rango de precio" />
               </SelectTrigger>

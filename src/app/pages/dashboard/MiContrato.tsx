@@ -1,14 +1,11 @@
-import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useContracts, useProperties } from '@/lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Link } from 'react-router';
-import { Contract } from '../../types';
 import {
   FileText,
-  Home,
   Calendar,
   CreditCard,
   Download,
@@ -20,25 +17,11 @@ import { formatPrice } from '../../utils/formatters';
 
 export default function MiContrato() {
   const { user } = useAuth();
-  const { getContractByInquilinoId, properties } = useData();
-  const [myContract, setMyContract] = useState<Contract | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: contracts = [], isLoading } = useContracts(user?.id);
+  const myContract = contracts.find(c => c.estado === 'activo') || null;
+  const { data: allProperties = [] } = useProperties();
 
-  useEffect(() => {
-    const loadContract = async () => {
-      if (!user?.id) {
-        setMyContract(null);
-        setIsLoading(false);
-        return;
-      }
-      const contract = await getContractByInquilinoId(user.id);
-      setMyContract(contract || null);
-      setIsLoading(false);
-    };
-    loadContract();
-  }, [user?.id, getContractByInquilinoId]);
-
-  const property = myContract ? properties.find((p) => p.id === myContract.propiedadId) : null;
+  const property = myContract ? allProperties.find((p) => p.id === myContract.propiedadId) : null;
 
   if (isLoading) {
     return (
@@ -99,7 +82,6 @@ export default function MiContrato() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Mi Contrato</h1>
         <p className="text-muted-foreground mt-1">
@@ -107,7 +89,6 @@ export default function MiContrato() {
         </p>
       </div>
 
-      {/* Status Banner */}
       <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
         <CardContent className="p-6">
           <div className="flex items-start justify-between gap-4">
@@ -128,7 +109,6 @@ export default function MiContrato() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Property Info */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Información de la propiedad</CardTitle>
@@ -174,7 +154,6 @@ export default function MiContrato() {
           </CardContent>
         </Card>
 
-        {/* Contract Details */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -251,7 +230,6 @@ export default function MiContrato() {
         </div>
       </div>
 
-      {/* Terms */}
       <Card>
         <CardHeader>
           <CardTitle>Términos y condiciones</CardTitle>

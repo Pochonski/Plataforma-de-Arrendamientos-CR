@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useForm, Controller } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { invitacionSchema, type InvitacionFormData } from '@/lib/validations';
+import { useProperties, useCreateInvitation } from '@/lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -19,74 +23,59 @@ import { formatPrice } from '../../utils/formatters';
 
 export default function NuevaInvitacion() {
   const { user } = useAuth();
-  const { properties, createInvitation } = useData();
   const navigate = useNavigate();
 
+  const { data: properties = [] } = useProperties(1, user?.id ? { duenoId: user.id } : undefined);
   const myProperties = properties.filter((p) => p.duenoId === user?.id);
 
-  const [propiedadId, setPropiedadId] = useState('');
-  const [inquilinoCorreo, setInquilinoCorreo] = useState('');
-  const [montoAlquiler, setMontoAlquiler] = useState('');
-  const [montoDeposito, setMontoDeposito] = useState('');
-  const [moneda, setMoneda] = useState<'CRC' | 'USD'>('CRC');
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [createdInvitation, setCreatedInvitation] = useState<any>(null);
+  const form = useForm<InvitacionFormData>({
+    resolver: zodResolver(invitacionSchema),
+    defaultValues: {
+      inquilinoCorreo: '',
+      propiedadId: '',
+      montoAlquiler: 0,
+      montoDeposito: 0,
+      moneda: 'CRC',
+    },
+  });
 
+  const { errors } = form.formState;
+  const propiedadId = form.watch('propiedadId');
   const selectedProperty = properties.find((p) => p.id === propiedadId);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setFieldErrors({});
+  const mutation = useCreateInvitation();
+  const [createdInvitation, setCreatedInvitation] = useState<any>(null);
 
-    const errors: Record<string, string> = {};
-    if (!propiedadId) errors.propiedadId = 'Por favor selecciona la propiedad';
-    if (!montoAlquiler) errors.montoAlquiler = 'Por favor ingresa el monto de alquiler';
-    if (!montoDeposito) errors.montoDeposito = 'Por favor ingresa el monto del depósito';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    if (inquilinoCorreo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inquilinoCorreo)) {
-      setError('Ingresa un correo electrónico válido');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const invitation = await createInvitation({
-        propiedadId,
+  const onSubmit: SubmitHandler<InvitacionFormData> = (data) => {
+    mutation.mutate(
+      {
+        propiedadId: data.propiedadId,
         duenoId: user?.id || '',
-        inquilinoCorreo: inquilinoCorreo || undefined,
-        montoAlquiler: parseFloat(montoAlquiler),
-        montoDeposito: parseFloat(montoDeposito),
-        moneda,
-      });
-
-      setCreatedInvitation(invitation);
-      toast.success('Invitación creada exitosamente');
-    } catch (err) {
-      setError('Error al crear la invitación. Intenta de nuevo.');
-    } finally {
-      setIsLoading(false);
-    }
+        inquilinoCorreo: data.inquilinoCorreo || undefined,
+        montoAlquiler: data.montoAlquiler,
+        montoDeposito: data.montoDeposito,
+        moneda: data.moneda,
+      },
+      {
+        onSuccess: (invitation) => {
+          setCreatedInvitation(invitation);
+          toast.success('Invitación creada exitosamente');
+        },
+        onError: () => {
+          toast.error('Error al crear la invitación. Intenta de nuevo.');
+        },
+      },
+    );
   };
 
   const copyInvitationLink = async () => {
     if (createdInvitation) {
       const link = `${window.location.origin}/invitacion/${createdInvitation.token}`;
-      
+
       try {
-        // Try modern clipboard API first
         await navigator.clipboard.writeText(link);
         toast.success('Enlace copiado al portapapeles');
-      } catch (err) {
-        // Fallback for when clipboard API is blocked
+      } catch {
         try {
           const textArea = document.createElement('textarea');
           textArea.value = link;
@@ -96,18 +85,17 @@ export default function NuevaInvitacion() {
           document.body.appendChild(textArea);
           textArea.focus();
           textArea.select();
-          
+
           const successful = document.execCommand('copy');
           document.body.removeChild(textArea);
-          
+
           if (successful) {
             toast.success('Enlace copiado al portapapeles');
           } else {
             toast.error('No se pudo copiar el enlace');
           }
-        } catch (fallbackErr) {
+        } catch {
           toast.error('No se pudo copiar el enlace');
-          console.error('Error al copiar:', fallbackErr);
         }
       }
     }
@@ -116,7 +104,6 @@ export default function NuevaInvitacion() {
   if (createdInvitation) {
     return (
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/invitaciones')}>
             <ArrowLeft className="size-4" />
@@ -207,10 +194,7 @@ export default function NuevaInvitacion() {
           </Button>
           <Button onClick={() => {
             setCreatedInvitation(null);
-            setPropiedadId('');
-            setInquilinoCorreo('');
-            setMontoAlquiler('');
-            setMontoDeposito('');
+            form.reset();
           }}>
             Crear otra invitación
           </Button>
@@ -221,7 +205,6 @@ export default function NuevaInvitacion() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-4" />
@@ -248,11 +231,11 @@ export default function NuevaInvitacion() {
         </Card>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {mutation.isError && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
             <AlertCircle className="size-4 flex-shrink-0" />
-            <span>{error}</span>
+            <span>Error al crear la invitación. Intenta de nuevo.</span>
           </div>
         )}
 
@@ -263,34 +246,39 @@ export default function NuevaInvitacion() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="propiedad">Propiedad *</Label>
-              <Select
-                value={propiedadId}
-                onValueChange={(value) => {
-                  setPropiedadId(value);
-                  if (fieldErrors.propiedadId) setFieldErrors(prev => ({ ...prev, propiedadId: '' }));
-                  const prop = properties.find((p) => p.id === value);
-                  if (prop) {
-                    setMontoAlquiler(prop.precio.toString());
-                    setMontoDeposito(prop.precio.toString()); // El depósito por defecto es 1 mensualidad
-                    setMoneda(prop.moneda);
-                  }
-                }}
-                disabled={isLoading || myProperties.length === 0}
-              >
-                <SelectTrigger className={fieldErrors.propiedadId ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Selecciona una propiedad" />
-                </SelectTrigger>
-                <SelectContent>
-                  {myProperties.map((property) => (
-                    <SelectItem key={property.id} value={property.id}>
-                      {property.titulo} - {formatPrice(property.precio, property.moneda)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldErrors.propiedadId && (
+              <Controller
+                name="propiedadId"
+                control={form.control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      const prop = properties.find((p) => p.id === value);
+                      if (prop) {
+                        form.setValue('montoAlquiler', prop.precio);
+                        form.setValue('montoDeposito', prop.precio);
+                        form.setValue('moneda', prop.moneda);
+                      }
+                    }}
+                    disabled={mutation.isPending || myProperties.length === 0}
+                  >
+                    <SelectTrigger className={errors.propiedadId ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="Selecciona una propiedad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {myProperties.map((property) => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.titulo} - {formatPrice(property.precio, property.moneda)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.propiedadId && (
                 <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="size-3" /> {fieldErrors.propiedadId}
+                  <AlertCircle className="size-3" /> {errors.propiedadId.message}
                 </p>
               )}
             </div>
@@ -311,17 +299,13 @@ export default function NuevaInvitacion() {
                   id="monto"
                   type="number"
                   placeholder="850000"
-                  className={fieldErrors.montoAlquiler ? 'border-destructive' : ''}
-                  value={montoAlquiler}
-                  onChange={(e) => {
-                    setMontoAlquiler(e.target.value);
-                    if (fieldErrors.montoAlquiler) setFieldErrors(prev => ({ ...prev, montoAlquiler: '' }));
-                  }}
-                  disabled={isLoading}
+                  className={errors.montoAlquiler ? 'border-destructive' : ''}
+                  {...form.register('montoAlquiler', { valueAsNumber: true })}
+                  disabled={mutation.isPending}
                 />
-                {fieldErrors.montoAlquiler && (
+                {errors.montoAlquiler && (
                   <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="size-3" /> {fieldErrors.montoAlquiler}
+                    <AlertCircle className="size-3" /> {errors.montoAlquiler.message}
                   </p>
                 )}
               </div>
@@ -332,28 +316,30 @@ export default function NuevaInvitacion() {
                   id="deposito"
                   type="number"
                   placeholder="850000"
-                  className={fieldErrors.montoDeposito ? 'border-destructive' : ''}
-                  value={montoDeposito}
-                  onChange={(e) => {
-                    setMontoDeposito(e.target.value);
-                    if (fieldErrors.montoDeposito) setFieldErrors(prev => ({ ...prev, montoDeposito: '' }));
-                  }}
-                  disabled={isLoading}
+                  className={errors.montoDeposito ? 'border-destructive' : ''}
+                  {...form.register('montoDeposito', { valueAsNumber: true })}
+                  disabled={mutation.isPending}
                 />
                 <p className="text-xs text-muted-foreground">Por ley suele ser equivalente a un mes</p>
               </div>
 
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="moneda">Moneda *</Label>
-                <Select value={moneda} onValueChange={(value: 'CRC' | 'USD') => setMoneda(value)} disabled={isLoading}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CRC">Colones (CRC)</SelectItem>
-                    <SelectItem value="USD">Dólares (USD)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="moneda"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange} disabled={mutation.isPending}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CRC">Colones (CRC)</SelectItem>
+                        <SelectItem value="USD">Dólares (USD)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
 
@@ -365,12 +351,16 @@ export default function NuevaInvitacion() {
                   id="correo"
                   type="email"
                   placeholder="inquilino@ejemplo.com"
-                  className="pl-10"
-                  value={inquilinoCorreo}
-                  onChange={(e) => setInquilinoCorreo(e.target.value)}
-                  disabled={isLoading}
+                  className={`pl-10 ${errors.inquilinoCorreo ? 'border-destructive' : ''}`}
+                  {...form.register('inquilinoCorreo')}
+                  disabled={mutation.isPending}
                 />
               </div>
+              {errors.inquilinoCorreo && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="size-3" /> {errors.inquilinoCorreo.message}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Si lo dejas vacío, cualquier persona con el enlace podrá aceptar la invitación
               </p>
@@ -402,13 +392,13 @@ export default function NuevaInvitacion() {
             type="button"
             variant="outline"
             onClick={() => navigate(-1)}
-            disabled={isLoading}
+            disabled={mutation.isPending}
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={isLoading || myProperties.length === 0}>
+          <Button type="submit" disabled={mutation.isPending || myProperties.length === 0}>
             <Mail className="size-4 mr-2" />
-            {isLoading ? 'Creando...' : 'Crear invitación'}
+            {mutation.isPending ? 'Creando...' : 'Crear invitación'}
           </Button>
         </div>
       </form>

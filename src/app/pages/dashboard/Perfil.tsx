@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { perfilSchema, type PerfilFormData } from '@/lib/validations';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -12,50 +15,35 @@ import { toast } from 'sonner';
 
 export default function Perfil() {
   const { user, updateUser } = useAuth();
-  const { getUserById } = useData();
-  const [nombre, setNombre] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const form = useForm<PerfilFormData>({
+    resolver: zodResolver(perfilSchema),
+    defaultValues: {
+      nombre: user?.nombre || '',
+      correo: user?.correo || '',
+      telefono: user?.telefono || '',
+    },
+  });
+
+  const { errors } = form.formState;
+  const isSubmitting = form.formState.isSubmitting;
 
   useEffect(() => {
-    if (user?.id) {
-      getUserById(user.id).then((fetched) => {
-        if (fetched) {
-          setNombre(fetched.nombre);
-          setCorreo(fetched.correo);
-          setTelefono(fetched.telefono || '');
-        }
+    if (user) {
+      form.reset({
+        nombre: user.nombre,
+        correo: user.correo,
+        telefono: user.telefono || '',
       });
     }
-  }, [user?.id, getUserById]);
+  }, [user, form.reset]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setFieldErrors({});
-
-    const errors: Record<string, string> = {};
-    if (!nombre.trim()) errors.nombre = 'Por favor completa tu nombre';
-    if (!correo.trim()) errors.correo = 'Por favor completa el correo';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
+  const onSubmit: SubmitHandler<PerfilFormData> = async (data) => {
     try {
-      await updateUser({ nombre, correo, telefono });
+      await updateUser(data);
       toast.success('Perfil actualizado exitosamente');
-    } catch (err) {
-      setError('Error al actualizar el perfil');
-    } finally {
-      setIsLoading(false);
+    } catch {
+      toast.error('Error al actualizar el perfil');
     }
   };
 
@@ -84,7 +72,6 @@ export default function Perfil() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Mi Perfil</h1>
         <p className="text-muted-foreground mt-1">
@@ -93,7 +80,6 @@ export default function Perfil() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Info Card */}
         <Card className="lg:col-span-1">
           <CardContent className="p-6 text-center">
             <Avatar className="size-24 mx-auto mb-4">
@@ -107,17 +93,16 @@ export default function Perfil() {
           </CardContent>
         </Card>
 
-        {/* Edit Form */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Información personal</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {errors.root && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                   <AlertCircle className="size-4 flex-shrink-0" />
-                  <span>{error}</span>
+                  <span>{errors.root.message}</span>
                 </div>
               )}
 
@@ -129,18 +114,14 @@ export default function Perfil() {
                     <Input
                       id="nombre"
                       placeholder="Tu nombre"
-                      className={`pl-10 ${fieldErrors.nombre ? 'border-destructive' : ''}`}
-                      value={nombre}
-                      onChange={(e) => {
-                        setNombre(e.target.value);
-                        if (fieldErrors.nombre) setFieldErrors(prev => ({ ...prev, nombre: '' }));
-                      }}
-                      disabled={isLoading}
+                      className={`pl-10 ${errors.nombre ? 'border-destructive' : ''}`}
+                      {...form.register('nombre')}
+                      disabled={isSubmitting}
                     />
                   </div>
-                  {fieldErrors.nombre && (
+                  {errors.nombre && (
                     <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="size-3" /> {fieldErrors.nombre}
+                      <AlertCircle className="size-3" /> {errors.nombre.message}
                     </p>
                   )}
                 </div>
@@ -153,18 +134,14 @@ export default function Perfil() {
                       id="correo"
                       type="email"
                       placeholder="tucorreo@ejemplo.com"
-                      className={`pl-10 ${fieldErrors.correo ? 'border-destructive' : ''}`}
-                      value={correo}
-                      onChange={(e) => {
-                        setCorreo(e.target.value);
-                        if (fieldErrors.correo) setFieldErrors(prev => ({ ...prev, correo: '' }));
-                      }}
-                      disabled={isLoading}
+                      className={`pl-10 ${errors.correo ? 'border-destructive' : ''}`}
+                      {...form.register('correo')}
+                      disabled={isSubmitting}
                     />
                   </div>
-                  {fieldErrors.correo && (
+                  {errors.correo && (
                     <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="size-3" /> {fieldErrors.correo}
+                      <AlertCircle className="size-3" /> {errors.correo.message}
                     </p>
                   )}
                 </div>
@@ -178,9 +155,8 @@ export default function Perfil() {
                       type="tel"
                       placeholder="8888-8888"
                       className="pl-10"
-                      value={telefono}
-                      onChange={(e) => setTelefono(e.target.value)}
-                      disabled={isLoading}
+                      {...form.register('telefono')}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
@@ -197,16 +173,15 @@ export default function Perfil() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isSubmitting}>
                 <Save className="size-4 mr-2" />
-                {isLoading ? 'Guardando...' : 'Guardar cambios'}
+                {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
               </Button>
             </form>
           </CardContent>
         </Card>
       </div>
 
-      {/* Additional Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>

@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router';
-import { useData } from '../contexts/DataContext';
+import { useProperty } from '../../lib/hooks';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -15,32 +15,17 @@ import {
   MessageSquare,
   Loader2,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import type { Property } from '../types';
 import { formatPrice } from '../utils/formatters';
 
 export default function PropiedadDetalle() {
   const { id } = useParams<{ id: string }>();
-  const { getPropertyById } = useData();
+  const { data: property, isLoading } = useProperty(id ?? '');
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [property, setProperty] = useState<Property | null | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) {
-      setProperty(null);
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    getPropertyById(id)
-      .then((data) => setProperty(data ?? null))
-      .catch(() => setProperty(null))
-      .finally(() => setIsLoading(false));
-  }, [id]);
 
   // Loading state
   if (isLoading) {

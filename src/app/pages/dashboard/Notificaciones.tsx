@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useNotifications, useMarkNotificationRead } from '@/lib/hooks';
 import { useNotificacionesWS, NotificacionWS } from '../../hooks/useNotificacionesWS';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
@@ -18,16 +18,19 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Notification } from '../../types';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Notificaciones() {
   const { user, token } = useAuth();
-  const { notifications, markNotificationAsRead, getUnreadCount, fetchNotifications, isLoadingNotifications, addNotification } = useData();
+  const { data: notifications = [], isLoading, isFetching, refetch } = useNotifications(user?.id);
+  const markNotificationRead = useMarkNotificationRead();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const handleRefresh = async () => {
     if (user?.id) {
       try {
-        await fetchNotifications(user.id);
+        await refetch();
         toast.success('Notificaciones actualizadas');
       } catch (error) {
         toast.error('Error al actualizar');
@@ -35,43 +38,25 @@ export default function Notificaciones() {
     }
   };
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchNotifications(user.id);
-    }
-  }, [user?.id, fetchNotifications]);
-
   // ─── Real-time: WebSocket para notificaciones en tiempo real ──────────────
-  const handleNotificacionWS = useCallback((notif: NotificacionWS) => {
-    // Mapear el modelo del backend al tipo Notification del frontend
-    const notificacionFrontend: Omit<Notification, 'id'> = {
-      userId: notif.usuario_id,
-      tipo: notif.tipo as Notification['tipo'],
-      titulo: notif.titulo,
-      mensaje: notif.cuerpo,
-      leida: false,
-      fecha: new Date(notif.creada_en),
-      link: notif.metadata?.conversacion_id
-        ? `/dashboard/mensajes`
-        : notif.metadata?.propiedad_id
-        ? `/dashboard/propiedades/${notif.metadata.propiedad_id}`
-        : undefined,
-    };
+  const handleNotificacionWS = useCallback((_notif: NotificacionWS) => {
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
 
-    // Agregar al estado local vía DataContext
-    addNotification(notificacionFrontend);
-
-    // Mostrar toast interactivo
-    toast.info(notif.titulo, {
-      description: notif.cuerpo,
-      action: notificacionFrontend.link
+    toast.info(_notif.titulo, {
+      description: _notif.cuerpo,
+      action: _notif.metadata?.conversacion_id
         ? {
             label: 'Ver',
-            onClick: () => navigate(notificacionFrontend.link!),
+            onClick: () => navigate(`/dashboard/mensajes`),
+          }
+        : _notif.metadata?.propiedad_id
+        ? {
+            label: 'Ver',
+            onClick: () => navigate(`/dashboard/propiedades/${_notif.metadata.propiedad_id}`),
           }
         : undefined,
     });
-  }, [addNotification, navigate]);
+  }, [queryClient, navigate]);
 
   const { connected: wsConnected } = useNotificacionesWS({
     userId: user?.id ?? null,
@@ -88,7 +73,7 @@ export default function Notificaciones() {
     return true;
   });
 
-  const unreadCount = getUnreadCount(user?.id || '');
+  const unreadCount = myNotifications.filter((n) => !n.leida).length;
 
   const getNotificationIcon = (tipo: string) => {
     switch (tipo) {
@@ -126,13 +111,13 @@ export default function Notificaciones() {
   };
 
   const handleMarkAsRead = (id: string) => {
-    markNotificationAsRead(id);
+    markNotificationRead.mutate(id);
   };
 
   const markAllAsRead = () => {
     myNotifications.forEach((n) => {
       if (!n.leida) {
-        markNotificationAsRead(n.id);
+        markNotificationRead.mutate(n.id);
       }
     });
   };
@@ -152,7 +137,7 @@ export default function Notificaciones() {
 
   const handleNotificationClick = (notification: typeof myNotifications[0]) => {
     if (!notification.leida) {
-      markNotificationAsRead(notification.id);
+      markNotificationRead.mutate(notification.id);
     }
     if (notification.link) {
       navigate(notification.link);
@@ -190,10 +175,10 @@ export default function Notificaciones() {
             variant="outline"
             size="lg"
             onClick={handleRefresh}
-            disabled={isLoadingNotifications}
+            disabled={isFetching}
             className="flex-1 sm:flex-none"
           >
-            <RefreshCw className={`size-4 mr-2 ${isLoadingNotifications ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`size-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
         </div>
@@ -234,7 +219,14 @@ export default function Notificaciones() {
 
       {/* Notifications List */}
       <div className="space-y-3">
-        {filteredNotifications.length > 0 ? (
+        {isLoading ? (
+          <Card className="p-12 text-center">
+            <div className="inline-flex items-center justify-center size-12 rounded-full bg-muted mb-4">
+              <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+            <p className="text-muted-foreground">Cargando notificaciones...</p>
+          </Card>
+        ) : filteredNotifications.length > 0 ? (
           filteredNotifications.map((notification) => (
             <Card
               key={notification.id}

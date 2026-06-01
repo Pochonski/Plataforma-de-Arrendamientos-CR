@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useProperties, useDeleteProperty, useUpdateProperty, useContracts, useUpdateContract } from '@/lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -38,25 +38,26 @@ import { formatPrice } from '../../utils/formatters';
 
 export default function MisPropiedades() {
   const { user } = useAuth();
-  const { properties, deleteProperty, contracts, updateContract, updateProperty, fetchProperties, isLoadingProperties } = useData();
+  const { data: properties = [], isLoading, isFetching, refetch } = useProperties(
+    1,
+    user?.id ? { duenoId: user.id } : undefined
+  );
+  const { data: contracts = [] } = useContracts(user?.id);
+  const deleteProperty = useDeleteProperty();
+  const updateContract = useUpdateContract();
+  const updateProperty = useUpdateProperty();
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleRefresh = async () => {
     try {
-      await fetchProperties(1, { duenoId: user?.id });
+      await refetch();
       toast.success('Lista de propiedades actualizada');
     } catch (error) {
       toast.error('Error al actualizar');
     }
   };
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchProperties(1, { duenoId: user.id });
-    }
-  }, [user?.id, fetchProperties]);
-  
   // Finish Contract State
   const [finishPropertyId, setFinishPropertyId] = useState<string | null>(null);
   const [depositResolution, setDepositResolution] = useState<'devuelto' | 'retenido' | null>(null);
@@ -69,13 +70,13 @@ export default function MisPropiedades() {
     property.canton.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleDelete = (id: string) => {
-    deleteProperty(id);
+  const handleDelete = async (id: string) => {
+    await deleteProperty.mutateAsync(id);
     setDeleteId(null);
     toast.success('Propiedad eliminada exitosamente');
   };
 
-  const handleFinishContract = () => {
+  const handleFinishContract = async () => {
     if (!finishPropertyId || !depositResolution) return;
 
     const property = properties.find(p => p.id === finishPropertyId);
@@ -83,14 +84,17 @@ export default function MisPropiedades() {
 
     const activeContract = contracts.find(c => c.propiedadId === finishPropertyId && c.estado === 'activo');
     if (activeContract) {
-      updateContract(activeContract.id, {
-        estado: 'finalizado',
-        estadoDeposito: depositResolution
+      await updateContract.mutateAsync({
+        id: activeContract.id,
+        data: {
+          estado: 'finalizado',
+          estadoDeposito: depositResolution
+        }
       });
       toast.success(`Contrato finalizado. Depósito ${depositResolution}.`);
     }
 
-    updateProperty(finishPropertyId, { estado: 'disponible' });
+    await updateProperty.mutateAsync({ id: finishPropertyId, data: { estado: 'disponible' } });
     setFinishPropertyId(null);
     setDepositResolution(null);
   };
@@ -123,9 +127,9 @@ export default function MisPropiedades() {
             variant="outline" 
             size="lg" 
             onClick={handleRefresh} 
-            disabled={isLoadingProperties}
+            disabled={isFetching}
           >
-            <RefreshCw className={`size-4 mr-2 ${isLoadingProperties ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`size-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
           <Button asChild size="lg">
@@ -149,7 +153,11 @@ export default function MisPropiedades() {
       </div>
 
       {/* Properties Grid */}
-      {filteredProperties.length > 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : filteredProperties.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProperties.map((property) => (
             <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">

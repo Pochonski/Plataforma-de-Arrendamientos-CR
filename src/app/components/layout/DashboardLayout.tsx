@@ -1,9 +1,10 @@
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useNotifications, usePayments, useConversations, useMessages } from '@/lib/hooks';
 import { Logo } from '../shared/Logo';
 import { ThemeToggle } from '../shared/ThemeToggle';
 import { DashboardFooter } from '../shared/DashboardFooter';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -28,29 +29,17 @@ import {
   Mail,
   MessageSquare,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function DashboardLayout() {
   const { user, logout } = useAuth();
-  const { getUnreadCount, getUnreadMessagesCount, fetchPayments, fetchNotifications, fetchMessages, fetchConversations } = useData();
+  const { data: notificationsData = [] } = useNotifications(user?.id);
+  const { data: paymentsData = [] } = usePayments(user?.id);
+  const { data: conversationsData = [] } = useConversations(user?.id);
+  const { data: messagesData = [] } = useMessages(user?.id);
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (user?.id) {
-      // Refresh context data for the specific user upon entering the dashboard
-      // Each fetch is filtered by user.id so we only get that user's data
-      fetchPayments(user.id);
-      fetchNotifications(user.id);
-      fetchConversations(user.id);
-      fetchMessages(user.id);
-      // Only fetch properties if we have a duenoId (owners have properties)
-      if (user.rol === 'dueño') {
-        fetchProperties(1, { duenoId: user.id });
-      }
-    }
-  }, [user?.id, fetchPayments, fetchNotifications, fetchConversations, fetchMessages, fetchProperties, user?.rol]);
 
   const handleLogout = () => {
     logout();
@@ -62,8 +51,8 @@ export function DashboardLayout() {
     setMobileMenuOpen(false);
   };
 
-  const unreadCount = user ? getUnreadCount(user.id) : 0;
-  const unreadMessagesCount = user ? getUnreadMessagesCount(user.id) : 0;
+  const unreadCount = user ? notificationsData.filter(n => !n.leida).length : 0;
+  const unreadMessagesCount = user ? conversationsData.reduce((sum, c) => sum + (c.unreadCount?.[user.id] ?? 0), 0) : 0;
 
   const duenoMenuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -94,7 +83,7 @@ export function DashboardLayout() {
         <Logo />
       </div>
 
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto" role="navigation" aria-label="Navegación principal">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
@@ -111,6 +100,8 @@ export function DashboardLayout() {
               }}
               role="button"
               tabIndex={0}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
               className={`cursor-pointer w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-primary text-primary-foreground'
@@ -227,7 +218,9 @@ export function DashboardLayout() {
 
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
 
         {/* Footer */}

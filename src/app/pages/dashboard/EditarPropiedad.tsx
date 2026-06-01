@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { propiedadSchema, type PropiedadFormData } from '@/lib/validations';
+import { useUpdateProperty, useProperty } from '@/lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -17,69 +20,52 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { ArrowLeft, Plus, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Property } from '../../types';
 import { PROVINCIAS, TIPOS_PROPIEDAD } from '../../utils/constants';
 
 export default function EditarPropiedad() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { properties, updateProperty, getPropertyById } = useData();
   const navigate = useNavigate();
 
-  const [property, setProperty] = useState<Property | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const { data: property, isLoading: initialLoading } = useProperty(id || '');
 
-  const [titulo, setTitulo] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [precio, setPrecio] = useState('');
-  const [moneda, setMoneda] = useState<'CRC' | 'USD'>('CRC');
-  const [provincia, setProvincia] = useState('');
-  const [canton, setCanton] = useState('');
-  const [distrito, setDistrito] = useState('');
-  const [tipo, setTipo] = useState('');
-  const [estado, setEstado] = useState('');
-  const [imagenes, setImagenes] = useState<string[]>([]);
-  const [caracteristicas, setCaracteristicas] = useState<string[]>([]);
-  const [nuevaCaracteristica, setNuevaCaracteristica] = useState('');
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const form = useForm<PropiedadFormData>({
+    resolver: zodResolver(propiedadSchema),
+    defaultValues: {
+      titulo: '',
+      descripcion: '',
+      precio: 0,
+      moneda: 'CRC',
+      tipo: 'casa',
+      provincia: '',
+      canton: '',
+      distrito: '',
+      caracteristicas: [],
+      imagenes: [],
+      estado: 'disponible',
+    },
+  });
 
-  useEffect(() => {
-    const loadProperty = async () => {
-      if (id) {
-        setInitialLoading(true);
-        try {
-          const data = await getPropertyById(id);
-          setProperty(data || null);
-        } catch (err) {
-          console.error('Error loading property:', err);
-          setProperty(null);
-        } finally {
-          setInitialLoading(false);
-        }
-      } else {
-        setInitialLoading(false);
-      }
-    };
-    loadProperty();
-  }, [id, getPropertyById]);
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    getValues,
+    watch,
+    reset,
+  } = form;
+
+  const updateProperty = useUpdateProperty();
 
   useEffect(() => {
     if (property) {
-      setTitulo(property.titulo);
-      setDescripcion(property.descripcion);
-      setPrecio(property.precio.toString());
-      setMoneda(property.moneda);
-      setProvincia(property.provincia);
-      setCanton(property.canton);
-      setDistrito(property.distrito);
-      setTipo(property.tipo);
-      setEstado(property.estado);
-      setImagenes(property.imagenes);
-      setCaracteristicas(property.caracteristicas);
+      reset(property);
     }
-  }, [property]);
+  }, [property, reset]);
+
+  const [nuevaCaracteristica, setNuevaCaracteristica] = useState('');
 
   const estados = [
     { value: 'disponible', label: 'Disponible' },
@@ -136,75 +122,45 @@ export default function EditarPropiedad() {
     );
   }
 
+  const imagenes = watch('imagenes');
+  const caracteristicas = watch('caracteristicas');
+
   const handleAddCaracteristica = () => {
     if (nuevaCaracteristica.trim()) {
-      setCaracteristicas([...caracteristicas, nuevaCaracteristica.trim()]);
+      setValue('caracteristicas', [...getValues('caracteristicas'), nuevaCaracteristica.trim()]);
       setNuevaCaracteristica('');
     }
   };
 
   const handleRemoveCaracteristica = (index: number) => {
-    setCaracteristicas(caracteristicas.filter((_, i) => i !== index));
+    setValue('caracteristicas', getValues('caracteristicas').filter((_, i) => i !== index));
   };
 
   const handleAddImagen = (url: string) => {
-    if (!imagenes.includes(url)) {
-      setImagenes([...imagenes, url]);
+    const current = getValues('imagenes');
+    if (!current.includes(url)) {
+      setValue('imagenes', [...current, url], { shouldValidate: true });
     }
   };
 
   const handleRemoveImagen = (index: number) => {
-    setImagenes(imagenes.filter((_, i) => i !== index));
+    const current = getValues('imagenes');
+    setValue('imagenes', current.filter((_, i) => i !== index), { shouldValidate: true });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setFieldErrors({});
-
-    const errors: Record<string, string> = {};
-    if (!titulo.trim()) errors.titulo = 'Por favor completa el título';
-    if (!descripcion.trim()) errors.descripcion = 'Por favor completa la descripción';
-    if (!precio) errors.precio = 'Por favor ingresa el precio';
-    if (!provincia) errors.provincia = 'Por favor selecciona la provincia';
-    if (!canton.trim()) errors.canton = 'Por favor ingresa el cantón';
-    if (!distrito.trim()) errors.distrito = 'Por favor ingresa el distrito';
-    if (!tipo) errors.tipo = 'Por favor selecciona el tipo';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    if (imagenes.length === 0) {
-      setError('Agrega al menos una imagen');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      updateProperty(property.id, {
-        titulo,
-        descripcion,
-        precio: parseFloat(precio),
-        moneda,
-        provincia,
-        canton,
-        distrito,
-        tipo: tipo as any,
-        estado: estado as any,
-        imagenes,
-        caracteristicas,
-      });
-
-      toast.success('Propiedad actualizada exitosamente');
-      navigate('/dashboard/propiedades');
-    } catch (err) {
-      setError('Error al actualizar la propiedad. Intenta de nuevo.');
-    } finally {
-      setIsLoading(false);
-    }
+  const onSubmit: SubmitHandler<PropiedadFormData> = (data) => {
+    updateProperty.mutate(
+      { id: property.id, data },
+      {
+        onSuccess: () => {
+          toast.success('Propiedad actualizada exitosamente');
+          navigate('/dashboard/propiedades');
+        },
+        onError: () => {
+          toast.error('Error al actualizar la propiedad. Intenta de nuevo.');
+        },
+      },
+    );
   };
 
   return (
@@ -220,14 +176,7 @@ export default function EditarPropiedad() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-            <AlertCircle className="size-4 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Información Básica */}
         <Card>
           <CardHeader>
@@ -239,17 +188,13 @@ export default function EditarPropiedad() {
               <Input
                 id="titulo"
                 placeholder="Ej: Apartamento moderno en Escazú"
-                className={fieldErrors.titulo ? 'border-destructive' : ''}
-                value={titulo}
-                onChange={(e) => {
-                  setTitulo(e.target.value);
-                  if (fieldErrors.titulo) setFieldErrors(prev => ({ ...prev, titulo: '' }));
-                }}
-                disabled={isLoading}
+                className={errors.titulo ? 'border-destructive' : ''}
+                {...register('titulo')}
+                disabled={updateProperty.isPending}
               />
-              {fieldErrors.titulo && (
+              {errors.titulo && (
                 <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="size-3" /> {fieldErrors.titulo}
+                  <AlertCircle className="size-3" /> {errors.titulo.message}
                 </p>
               )}
             </div>
@@ -259,18 +204,14 @@ export default function EditarPropiedad() {
               <Textarea
                 id="descripcion"
                 placeholder="Describe la propiedad, sus características principales..."
-                className={fieldErrors.descripcion ? 'border-destructive' : ''}
+                className={errors.descripcion ? 'border-destructive' : ''}
                 rows={4}
-                value={descripcion}
-                onChange={(e) => {
-                  setDescripcion(e.target.value);
-                  if (fieldErrors.descripcion) setFieldErrors(prev => ({ ...prev, descripcion: '' }));
-                }}
-                disabled={isLoading}
+                {...register('descripcion')}
+                disabled={updateProperty.isPending}
               />
-              {fieldErrors.descripcion && (
+              {errors.descripcion && (
                 <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="size-3" /> {fieldErrors.descripcion}
+                  <AlertCircle className="size-3" /> {errors.descripcion.message}
                 </p>
               )}
             </div>
@@ -282,68 +223,82 @@ export default function EditarPropiedad() {
                   id="precio"
                   type="number"
                   placeholder="850000"
-                  className={fieldErrors.precio ? 'border-destructive' : ''}
-                  value={precio}
-                  onChange={(e) => {
-                    setPrecio(e.target.value);
-                    if (fieldErrors.precio) setFieldErrors(prev => ({ ...prev, precio: '' }));
-                  }}
-                  disabled={isLoading}
+                  className={errors.precio ? 'border-destructive' : ''}
+                  {...register('precio')}
+                  disabled={updateProperty.isPending}
                 />
-                {fieldErrors.precio && (
+                {errors.precio && (
                   <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="size-3" /> {fieldErrors.precio}
+                    <AlertCircle className="size-3" /> {errors.precio.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="moneda">Moneda *</Label>
-                <Select value={moneda} onValueChange={(value: 'CRC' | 'USD') => setMoneda(value)} disabled={isLoading}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CRC">Colones (CRC)</SelectItem>
-                    <SelectItem value="USD">Dólares (USD)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="moneda"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange} disabled={updateProperty.isPending}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CRC">Colones (CRC)</SelectItem>
+                        <SelectItem value="USD">Dólares (USD)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="estado">Estado *</Label>
-                <Select value={estado} onValueChange={setEstado} disabled={isLoading}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estados.map((e) => (
-                      <SelectItem key={e.value} value={e.value}>
-                        {e.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="estado"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange} disabled={updateProperty.isPending}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {estados.map((e) => (
+                          <SelectItem key={e.value} value={e.value}>
+                            {e.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo de propiedad *</Label>
-              <Select value={tipo} onValueChange={(v) => { setTipo(v); if (fieldErrors.tipo) setFieldErrors(prev => ({ ...prev, tipo: '' })); }} disabled={isLoading}>
-                <SelectTrigger className={fieldErrors.tipo ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Selecciona un tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIPOS_PROPIEDAD.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldErrors.tipo && (
+              <Controller
+                name="tipo"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange} disabled={updateProperty.isPending}>
+                    <SelectTrigger className={errors.tipo ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="Selecciona un tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIPOS_PROPIEDAD.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.tipo && (
                 <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="size-3" /> {fieldErrors.tipo}
+                  <AlertCircle className="size-3" /> {errors.tipo.message}
                 </p>
               )}
             </div>
@@ -358,21 +313,27 @@ export default function EditarPropiedad() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="provincia">Provincia *</Label>
-              <Select value={provincia} onValueChange={(v) => { setProvincia(v); if (fieldErrors.provincia) setFieldErrors(prev => ({ ...prev, provincia: '' })); }} disabled={isLoading}>
-                <SelectTrigger className={fieldErrors.provincia ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Selecciona una provincia" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROVINCIAS.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldErrors.provincia && (
+              <Controller
+                name="provincia"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange} disabled={updateProperty.isPending}>
+                    <SelectTrigger className={errors.provincia ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="Selecciona una provincia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROVINCIAS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.provincia && (
                 <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="size-3" /> {fieldErrors.provincia}
+                  <AlertCircle className="size-3" /> {errors.provincia.message}
                 </p>
               )}
             </div>
@@ -383,17 +344,13 @@ export default function EditarPropiedad() {
                 <Input
                   id="canton"
                   placeholder="Ej: Escazú"
-                  className={fieldErrors.canton ? 'border-destructive' : ''}
-                  value={canton}
-                  onChange={(e) => {
-                    setCanton(e.target.value);
-                    if (fieldErrors.canton) setFieldErrors(prev => ({ ...prev, canton: '' }));
-                  }}
-                  disabled={isLoading}
+                  className={errors.canton ? 'border-destructive' : ''}
+                  {...register('canton')}
+                  disabled={updateProperty.isPending}
                 />
-                {fieldErrors.canton && (
+                {errors.canton && (
                   <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="size-3" /> {fieldErrors.canton}
+                    <AlertCircle className="size-3" /> {errors.canton.message}
                   </p>
                 )}
               </div>
@@ -403,17 +360,13 @@ export default function EditarPropiedad() {
                 <Input
                   id="distrito"
                   placeholder="Ej: San Rafael"
-                  className={fieldErrors.distrito ? 'border-destructive' : ''}
-                  value={distrito}
-                  onChange={(e) => {
-                    setDistrito(e.target.value);
-                    if (fieldErrors.distrito) setFieldErrors(prev => ({ ...prev, distrito: '' }));
-                  }}
-                  disabled={isLoading}
+                  className={errors.distrito ? 'border-destructive' : ''}
+                  {...register('distrito')}
+                  disabled={updateProperty.isPending}
                 />
-                {fieldErrors.distrito && (
+                {errors.distrito && (
                   <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="size-3" /> {fieldErrors.distrito}
+                    <AlertCircle className="size-3" /> {errors.distrito.message}
                   </p>
                 )}
               </div>
@@ -427,6 +380,12 @@ export default function EditarPropiedad() {
             <CardTitle>Imágenes</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {errors.imagenes && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="size-3" /> {errors.imagenes.message}
+              </p>
+            )}
+
             {imagenes.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {imagenes.map((img, index) => (
@@ -481,10 +440,10 @@ export default function EditarPropiedad() {
                 placeholder="Ej: 2 habitaciones, Parqueo..."
                 value={nuevaCaracteristica}
                 onChange={(e) => setNuevaCaracteristica(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCaracteristica())}
-                disabled={isLoading}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCaracteristica())}
+                disabled={updateProperty.isPending}
               />
-              <Button type="button" onClick={handleAddCaracteristica} disabled={isLoading}>
+              <Button type="button" onClick={handleAddCaracteristica} disabled={updateProperty.isPending}>
                 <Plus className="size-4 mr-2" />
                 Agregar
               </Button>
@@ -517,12 +476,12 @@ export default function EditarPropiedad() {
             type="button"
             variant="outline"
             onClick={() => navigate(-1)}
-            disabled={isLoading}
+            disabled={updateProperty.isPending}
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Guardando...' : 'Guardar cambios'}
+          <Button type="submit" disabled={updateProperty.isPending}>
+            {updateProperty.isPending ? 'Guardando...' : 'Guardar cambios'}
           </Button>
         </div>
       </form>

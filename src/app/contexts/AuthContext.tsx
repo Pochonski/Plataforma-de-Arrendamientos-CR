@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SignJWT } from 'jose';
 import { User } from '../types';
-import { useData } from './DataContext';
+import { updateUser as updateUserApi } from '@/lib/api/users';
 
 interface GoogleCredentialResponse {
   credential?: string;
@@ -229,8 +229,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return false;
   };
-
-  const { updateUser: updateUserApi } = useData();
 
   const logout = () => {
     setUser(null);

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useConversations, useMessages, useSendMessage, useMarkMessagesRead } from '@/lib/hooks';
+import { fetchUser } from '@/lib/api/users';
 import { useSocket } from '../../hooks/useSocket';
 import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -30,19 +32,11 @@ import { toast } from 'sonner';
 
 export default function Mensajes() {
   const { user, token } = useAuth();
-  const {
-    properties,
-    conversations,
-    messages,
-    fetchConversations,
-    fetchMessages,
-    sendMessage,
-    getMessagesByConversationId,
-    markMessagesAsRead,
-    getUserById,
-    isLoadingConversations,
-    isLoadingMessages
-  } = useData();
+  const queryClient = useQueryClient();
+  const { data: conversations = [], isLoading: isLoadingConversations, isFetching: isFetchingConversations, refetch: refetchConversations } = useConversations(user?.id);
+  const { data: messages = [], isLoading: isLoadingMessages, isFetching: isFetchingMessages, refetch: refetchMessages } = useMessages(user?.id);
+  const sendMessage = useSendMessage();
+  const markMessagesRead = useMarkMessagesRead();
 
   const [userNames, setUserNames] = useState<Record<string, string>>({});
 
@@ -50,8 +44,8 @@ export default function Mensajes() {
     if (user?.id) {
       try {
         await Promise.all([
-          fetchConversations(user.id),
-          fetchMessages(user.id)
+          refetchConversations(),
+          refetchMessages()
         ]);
         toast.success('Mensajes actualizados');
       } catch (error) {
@@ -59,13 +53,6 @@ export default function Mensajes() {
       }
     }
   };
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchConversations(user.id);
-      fetchMessages(user.id);
-    }
-  }, [user?.id, fetchConversations, fetchMessages]);
 
   // Cargar nombres de usuarios participantes
   useEffect(() => {
@@ -77,7 +64,11 @@ export default function Mensajes() {
       for (const id of otherParticipantIds) {
         if (!userNames[id]) {
           try {
-            const userData = await getUserById(id);
+            const userData = await queryClient.fetchQuery({
+              queryKey: ['users', id],
+              queryFn: () => fetchUser(id),
+              staleTime: 5 * 60 * 1000,
+            });
             if (userData?.nombre) {
               setUserNames(prev => ({ ...prev, [id]: userData.nombre }));
             }
@@ -91,7 +82,7 @@ export default function Mensajes() {
     if (conversations.length > 0) {
       loadParticipantNames();
     }
-  }, [conversations, user?.id, getUserById, userNames]);
+  }, [conversations, user?.id, queryClient, userNames]);
 
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
@@ -110,27 +101,19 @@ export default function Mensajes() {
   }) => {
     if (!user?.id) return;
 
-    // Refrescar mensajes y conversaciones para la conversación afectada
-    try {
-      await Promise.all([
-        fetchMessages(user.id),
-        fetchConversations(user.id),
-      ]);
+    queryClient.invalidateQueries({ queryKey: ['messages'] });
+    queryClient.invalidateQueries({ queryKey: ['conversations'] });
 
-      // Toast solo si el mensaje es de otra conversación (no la abierta actualmente)
-      if (payload.conversacion_id !== selectedConversationId) {
-        toast.info(`Nuevo mensaje de ${payload.remitente_nombre}`, {
-          description: payload.contenido.substring(0, 80),
-        });
-      }
-    } catch {
-      // silent error — datos se actualizan en el siguiente refresh manual
+    if (payload.conversacion_id !== selectedConversationId) {
+      toast.info(`Nuevo mensaje de ${payload.remitente_nombre}`, {
+        description: payload.contenido.substring(0, 80),
+      });
     }
-  }, [user?.id, fetchMessages, fetchConversations, selectedConversationId]);
+  }, [user?.id, queryClient, selectedConversationId]);
 
   const { connected: socketConnected } = useSocket({
     userId: user?.id ?? null,
-    token,                          // JWT verificado por el middleware de ms-mensajes
+    token,
     onNuevoMensaje: handleNuevoMensaje,
   });
   // ─────────────────────────────────────────────────────────────────────────────
@@ -158,9 +141,11 @@ export default function Mensajes() {
     : null;
 
   const conversationMessages = selectedConversationId
-    ? getMessagesByConversationId(selectedConversationId).sort((a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      )
+    ? messages
+        .filter(m => m.conversationId === selectedConversationId)
+        .sort((a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
     : [];
 
   // Scroll to bottom when messages change
@@ -169,13 +154,13 @@ export default function Mensajes() {
   }, [conversationMessages]);
 
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversationId || !user || !selectedConversation) return;
 
     const receiverId = selectedConversation.participants.find(p => p !== user.id);
     if (!receiverId) return;
 
-    sendMessage({
+    await sendMessage.mutateAsync({
       conversationId: selectedConversationId,
       senderId: user.id,
       receiverId,
@@ -271,8 +256,10 @@ export default function Mensajes() {
     }
   };
 
+  const isRefreshing = isFetchingConversations || isFetchingMessages;
+
   // Empty state
-  if (filteredConversations.length === 0) {
+  if (!isLoadingConversations && filteredConversations.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="text-center space-y-3">
@@ -318,10 +305,10 @@ export default function Mensajes() {
             variant="outline"
             size="lg"
             onClick={handleRefresh}
-            disabled={isLoadingConversations || isLoadingMessages}
+            disabled={isRefreshing}
             className="flex-1 sm:flex-none"
           >
-            <RefreshCw className={`size-4 mr-2 ${isLoadingConversations || isLoadingMessages ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`size-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
         </div>
@@ -367,7 +354,7 @@ export default function Mensajes() {
                       onClick={() => {
                         setSelectedConversationId(conv.id);
                         if (user?.id) {
-                          markMessagesAsRead(conv.id, user.id);
+                          markMessagesRead.mutate({ conversationId: conv.id, userId: user.id });
                         }
                       }}
                       className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${

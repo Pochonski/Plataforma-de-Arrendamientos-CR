@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useInvitations, useUpdateInvitation, useProperties } from '@/lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -41,14 +41,16 @@ import { formatPrice, getDaysRemaining } from '../../utils/formatters';
 
 export default function Invitaciones() {
   const { user } = useAuth();
-  const { invitations, updateInvitation, properties, fetchInvitations, isLoadingInvitations } = useData();
+  const { data: invitations = [], isLoading, isFetching, refetch } = useInvitations(user?.id || '');
+  const { data: properties = [] } = useProperties();
+  const updateInvitation = useUpdateInvitation();
   const [searchQuery, setSearchQuery] = useState('');
   const [cancelId, setCancelId] = useState<string | null>(null);
 
   const handleRefresh = async () => {
     if (!user?.id) return;
     try {
-      await fetchInvitations(user.id);
+      await refetch();
       toast.success('Invitaciones actualizadas');
     } catch (error) {
       toast.error('Error al actualizar');
@@ -142,8 +144,8 @@ export default function Invitaciones() {
     }
   };
 
-  const handleCancel = (id: string) => {
-    updateInvitation(id, { estado: 'cancelada' });
+  const handleCancel = async (id: string) => {
+    await updateInvitation.mutateAsync({ id, data: { estado: 'cancelada' } });
     setCancelId(null);
     toast.success('Invitación cancelada');
   };
@@ -163,9 +165,9 @@ export default function Invitaciones() {
             variant="outline" 
             size="lg" 
             onClick={handleRefresh} 
-            disabled={isLoadingInvitations}
+            disabled={isFetching}
           >
-            <RefreshCw className={`size-4 mr-2 ${isLoadingInvitations ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`size-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
           <Button asChild size="lg">
@@ -234,7 +236,11 @@ export default function Invitaciones() {
       {/* Invitations Table */}
       <Card>
         <CardContent className="p-6">
-          {filteredInvitations.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : filteredInvitations.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>

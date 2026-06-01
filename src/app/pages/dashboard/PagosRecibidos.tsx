@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { usePayments, useUpdatePayment, useUpdateContract, useProperties } from '@/lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -39,25 +39,22 @@ import { formatPrice, getMonthName, getPaymentStatusBadge, getPaymentTypeBadge }
 
 export default function PagosRecibidos() {
   const { user } = useAuth();
-  const { payments, updatePayment, properties, updateContract, fetchPayments, isLoadingPayments } = useData();
+  const { data: payments = [], isFetching, refetch } = usePayments(user?.id);
+  const { data: properties = [] } = useProperties();
+  const updatePayment = useUpdatePayment();
+  const updateContract = useUpdateContract();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleRefresh = async () => {
     if (user?.id) {
       try {
-        await fetchPayments(user.id);
+        await refetch();
         toast.success('Pagos actualizados');
       } catch (error) {
         toast.error('Error al actualizar');
       }
     }
   };
-  
-  useEffect(() => {
-    if (user?.id) {
-      fetchPayments(user.id);
-    }
-  }, [user?.id, fetchPayments]);
 
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -75,18 +72,24 @@ export default function PagosRecibidos() {
 
   const pendingCount = myPayments.filter((p) => p.estado === 'pendiente').length;
 
-  const handleApprove = (paymentId: string) => {
+  const handleApprove = async (paymentId: string) => {
     const payment = payments.find(p => p.id === paymentId);
     if (!payment) return;
 
-    updatePayment(paymentId, {
-      estado: 'aprobado',
-      fechaRevision: new Date(),
+    await updatePayment.mutateAsync({
+      id: paymentId,
+      data: {
+        estado: 'aprobado',
+        fechaRevision: new Date(),
+      },
     });
 
     if (payment.tipo === 'deposito') {
-      updateContract(payment.contratoId, {
-        estadoDeposito: 'pagado'
+      await updateContract.mutateAsync({
+        id: payment.contratoId,
+        data: {
+          estadoDeposito: 'pagado'
+        }
       });
     }
 
@@ -94,16 +97,19 @@ export default function PagosRecibidos() {
     toast.success('Pago aprobado exitosamente');
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!selectedPayment || !motivoRechazo.trim()) {
       toast.error('Por favor indica el motivo del rechazo');
       return;
     }
 
-    updatePayment(selectedPayment.id, {
-      estado: 'rechazado',
-      fechaRevision: new Date(),
-      motivoRechazo: motivoRechazo.trim(),
+    await updatePayment.mutateAsync({
+      id: selectedPayment.id,
+      data: {
+        estado: 'rechazado',
+        fechaRevision: new Date(),
+        motivoRechazo: motivoRechazo.trim(),
+      },
     });
 
     setSelectedPayment(null);
@@ -126,10 +132,10 @@ export default function PagosRecibidos() {
           variant="outline" 
           size="lg" 
           onClick={handleRefresh} 
-          disabled={isLoadingPayments}
+          disabled={isFetching}
           className="w-full sm:w-auto"
         >
-          <RefreshCw className={`size-4 mr-2 ${isLoadingPayments ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`size-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Actualizar
         </Button>
       </div>

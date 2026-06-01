@@ -1,25 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useProperties, useInvitations, usePayments } from '@/lib/hooks';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
 import {
   Building2,
   Mail,
   CreditCard,
   CheckCircle2,
   Clock,
-  XCircle,
   Plus,
   ArrowRight,
   RefreshCw,
@@ -29,88 +20,87 @@ import { formatPrice, getMonthName, getPaymentStatusBadge } from '../../utils/fo
 
 export default function DuenoDashboard() {
   const { user } = useAuth();
-  const { 
-    properties, 
-    invitations, 
-    payments, 
-    fetchPayments, 
-    fetchProperties, 
-    fetchInvitations,
-    isLoadingProperties,
-    isLoadingInvitations,
-    isLoadingPayments
-  } = useData();
+  const { data: propsData, isLoading: isLoadingProperties, refetch: refetchProperties } = useProperties(1, { duenoId: user?.id });
+  const properties = propsData?.data ?? [];
+  const { data: invitations = [], isLoading: isLoadingInvitations, refetch: refetchInvitations } = useInvitations(user?.id ?? '');
+  const { data: payments = [], isLoading: isLoadingPayments, refetch: refetchPayments } = usePayments(user?.id);
 
   const handleRefresh = async () => {
-    if (user?.id) {
-      try {
-        await Promise.all([
-          fetchProperties(),
-          fetchInvitations(),
-          fetchPayments(user.id)
-        ]);
-        toast.success('Dashboard actualizado');
-      } catch (error) {
-        toast.error('Error al actualizar');
-      }
+    try {
+      await Promise.all([
+        refetchProperties(),
+        refetchInvitations(),
+        refetchPayments(),
+      ]);
+      toast.success('Dashboard actualizado');
+    } catch (error) {
+      toast.error('Error al actualizar');
     }
   };
 
   const isRefreshing = isLoadingProperties || isLoadingInvitations || isLoadingPayments;
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchPayments(user.id);
-    }
-  }, [user?.id, fetchPayments]);
-
-  const myProperties = properties.filter((p) => p.duenoId === user?.id);
-  // Bypass para datos mockeados: mostramos todas las invitaciones si el usuario es dueño
-  const myInvitations = user?.rol === 'dueño' ? invitations : [];
+  const myProperties = properties;
+  const myInvitations = useMemo(
+    () => (user?.rol === 'dueño' ? invitations : []),
+    [invitations, user?.rol],
+  );
   const myPayments = payments;
 
-  const pendingPayments = myPayments.filter((p) => p.estado === 'pendiente');
-  const approvedPayments = myPayments.filter((p) => p.estado === 'aprobado');
-  const activeInvitations = myInvitations.filter((inv) => inv.estado === 'pendiente');
+  const pendingPayments = useMemo(
+    () => myPayments.filter((p) => p.estado === 'pendiente'),
+    [myPayments],
+  );
+  const approvedPayments = useMemo(
+    () => myPayments.filter((p) => p.estado === 'aprobado'),
+    [myPayments],
+  );
+  const activeInvitations = useMemo(
+    () => myInvitations.filter((inv) => inv.estado === 'pendiente'),
+    [myInvitations],
+  );
 
-  const stats = [
-    {
-      title: 'Mis propiedades',
-      value: myProperties.length,
-      icon: Building2,
-      description: `${myProperties.filter((p) => p.estado === 'disponible').length} disponibles`,
-      href: '/dashboard/propiedades',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100 dark:bg-blue-950',
-    },
-    {
-      title: 'Invitaciones activas',
-      value: activeInvitations.length,
-      icon: Mail,
-      description: 'Pendientes de aceptar',
-      href: '/dashboard/invitaciones',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100 dark:bg-purple-950',
-    },
-    {
-      title: 'Pagos pendientes',
-      value: pendingPayments.length,
-      icon: Clock,
-      description: 'Por revisar',
-      href: '/dashboard/pagos',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-100 dark:bg-amber-950',
-    },
-    {
-      title: 'Pagos aprobados',
-      value: approvedPayments.length,
-      icon: CheckCircle2,
-      description: 'Este mes',
-      href: '/dashboard/historial',
-      color: 'text-green-600',
-      bgColor: 'bg-green-100 dark:bg-green-950',
-    },
-  ];
+  const stats = useMemo(
+    () => [
+      {
+        title: 'Mis propiedades',
+        value: myProperties.length,
+        icon: Building2,
+        description: `${myProperties.filter((p) => p.estado === 'disponible').length} disponibles`,
+        href: '/dashboard/propiedades',
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-100 dark:bg-blue-950',
+      },
+      {
+        title: 'Invitaciones activas',
+        value: activeInvitations.length,
+        icon: Mail,
+        description: 'Pendientes de aceptar',
+        href: '/dashboard/invitaciones',
+        color: 'text-purple-600',
+        bgColor: 'bg-purple-100 dark:bg-purple-950',
+      },
+      {
+        title: 'Pagos pendientes',
+        value: pendingPayments.length,
+        icon: Clock,
+        description: 'Por revisar',
+        href: '/dashboard/pagos',
+        color: 'text-amber-600',
+        bgColor: 'bg-amber-100 dark:bg-amber-950',
+      },
+      {
+        title: 'Pagos aprobados',
+        value: approvedPayments.length,
+        icon: CheckCircle2,
+        description: 'Este mes',
+        href: '/dashboard/historial',
+        color: 'text-green-600',
+        bgColor: 'bg-green-100 dark:bg-green-950',
+      },
+    ],
+    [myProperties, activeInvitations, pendingPayments, approvedPayments],
+  );
 
   const quickActions = [
     {
@@ -136,7 +126,7 @@ export default function DuenoDashboard() {
     },
   ];
 
-  const recentPayments = myPayments.slice(0, 5);
+  const recentPayments = useMemo(() => myPayments.slice(0, 5), [myPayments]);
 
   return (
     <div className="space-y-8">
@@ -148,10 +138,10 @@ export default function DuenoDashboard() {
             Aquí tienes un resumen de tu actividad reciente
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          size="lg" 
-          onClick={handleRefresh} 
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={handleRefresh}
           disabled={isRefreshing}
           className="w-full sm:w-auto"
         >
@@ -225,7 +215,7 @@ export default function DuenoDashboard() {
             {recentPayments.length > 0 ? (
               <div className="space-y-4">
                 {recentPayments.map((payment) => {
-                  const property = properties.find((p) => p.id === payment.propiedadId);
+                  const property = myProperties.find((p) => p.id === payment.propiedadId);
                   return (
                     <div key={payment.id} className="flex items-center justify-between py-2 border-b last:border-0">
                       <div className="flex-1 min-w-0">
@@ -263,7 +253,7 @@ export default function DuenoDashboard() {
             {activeInvitations.length > 0 ? (
               <div className="space-y-4">
                 {activeInvitations.slice(0, 5).map((invitation) => {
-                  const property = properties.find((p) => p.id === invitation.propiedadId);
+                  const property = myProperties.find((p) => p.id === invitation.propiedadId);
                   const daysLeft = Math.ceil(
                     (invitation.fechaExpiracion.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                   );

@@ -1,11 +1,10 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useProperties, useContracts, usePayments } from '@/lib/hooks';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Contract } from '../../types';
 import {
   FileText,
   CreditCard,
@@ -23,91 +22,86 @@ import { formatPrice, getMonthName, getMonthNameLong, getPaymentStatusBadge } fr
 
 export default function InquilinoDashboard() {
   const { user } = useAuth();
-  const { contracts, payments, properties, getContractByInquilinoId, fetchPayments, isLoadingPayments } = useData();
-  const [myContract, setMyContract] = useState<Contract | null>(null);
-  const [isLoadingContract, setIsLoadingContract] = useState(true);
+  const { data: contracts = [], isLoading: isLoadingContracts, refetch: refetchContracts } = useContracts(user?.id);
+  const { data: payments = [], isLoading: isLoadingPayments, refetch: refetchPayments } = usePayments(user?.id);
+  const { data: allProperties = [] } = useProperties();
+
+  const myContract = useMemo(() => contracts[0] ?? null, [contracts]);
 
   const handleRefresh = async () => {
-    if (user?.id) {
-      try {
-        await Promise.all([
-          fetchPayments(user.id),
-          getContractByInquilinoId(user.id).then(c => setMyContract(c || null))
-        ]);
-        toast.success('Dashboard actualizado');
-      } catch (error) {
-        toast.error('Error al actualizar');
-      }
+    try {
+      await Promise.all([
+        refetchContracts(),
+        refetchPayments(),
+      ]);
+      toast.success('Dashboard actualizado');
+    } catch (error) {
+      toast.error('Error al actualizar');
     }
   };
 
-  const isRefreshing = isLoadingPayments || isLoadingContract;
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchPayments(user.id);
-    }
-  }, [user?.id, fetchPayments]);
-
-  useEffect(() => {
-    const loadContract = async () => {
-      if (!user?.id) {
-        setMyContract(null);
-        setIsLoadingContract(false);
-        return;
-      }
-      setIsLoadingContract(true);
-      const contract = await getContractByInquilinoId(user.id);
-      setMyContract(contract || null);
-      setIsLoadingContract(false);
-    };
-    loadContract();
-  }, [user?.id, getContractByInquilinoId]);
+  const isRefreshing = isLoadingPayments || isLoadingContracts;
 
   const myPayments = payments;
-  const property = myContract ? properties.find((p) => p.id === myContract.propiedadId) : null;
+  const property = useMemo(
+    () => (myContract ? allProperties.find((p) => p.id === myContract.propiedadId) ?? null : null),
+    [myContract, allProperties],
+  );
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
-  
-  const currentMonthPayment = myPayments.find(
-    (p) => p.mes === currentMonth && p.año === currentYear
+
+  const currentMonthPayment = useMemo(
+    () => myPayments.find((p) => p.mes === currentMonth && p.año === currentYear),
+    [myPayments, currentMonth, currentYear],
   );
 
-  const pendingPayments = myPayments.filter((p) => p.estado === 'pendiente').length;
-  const approvedPayments = myPayments.filter((p) => p.estado === 'aprobado').length;
-  const rejectedPayments = myPayments.filter((p) => p.estado === 'rechazado').length;
+  const pendingPayments = useMemo(
+    () => myPayments.filter((p) => p.estado === 'pendiente').length,
+    [myPayments],
+  );
+  const approvedPayments = useMemo(
+    () => myPayments.filter((p) => p.estado === 'aprobado').length,
+    [myPayments],
+  );
+  const rejectedPayments = useMemo(
+    () => myPayments.filter((p) => p.estado === 'rechazado').length,
+    [myPayments],
+  );
 
-  const stats = [
-    {
-      title: 'Pagos aprobados',
-      value: approvedPayments,
-      icon: CheckCircle2,
-      description: 'Total histórico',
-      color: 'text-green-600',
-      bgColor: 'bg-green-100 dark:bg-green-950',
-    },
-    {
-      title: 'Pagos pendientes',
-      value: pendingPayments,
-      icon: Clock,
-      description: 'En revisión',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-100 dark:bg-amber-950',
-    },
-    {
-      title: 'Pagos rechazados',
-      value: rejectedPayments,
-      icon: XCircle,
-      description: 'Requieren acción',
-      color: 'text-red-600',
-      bgColor: 'bg-red-100 dark:bg-red-950',
-    },
-  ];
+  const stats = useMemo(
+    () => [
+      {
+        title: 'Pagos aprobados',
+        value: approvedPayments,
+        icon: CheckCircle2,
+        description: 'Total histórico',
+        color: 'text-green-600',
+        bgColor: 'bg-green-100 dark:bg-green-950',
+      },
+      {
+        title: 'Pagos pendientes',
+        value: pendingPayments,
+        icon: Clock,
+        description: 'En revisión',
+        color: 'text-amber-600',
+        bgColor: 'bg-amber-100 dark:bg-amber-950',
+      },
+      {
+        title: 'Pagos rechazados',
+        value: rejectedPayments,
+        icon: XCircle,
+        description: 'Requieren acción',
+        color: 'text-red-600',
+        bgColor: 'bg-red-100 dark:bg-red-950',
+      },
+    ],
+    [approvedPayments, pendingPayments, rejectedPayments],
+  );
 
-  const recentPayments = myPayments.slice(0, 5);
+  const recentPayments = useMemo(() => myPayments.slice(0, 5), [myPayments]);
 
-  if (isLoadingContract) {
+  if (isLoadingContracts) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -161,10 +155,10 @@ export default function InquilinoDashboard() {
             Gestiona tu alquiler y mantén todo en orden
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          size="lg" 
-          onClick={handleRefresh} 
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={handleRefresh}
           disabled={isRefreshing}
           className="w-full sm:w-auto"
         >
@@ -238,7 +232,7 @@ export default function InquilinoDashboard() {
               <div className="flex-1">
                 <h3 className="font-semibold text-lg mb-1">Pago rechazado</h3>
                 <p className="text-muted-foreground mb-2">
-                  Tu comprobante de {getMonthNameLong(currentMonth)} fue rechazado. 
+                  Tu comprobante de {getMonthNameLong(currentMonth)} fue rechazado.
                   {currentMonthPayment.motivoRechazo && ` Motivo: ${currentMonthPayment.motivoRechazo}`}
                 </p>
                 <Button asChild variant="destructive">

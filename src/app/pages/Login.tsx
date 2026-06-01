@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -20,13 +23,10 @@ import {
 import { Building2, Home } from 'lucide-react';
 
 export default function Login() {
-  const [correo, setCorreo] = useState('');
-  const [contraseña, setContraseña] = useState('');
   const [recordarme, setRecordarme] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState('');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [pendingGoogleUser, setPendingGoogleUser] = useState<{ id: string; nombre: string; correo: string } | null>(null);
@@ -35,40 +35,30 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setFieldErrors({});
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { correo: '', contraseña: '' },
+  });
 
-    const errors: Record<string, string> = {};
-    if (!correo.trim()) errors.correo = 'Por favor completa el correo';
-    if (!contraseña) errors.contraseña = 'Por favor completa la contraseña';
+  const onSubmit = async (data: LoginFormData) => {
+    setServerError('');
 
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    setIsLoading(true);
-    
     try {
-      const success = await login(correo, contraseña);
+      const success = await login(data.correo, data.contraseña);
       if (success) {
         toast.success('¡Bienvenido de nuevo!');
         const from = location.state?.from?.pathname || location.state?.returnTo || '/dashboard';
         navigate(from, { replace: true });
       } else {
-        setError('Correo o contraseña incorrectos');
+        setServerError('Correo o contraseña incorrectos');
       }
     } catch (err) {
-      setError('Ocurrió un error. Por favor intenta de nuevo.');
-    } finally {
-      setIsLoading(false);
+      setServerError('Ocurrió un error. Por favor intenta de nuevo.');
     }
   };
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     try {
       const token = credentialResponse.credential as string;
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -79,7 +69,6 @@ export default function Login() {
         correo: payload.email,
       };
 
-      // Check if user already exists in DB
       const apiUrl = import.meta.env.VITE_API_URL;
       if (apiUrl) {
         try {
@@ -92,7 +81,6 @@ export default function Login() {
               (u.id || u.Id) === googleUserData.id
             );
             if (existingUser) {
-              // User exists, login directly with their data from DB
               const normalizedUser = {
                 id: existingUser.Id || existingUser.id,
                 nombre: existingUser.Nombre || existingUser.nombre,
@@ -101,7 +89,6 @@ export default function Login() {
                    : existingUser.Rol === 'arrendatario' ? 'inquilino'
                    : existingUser.Rol || existingUser.rol || 'inquilino',
               };
-              // Use loginWithGoogle with isExisting=true to properly set user in AuthContext
               await loginWithGoogle({ credential: '' }, normalizedUser.rol as 'dueño' | 'inquilino', {
                 id: normalizedUser.id,
                 nombre: normalizedUser.nombre,
@@ -117,20 +104,19 @@ export default function Login() {
         }
       }
 
-      // User doesn't exist, show role selection
       setPendingGoogleUser(googleUserData);
       setShowRoleSelection(true);
     } catch (err) {
       toast.error('Error al procesar login de Google');
     } finally {
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
   const handleGoogleRoleSelection = async (rol: 'dueño' | 'inquilino') => {
     if (!pendingGoogleUser) return;
 
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     try {
       const success = await loginWithGoogle({ credential: '' }, rol, pendingGoogleUser);
       if (success) {
@@ -142,11 +128,13 @@ export default function Login() {
     } catch (err) {
       toast.error('Error al crear cuenta con Google');
     } finally {
-      setIsLoading(false);
+      setIsGoogleLoading(false);
       setShowRoleSelection(false);
       setPendingGoogleUser(null);
     }
   };
+
+  const isLoading = form.formState.isSubmitting || isGoogleLoading;
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -163,11 +151,11 @@ export default function Login() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {serverError && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                   <AlertCircle className="size-4 flex-shrink-0" />
-                  <span>{error}</span>
+                  <span>{serverError}</span>
                 </div>
               )}
 
@@ -180,18 +168,14 @@ export default function Login() {
                       id="correo"
                       type="email"
                       placeholder="tucorreo@ejemplo.com"
-                      className={`pl-10 ${fieldErrors.correo ? 'border-destructive' : ''}`}
-                      value={correo}
-                      onChange={(e) => {
-                        setCorreo(e.target.value);
-                        if (fieldErrors.correo) setFieldErrors(prev => ({ ...prev, correo: '' }));
-                      }}
+                      className={`pl-10 ${form.formState.errors.correo ? 'border-destructive' : ''}`}
+                      {...form.register('correo')}
                       disabled={isLoading}
                     />
                   </div>
-                  {fieldErrors.correo && (
+                  {form.formState.errors.correo && (
                     <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="size-3" /> {fieldErrors.correo}
+                      <AlertCircle className="size-3" /> {form.formState.errors.correo.message}
                     </p>
                   )}
                 </div>
@@ -204,12 +188,8 @@ export default function Login() {
                       id="contraseña"
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
-                      className={`pl-10 pr-10 ${fieldErrors.contraseña ? 'border-destructive' : ''}`}
-                      value={contraseña}
-                      onChange={(e) => {
-                        setContraseña(e.target.value);
-                        if (fieldErrors.contraseña) setFieldErrors(prev => ({ ...prev, contraseña: '' }));
-                      }}
+                      className={`pl-10 pr-10 ${form.formState.errors.contraseña ? 'border-destructive' : ''}`}
+                      {...form.register('contraseña')}
                       disabled={isLoading}
                     />
                     <button
@@ -220,9 +200,9 @@ export default function Login() {
                       {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                     </button>
                   </div>
-                  {fieldErrors.contraseña && (
+                  {form.formState.errors.contraseña && (
                     <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="size-3" /> {fieldErrors.contraseña}
+                      <AlertCircle className="size-3" /> {form.formState.errors.contraseña.message}
                     </p>
                   )}
                 </div>
@@ -254,7 +234,7 @@ export default function Login() {
 
               <div className="space-y-3">
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
+                  {form.formState.isSubmitting ? (
                     <>Iniciando sesión...</>
                   ) : (
                     <>

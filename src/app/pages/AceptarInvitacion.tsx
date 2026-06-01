@@ -1,6 +1,14 @@
 import { useParams, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
-import { useData } from '../contexts/DataContext';
+import {
+  useInvitationByToken,
+  useUpdateInvitation,
+  useCreateContract,
+  useUpdateProperty,
+  useCreateNotification,
+  useProperty,
+  useUser,
+} from '../../lib/hooks';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -27,37 +35,25 @@ export default function AceptarInvitacion() {
   const { token } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const {
-    getInvitationByToken,
-    getPropertyById,
-    updateInvitation,
-    createContract,
-    addNotification,
-    getUserById,
-    updateProperty,
-  } = useData();
 
-  const [invitation, setInvitation] = useState<any>(null);
-  const [property, setProperty] = useState<any>(null);
-  const [owner, setOwner] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: invitation, isLoading: isLoadingInv } = useInvitationByToken(token ?? '');
+  const { data: property, isLoading: isLoadingProp } = useProperty(invitation?.propiedadId ?? '');
+  const { data: owner } = useUser(invitation?.duenoId ?? '');
+
+  const updateInvitationMut = useUpdateInvitation();
+  const createContractMut = useCreateContract();
+  const updatePropertyMut = useUpdateProperty();
+  const addNotificationMut = useCreateNotification();
+
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (!token) {
       navigate('/login');
-      return;
     }
+  }, [token, navigate]);
 
-    getInvitationByToken(token).then((inv) => {
-      if (inv) {
-        setInvitation(inv);
-        getPropertyById(inv.propiedadId).then((prop) => setProperty(prop || null));
-        getUserById(inv.duenoId).then((ownerData) => setOwner(ownerData || null));
-      }
-      setLoading(false);
-    });
-  }, [token, getInvitationByToken, getPropertyById, getUserById, navigate]);
+  const loading = isLoadingInv || (!!invitation && isLoadingProp);
 
   const handleAccept = async () => {
     if (!user || !invitation || !property) return;
@@ -65,33 +61,33 @@ export default function AceptarInvitacion() {
     setProcessing(true);
 
     try {
-      // Actualizar estado de la invitación
-      await updateInvitation(invitation.id, {
-        estado: 'aceptada',
-        inquilinoId: user.id,
+      await updateInvitationMut.mutateAsync({
+        id: invitation.id,
+        data: {
+          estado: 'aceptada',
+          inquilinoId: user.id,
+        },
       });
 
-      // Crear el contrato
-      await createContract({
+      await createContractMut.mutateAsync({
         invitacionId: invitation.id,
         propiedadId: invitation.propiedadId,
         duenoId: invitation.duenoId,
         inquilinoId: user.id,
         montoMensual: invitation.montoAlquiler,
-        montoDeposito: invitation.montoDeposito || invitation.montoAlquiler, // Fallback if old invitation
+        montoDeposito: invitation.montoDeposito || invitation.montoAlquiler,
         moneda: invitation.moneda,
         fechaInicio: new Date(),
         estado: 'activo',
         estadoDeposito: 'pendiente',
       });
 
-      // Actualizar estado de la propiedad a "alquilada" para que ya no aparezca disponible
-      await updateProperty(property.id, {
-        estado: 'alquilada',
+      await updatePropertyMut.mutateAsync({
+        id: property.id,
+        data: { estado: 'alquilada' },
       });
 
-      // Notificar al dueño
-      await addNotification({
+      await addNotificationMut.mutateAsync({
         userId: invitation.duenoId,
         tipo: 'invitacion_aceptada',
         titulo: 'Invitación aceptada',
@@ -116,12 +112,15 @@ export default function AceptarInvitacion() {
     }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!invitation) return;
 
-    updateInvitation(invitation.id, {
-      estado: 'cancelada',
-    });
+    try {
+      await updateInvitationMut.mutateAsync({
+        id: invitation.id,
+        data: { estado: 'cancelada' },
+      });
+    } catch {}
 
     toast.info('Invitación rechazada', {
       description: 'Has rechazado esta invitación de contrato.',

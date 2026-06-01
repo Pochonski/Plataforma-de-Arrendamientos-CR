@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { usePayments, useProperties } from '@/lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -35,25 +35,20 @@ import { formatPrice, getMonthName, getPaymentStatusBadge } from '../../utils/fo
 
 export default function Historial() {
   const { user } = useAuth();
-  const { payments, properties, fetchPayments, isLoadingPayments } = useData();
+  const { data: payments = [], isFetching, refetch } = usePayments(user?.id);
+  const { data: properties = [] } = useProperties();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleRefresh = async () => {
     if (user?.id) {
       try {
-        await fetchPayments(user.id);
+        await refetch();
         toast.success('Historial actualizado');
       } catch (error) {
         toast.error('Error al actualizar');
       }
     }
   };
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchPayments(user.id);
-    }
-  }, [user?.id, fetchPayments]);
 
   const [filterAño, setFilterAño] = useState<string>('todos');
   const [filterEstado, setFilterEstado] = useState<string>('todos');
@@ -94,10 +89,10 @@ export default function Historial() {
           variant="outline" 
           size="lg" 
           onClick={handleRefresh} 
-          disabled={isLoadingPayments}
+          disabled={isFetching}
           className="w-full sm:w-auto"
         >
-          <RefreshCw className={`size-4 mr-2 ${isLoadingPayments ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`size-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
           Actualizar
         </Button>
       </div>

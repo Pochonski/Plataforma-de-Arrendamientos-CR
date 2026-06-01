@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registroSchema, type RegistroFormData } from '@/lib/validations';
+import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -16,83 +20,53 @@ import {
 import { UserPlus, Mail, Lock, User, AlertCircle, Building2, Home, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
+const formSchema = registroSchema.omit({ rol: true });
+type FormValues = z.infer<typeof formSchema>;
+
 export default function Registro() {
-  const [nombre, setNombre] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [contraseña, setContraseña] = useState('');
-  const [confirmarContraseña, setConfirmarContraseña] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
   const [showConfirmPassword, setShowConfirmPassword] = useState(true);
+  const [serverError, setServerError] = useState('');
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
 
-  const { register } = useAuth();
+  const { register: registerUser } = useAuth();
   const navigate = useNavigate();
 
-  const validatePassword = (pwd: string) => {
-    if (pwd.length < 8) return 'La contraseña debe tener al menos 8 caracteres';
-    if (!/[A-Z]/.test(pwd)) return 'Debe incluir al menos una mayúscula';
-    if (!/[0-9]/.test(pwd)) return 'Debe incluir al menos un número';
-    return null;
-  };
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      nombre: '',
+      correo: '',
+      telefono: '',
+      contraseña: '',
+      confirmarContraseña: '',
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setFieldErrors({});
-
-    const errors: Record<string, string> = {};
-    if (!nombre.trim()) errors.nombre = 'Por favor completa tu nombre';
-    if (!correo.trim()) errors.correo = 'Por favor completa el correo';
-    if (!telefono.trim()) errors.telefono = 'Por favor completa el teléfono';
-    if (!contraseña) errors.contraseña = 'Por favor completa la contraseña';
-    if (!confirmarContraseña) errors.confirmarContraseña = 'Por favor confirma la contraseña';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    const passwordError = validatePassword(contraseña);
-    if (passwordError) {
-      setError(passwordError);
-      return;
-    }
-
-    if (contraseña !== confirmarContraseña) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-
+  const onSubmit = () => {
+    setServerError('');
     setShowRoleSelection(true);
   };
 
   const handleRoleSelection = async (rol: 'dueño' | 'inquilino') => {
-    setIsLoading(true);
-    
+    const data = form.getValues();
+
     try {
-      const success = await register(nombre, correo, contraseña, rol, telefono);
+      const success = await registerUser(data.nombre, data.correo, data.contraseña, rol, data.telefono);
       if (success) {
         toast.success('¡Cuenta creada exitosamente!');
         navigate('/dashboard');
       } else {
-        setError('No se pudo crear la cuenta. Intenta de nuevo.');
+        setServerError('No se pudo crear la cuenta. Intenta de nuevo.');
         setShowRoleSelection(false);
       }
     } catch (err) {
-      setError('Ocurrió un error. Por favor intenta de nuevo.');
+      setServerError('Ocurrió un error. Por favor intenta de nuevo.');
       setShowRoleSelection(false);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const hasMinLength = contraseña.length >= 8;
-  const hasUppercase = /[A-Z]/.test(contraseña);
-  const hasNumber = /[0-9]/.test(contraseña);
+  const isLoading = form.formState.isSubmitting;
 
   return (
     <>
@@ -110,11 +84,11 @@ export default function Registro() {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {error && (
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {serverError && (
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                     <AlertCircle className="size-4 flex-shrink-0" />
-                    <span>{error}</span>
+                    <span>{serverError}</span>
                   </div>
                 )}
 
@@ -127,18 +101,14 @@ export default function Registro() {
                         id="nombre"
                         type="text"
                         placeholder="Juan Pérez"
-                        className={`pl-10 ${fieldErrors.nombre ? 'border-destructive' : ''}`}
-                        value={nombre}
-                        onChange={(e) => {
-                          setNombre(e.target.value);
-                          if (fieldErrors.nombre) setFieldErrors(prev => ({ ...prev, nombre: '' }));
-                        }}
+                        className={`pl-10 ${form.formState.errors.nombre ? 'border-destructive' : ''}`}
+                        {...form.register('nombre')}
                         disabled={isLoading}
                       />
                     </div>
-                    {fieldErrors.nombre && (
+                    {form.formState.errors.nombre && (
                       <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertCircle className="size-3" /> {fieldErrors.nombre}
+                        <AlertCircle className="size-3" /> {form.formState.errors.nombre.message}
                       </p>
                     )}
                   </div>
@@ -151,18 +121,14 @@ export default function Registro() {
                         id="telefono"
                         type="tel"
                         placeholder="8888-8888"
-                        className={`pl-10 ${fieldErrors.telefono ? 'border-destructive' : ''}`}
-                        value={telefono}
-                        onChange={(e) => {
-                          setTelefono(e.target.value);
-                          if (fieldErrors.telefono) setFieldErrors(prev => ({ ...prev, telefono: '' }));
-                        }}
+                        className={`pl-10 ${form.formState.errors.telefono ? 'border-destructive' : ''}`}
+                        {...form.register('telefono')}
                         disabled={isLoading}
                       />
                     </div>
-                    {fieldErrors.telefono && (
+                    {form.formState.errors.telefono && (
                       <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertCircle className="size-3" /> {fieldErrors.telefono}
+                        <AlertCircle className="size-3" /> {form.formState.errors.telefono.message}
                       </p>
                     )}
                   </div>
@@ -175,18 +141,14 @@ export default function Registro() {
                         id="correo"
                         type="email"
                         placeholder="tucorreo@ejemplo.com"
-                        className={`pl-10 ${fieldErrors.correo ? 'border-destructive' : ''}`}
-                        value={correo}
-                        onChange={(e) => {
-                          setCorreo(e.target.value);
-                          if (fieldErrors.correo) setFieldErrors(prev => ({ ...prev, correo: '' }));
-                        }}
+                        className={`pl-10 ${form.formState.errors.correo ? 'border-destructive' : ''}`}
+                        {...form.register('correo')}
                         disabled={isLoading}
                       />
                     </div>
-                    {fieldErrors.correo && (
+                    {form.formState.errors.correo && (
                       <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertCircle className="size-3" /> {fieldErrors.correo}
+                        <AlertCircle className="size-3" /> {form.formState.errors.correo.message}
                       </p>
                     )}
                   </div>
@@ -199,12 +161,8 @@ export default function Registro() {
                         id="contraseña"
                         type={showPassword ? 'text' : 'password'}
                         placeholder="••••••••"
-                        className={`pl-10 pr-10 ${fieldErrors.contraseña ? 'border-destructive' : ''}`}
-                        value={contraseña}
-                        onChange={(e) => {
-                          setContraseña(e.target.value);
-                          if (fieldErrors.contraseña) setFieldErrors(prev => ({ ...prev, contraseña: '' }));
-                        }}
+                        className={`pl-10 pr-10 ${form.formState.errors.contraseña ? 'border-destructive' : ''}`}
+                        {...form.register('contraseña')}
                         disabled={isLoading}
                       />
                       <button
@@ -215,23 +173,10 @@ export default function Registro() {
                         {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
-                    {fieldErrors.contraseña && (
+                    {form.formState.errors.contraseña && (
                       <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertCircle className="size-3" /> {fieldErrors.contraseña}
+                        <AlertCircle className="size-3" /> {form.formState.errors.contraseña.message}
                       </p>
-                    )}
-                    {contraseña && (
-                      <div className="space-y-1 text-xs">
-                        <div className={hasMinLength ? 'text-green-600' : 'text-muted-foreground'}>
-                          {hasMinLength ? '✓' : '○'} Mínimo 8 caracteres
-                        </div>
-                        <div className={hasUppercase ? 'text-green-600' : 'text-muted-foreground'}>
-                          {hasUppercase ? '✓' : '○'} Al menos una mayúscula
-                        </div>
-                        <div className={hasNumber ? 'text-green-600' : 'text-muted-foreground'}>
-                          {hasNumber ? '✓' : '○'} Al menos un número
-                        </div>
-                      </div>
                     )}
                   </div>
 
@@ -243,12 +188,8 @@ export default function Registro() {
                         id="confirmarContraseña"
                         type={showConfirmPassword ? 'text' : 'password'}
                         placeholder="••••••••"
-                        className={`pl-10 pr-10 ${fieldErrors.confirmarContraseña ? 'border-destructive' : ''}`}
-                        value={confirmarContraseña}
-                        onChange={(e) => {
-                          setConfirmarContraseña(e.target.value);
-                          if (fieldErrors.confirmarContraseña) setFieldErrors(prev => ({ ...prev, confirmarContraseña: '' }));
-                        }}
+                        className={`pl-10 pr-10 ${form.formState.errors.confirmarContraseña ? 'border-destructive' : ''}`}
+                        {...form.register('confirmarContraseña')}
                         disabled={isLoading}
                       />
                       <button
@@ -259,9 +200,9 @@ export default function Registro() {
                         {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
-                    {fieldErrors.confirmarContraseña && (
+                    {form.formState.errors.confirmarContraseña && (
                       <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertCircle className="size-3" /> {fieldErrors.confirmarContraseña}
+                        <AlertCircle className="size-3" /> {form.formState.errors.confirmarContraseña.message}
                       </p>
                     )}
                   </div>
