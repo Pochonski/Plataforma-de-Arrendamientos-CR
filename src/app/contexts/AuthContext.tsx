@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { SignJWT } from 'jose';
 import { User } from '../types';
 import { useData } from './DataContext';
 
@@ -15,6 +16,7 @@ interface GoogleUserData {
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   login: (correo: string, contraseña: string) => Promise<boolean>;
   loginWithGoogle: (credentialResponse: GoogleCredentialResponse, rol: 'dueño' | 'inquilino', googleUserData: GoogleUserData, isExisting?: boolean) => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
@@ -34,12 +36,52 @@ const normalizeUser = (raw: any): User => ({
      : raw.rol ?? 'inquilino',
 });
 
+/**
+ * Genera un JWT HS256 con claim sub=userId y name=nombre.
+ *
+ * NOTA DE SEGURIDAD: En producción real el token debería ser emitido
+ * exclusivamente por el servidor (endpoint POST /login → token firmado).
+ * Este enfoque client-side es válido para una demo universitaria donde:
+ *   (a) el shared secret ya está en env vars de los App Services (ms-mensajes,
+ *       ms-notificaciones), y (b) no existe endpoint de login con contraseña.
+ * Si VITE_JWT_SECRET no está configurada, no se genera token (fail-closed).
+ *
+ * @throws si VITE_JWT_SECRET no está definida en el entorno
+ */
+async function generarToken(userId: string, nombre: string): Promise<string> {
+  const secretStr = import.meta.env.VITE_JWT_SECRET;
+  if (!secretStr) {
+    throw new Error('[Auth] VITE_JWT_SECRET no está configurada — no se puede generar token JWT');
+  }
+  const secret = new TextEncoder().encode(secretStr);
+
+  return new SignJWT({ name: nombre })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setSubject(userId)
+    .setIssuedAt()
+    .setExpirationTime('24h')
+    .sign(secret);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     // Session restored on page load via API validation in login()
   }, []);
+
+  /** Establece el usuario autenticado y genera el JWT correspondiente */
+  const autenticar = async (u: User) => {
+    setUser(u);
+    try {
+      const jwt = await generarToken(u.id, u.nombre);
+      setToken(jwt);
+    } catch (err) {
+      console.error('[Auth] Error generando JWT:', err);
+      setToken(null);
+    }
+  };
 
   const login = async (correo: string, contraseña: string): Promise<boolean> => {
     try {
@@ -52,7 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const foundUser = usuarios.find((u: any) => u.correo === correo);
           if (foundUser) {
             // Normalize role from APIM ("dueno" → "dueño")
-            setUser(normalizeUser(foundUser));
+            const normalizedUser = normalizeUser(foundUser);
+            await autenticar(normalizedUser);
             return true;
           }
         }
@@ -77,9 +120,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // If user already exists, use the DB id passed via googleUserData.id
-      // (for existing users, we pass the database id in googleUserData.id)
       if (isExisting) {
-        setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
+        const u: User = { id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol };
+        await autenticar(u);
         return true;
       }
 
@@ -109,16 +152,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const usuarios = await getResponse.json();
           const createdUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
           if (createdUser) {
-            setUser(normalizeUser(createdUser));
+            await autenticar(normalizeUser(createdUser));
             return true;
           }
         }
         // Fallback to local user if DB fetch fails
-        setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
+        const u: User = { id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol };
+        await autenticar(u);
         return true;
       } else if (response.status === 409) {
-        // User already exists - use local user data directly, no need to re-fetch
-        setUser({ id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol: rol });
+        // User already exists
+        const u: User = { id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol };
+        await autenticar(u);
         return true;
       } else {
         const errorText = await response.text();
@@ -149,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           nombre,
           correo,
-          contraseña, // En una app real, el hash se maneja en el backend o antes de enviar
+          contraseña,
           rol: backendRol,
           telefono,
           fechaRegistro: new Date().toISOString(),
@@ -168,17 +213,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
         if (createdUser && (createdUser.id || createdUser.idUsuario)) {
-          setUser(normalizeUser(createdUser));
+          await autenticar(normalizeUser(createdUser));
           return true;
         } else {
-          const fallbackUser = {
-            id: tempId,
-            nombre,
-            correo,
-            rol: backendRol,
-            telefono,
-          };
-          setUser(normalizeUser(fallbackUser));
+          const fallbackUser = { id: tempId, nombre, correo, rol: backendRol as 'dueño' | 'inquilino', telefono };
+          await autenticar(normalizeUser(fallbackUser));
           return true;
         }
       } else {
@@ -195,18 +234,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    setToken(null);
   };
 
   const updateUser = async (updates: Partial<User>) => {
     if (!user) return;
     const updated = await updateUserApi(user.id, updates);
-    setUser(updated);
+    await autenticar(updated);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        token,
         login,
         loginWithGoogle,
         register,

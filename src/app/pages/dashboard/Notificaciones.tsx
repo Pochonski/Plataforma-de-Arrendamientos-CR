@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
+import { useNotificacionesWS, NotificacionWS } from '../../hooks/useNotificacionesWS';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -10,17 +11,17 @@ import {
   Mail,
   CreditCard,
   FileText,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
   Check,
   RefreshCw,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Notification } from '../../types';
 
 export default function Notificaciones() {
-  const { user } = useAuth();
-  const { notifications, markNotificationAsRead, getUnreadCount, fetchNotifications, isLoadingNotifications } = useData();
+  const { user, token } = useAuth();
+  const { notifications, markNotificationAsRead, getUnreadCount, fetchNotifications, isLoadingNotifications, addNotification } = useData();
   const navigate = useNavigate();
 
   const handleRefresh = async () => {
@@ -39,6 +40,45 @@ export default function Notificaciones() {
       fetchNotifications(user.id);
     }
   }, [user?.id, fetchNotifications]);
+
+  // ─── Real-time: WebSocket para notificaciones en tiempo real ──────────────
+  const handleNotificacionWS = useCallback((notif: NotificacionWS) => {
+    // Mapear el modelo del backend al tipo Notification del frontend
+    const notificacionFrontend: Omit<Notification, 'id'> = {
+      userId: notif.usuario_id,
+      tipo: notif.tipo as Notification['tipo'],
+      titulo: notif.titulo,
+      mensaje: notif.cuerpo,
+      leida: false,
+      fecha: new Date(notif.creada_en),
+      link: notif.metadata?.conversacion_id
+        ? `/dashboard/mensajes`
+        : notif.metadata?.propiedad_id
+        ? `/dashboard/propiedades/${notif.metadata.propiedad_id}`
+        : undefined,
+    };
+
+    // Agregar al estado local vía DataContext
+    addNotification(notificacionFrontend);
+
+    // Mostrar toast interactivo
+    toast.info(notif.titulo, {
+      description: notif.cuerpo,
+      action: notificacionFrontend.link
+        ? {
+            label: 'Ver',
+            onClick: () => navigate(notificacionFrontend.link!),
+          }
+        : undefined,
+    });
+  }, [addNotification, navigate]);
+
+  const { connected: wsConnected } = useNotificacionesWS({
+    userId: user?.id ?? null,
+    token: token,
+    onNotificacion: handleNotificacionWS,
+  });
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const myNotifications = notifications;
   const [filter, setFilter] = useState<'todas' | 'no-leidas'>('todas');
@@ -129,16 +169,34 @@ export default function Notificaciones() {
             Mantente al día con todas tus actualizaciones
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={handleRefresh}
-          disabled={isLoadingNotifications}
-          className="w-full sm:w-auto"
-        >
-          <RefreshCw className={`size-4 mr-2 ${isLoadingNotifications ? 'animate-spin' : ''}`} />
-          Actualizar
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Indicador WebSocket en tiempo real */}
+          <div
+            className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border ${
+              wsConnected
+                ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800'
+                : 'bg-muted text-muted-foreground border-border'
+            }`}
+            title={wsConnected ? 'Notificaciones en tiempo real activas' : 'Sin conexión en tiempo real'}
+          >
+            {wsConnected ? (
+              <Wifi className="size-3" />
+            ) : (
+              <WifiOff className="size-3" />
+            )}
+            <span>{wsConnected ? 'En vivo' : 'Desconectado'}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleRefresh}
+            disabled={isLoadingNotifications}
+            className="flex-1 sm:flex-none"
+          >
+            <RefreshCw className={`size-4 mr-2 ${isLoadingNotifications ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
 
       {/* Stats and Actions */}
