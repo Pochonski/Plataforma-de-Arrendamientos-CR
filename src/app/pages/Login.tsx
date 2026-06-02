@@ -235,18 +235,29 @@ export default function Login() {
                     </>
                   )}
                 </Button>
+              </div>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      O continúa con
-                    </span>
-                  </div>
+              <p className="text-center text-sm text-muted-foreground">
+                ¿No tienes una cuenta?{' '}
+                <Link to="/registro" className="text-primary hover:underline font-medium">
+                  Regístrate gratis
+                </Link>
+              </p>
+            </form>
+
+            <div className="space-y-3">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
                 </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    O continúa con
+                  </span>
+                </div>
+              </div>
 
+              <div className="flex justify-center">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => {
@@ -260,14 +271,7 @@ export default function Login() {
                   click_listener={null}
                 />
               </div>
-
-              <p className="text-center text-sm text-muted-foreground">
-                ¿No tienes una cuenta?{' '}
-                <Link to="/registro" className="text-primary hover:underline font-medium">
-                  Regístrate gratis
-                </Link>
-              </p>
-            </form>
+            </div>
 
             <div className="pt-4 border-t">
               <p className="text-xs text-center text-muted-foreground">
