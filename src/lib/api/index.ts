@@ -17,5 +17,6 @@ export * from './contracts';
 export * from './invitations';
 export * from './payments';
 export * from './notifications';
+export * from './auth';
 export * from './messages';
 export * from './users';

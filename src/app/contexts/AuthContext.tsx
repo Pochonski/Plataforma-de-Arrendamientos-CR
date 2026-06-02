@@ -2,23 +2,13 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { SignJWT } from 'jose';
 import { User } from '../types';
 import { updateUser as updateUserApi } from '@/lib/api/users';
-
-interface GoogleCredentialResponse {
-  credential?: string;
-  select_by?: string;
-}
-
-interface GoogleUserData {
-  id: string;
-  nombre: string;
-  correo: string;
-}
+import { googleAuth } from '@/lib/api/auth';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (correo: string, contraseña: string) => Promise<boolean>;
-  loginWithGoogle: (credentialResponse: GoogleCredentialResponse, rol: 'dueño' | 'inquilino', googleUserData: GoogleUserData, isExisting?: boolean) => Promise<boolean>;
+  loginWithGoogle: (googleToken: string, rol: 'dueño' | 'inquilino') => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
@@ -107,69 +97,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loginWithGoogle = async (
-    credentialResponse: GoogleCredentialResponse,
+    googleToken: string,
     rol: 'dueño' | 'inquilino',
-    googleUserData: GoogleUserData,
-    isExisting?: boolean
   ): Promise<boolean> => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      if (!apiUrl) {
-        console.error("Google OAuth: VITE_API_URL no está configurado");
-        return false;
-      }
-
-      // If user already exists, use the DB id passed via googleUserData.id
-      if (isExisting) {
-        const u: User = { id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol };
-        await autenticar(u);
-        return true;
-      }
-
-      // Map role to backend format (dueño -> dueno)
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
-
-      // Create user in the backend
-      const response = await fetch(`${apiUrl}/usuario/${googleUserData.id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '',
-        },
-        body: JSON.stringify({
-          nombre: googleUserData.nombre,
-          correo: googleUserData.correo,
-          contrasena: '',
-          rol: backendRol,
-          telefono: ''
-        }),
-      });
-
-      if (response.ok) {
-        // Fetch the actual user from DB to get normalized data
-        const getResponse = await fetch(`${apiUrl}/usuarios`);
-        if (getResponse.ok) {
-          const usuarios = await getResponse.json();
-          const createdUser = usuarios.find((u: any) => u.correo === googleUserData.correo);
-          if (createdUser) {
-            await autenticar(normalizeUser(createdUser));
-            return true;
-          }
-        }
-        // Fallback to local user if DB fetch fails
-        const u: User = { id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol };
-        await autenticar(u);
+      const user = await googleAuth(googleToken, backendRol);
+      if (user) {
+        await autenticar(normalizeUser(user));
         return true;
-      } else if (response.status === 409) {
-        // User already exists
-        const u: User = { id: googleUserData.id, nombre: googleUserData.nombre, correo: googleUserData.correo, rol };
-        await autenticar(u);
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.error("Google OAuth: Error creando usuario:", errorText);
-        return false;
       }
+      return false;
     } catch (err) {
       console.error("Error con login de Google:", err);
       return false;

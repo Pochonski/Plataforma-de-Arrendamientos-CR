@@ -29,7 +29,7 @@ export default function Login() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const [showRoleSelection, setShowRoleSelection] = useState(false);
-  const [pendingGoogleUser, setPendingGoogleUser] = useState<{ id: string; nombre: string; correo: string } | null>(null);
+  const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null);
 
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -61,13 +61,10 @@ export default function Login() {
     setIsGoogleLoading(true);
     try {
       const token = credentialResponse.credential as string;
-      const payload = JSON.parse(atob(token.split('.')[1]));
-
-      const googleUserData = {
-        id: payload.sub || payload.email,
-        nombre: payload.name,
-        correo: payload.email,
-      };
+      if (!token) {
+        toast.error('No se pudo obtener el token de Google');
+        return;
+      }
 
       const apiUrl = import.meta.env.VITE_API_URL;
       if (apiUrl) {
@@ -75,27 +72,22 @@ export default function Login() {
           const response = await fetch(`${apiUrl}/usuarios`, { cache: 'no-store' });
           if (response.ok) {
             const usuarios = await response.json();
-            const normalizedEmail = googleUserData.correo.toLowerCase();
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const email = (payload.email || '').toLowerCase();
             const existingUser = usuarios.find((u: any) =>
-              (u.Correo || u.correo || '').toLowerCase() === normalizedEmail ||
-              (u.id || u.Id) === googleUserData.id
+              (u.Correo || u.correo || '').toLowerCase() === email
             );
             if (existingUser) {
-              const normalizedUser = {
-                id: existingUser.Id || existingUser.id,
-                nombre: existingUser.Nombre || existingUser.nombre,
-                correo: existingUser.Correo || existingUser.correo,
-                rol: existingUser.Rol === 'dueno' || existingUser.Rol === 'arrendador' ? 'dueño'
-                   : existingUser.Rol === 'arrendatario' ? 'inquilino'
-                   : existingUser.Rol || existingUser.rol || 'inquilino',
-              };
-              await loginWithGoogle({ credential: '' }, normalizedUser.rol as 'dueño' | 'inquilino', {
-                id: normalizedUser.id,
-                nombre: normalizedUser.nombre,
-                correo: normalizedUser.correo,
-              }, true);
-              toast.success('¡Bienvenido con Google!');
-              navigate('/dashboard', { replace: true });
+              const rol = existingUser.Rol === 'dueno' || existingUser.Rol === 'arrendador' ? 'dueño'
+                       : existingUser.Rol === 'arrendatario' ? 'inquilino'
+                       : existingUser.Rol || existingUser.rol || 'inquilino';
+              const success = await loginWithGoogle(token, rol);
+              if (success) {
+                toast.success('¡Bienvenido con Google!');
+                navigate('/dashboard', { replace: true });
+              } else {
+                toast.error('Error al iniciar sesión con Google');
+              }
               return;
             }
           }
@@ -104,7 +96,7 @@ export default function Login() {
         }
       }
 
-      setPendingGoogleUser(googleUserData);
+      setPendingGoogleToken(token);
       setShowRoleSelection(true);
     } catch (err) {
       toast.error('Error al procesar login de Google');
@@ -114,11 +106,11 @@ export default function Login() {
   };
 
   const handleGoogleRoleSelection = async (rol: 'dueño' | 'inquilino') => {
-    if (!pendingGoogleUser) return;
+    if (!pendingGoogleToken) return;
 
     setIsGoogleLoading(true);
     try {
-      const success = await loginWithGoogle({ credential: '' }, rol, pendingGoogleUser);
+      const success = await loginWithGoogle(pendingGoogleToken, rol);
       if (success) {
         toast.success('¡Bienvenido con Google!');
         navigate('/dashboard', { replace: true });
@@ -130,7 +122,7 @@ export default function Login() {
     } finally {
       setIsGoogleLoading(false);
       setShowRoleSelection(false);
-      setPendingGoogleUser(null);
+      setPendingGoogleToken(null);
     }
   };
 
