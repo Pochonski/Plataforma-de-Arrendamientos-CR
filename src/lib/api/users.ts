@@ -1,8 +1,8 @@
-import { api, API_BASE } from './client';
+import { api } from './client';
 import type { User } from '@/app/types';
 
 export async function fetchUser(id: string): Promise<User> {
-  return api.get(`/usuario/${id}`, API_BASE);
+  return api.get(`/usuario/${id}`);
 }
 
 export async function createUser(data: {
@@ -12,9 +12,9 @@ export async function createUser(data: {
   rol: 'dueno' | 'inquilino';
   telefono?: string;
 }): Promise<User> {
-  return api.post('/usuarios', data, API_BASE);
+  return api.post('/usuarios', data);
 }
 
 export async function updateUser(id: string, data: Partial<User>): Promise<User> {
-  return api.put(`/usuario/${id}`, data, API_BASE);
+  return api.put(`/usuario/${id}`, data);
 }
