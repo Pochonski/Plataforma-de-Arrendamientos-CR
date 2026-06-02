@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SignJWT } from 'jose';
 import { User } from '../types';
-import { updateUser as updateUserApi } from '@/lib/api/users';
+import { updateUser as updateUserApi, createUser } from '@/lib/api/users';
 import { googleAuth } from '@/lib/api/auth';
 
 interface AuthContextType {
@@ -116,56 +116,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string): Promise<boolean> => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      if (!apiUrl) return false;
-
-      // Map role to backend format (dueño -> dueno)
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
-      const tempId = `usr-${Math.floor(Math.random() * 10000)}`;
 
-      const response = await fetch(`${apiUrl}/usuario/${tempId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '',
-        },
-        body: JSON.stringify({
-          nombre,
-          correo,
-          contraseña,
-          rol: backendRol,
-          telefono,
-          fechaRegistro: new Date().toISOString(),
-          propiedades: []
-        }),
+      const user = await createUser({
+        nombre,
+        correo,
+        contrasena: contraseña,
+        rol: backendRol,
+        telefono,
       });
 
-      if (response.ok) {
-        const responseText = await response.text();
-        let createdUser = null;
-        if (responseText) {
-          try {
-            createdUser = JSON.parse(responseText);
-          } catch (e) {
-            console.error("Error parseando la respuesta del servidor:", e);
-          }
-        }
-        if (createdUser && (createdUser.id || createdUser.idUsuario)) {
-          await autenticar(normalizeUser(createdUser));
-          return true;
-        } else {
-          const fallbackUser = { id: tempId, nombre, correo, rol: backendRol as 'dueño' | 'inquilino', telefono };
-          await autenticar(normalizeUser(fallbackUser));
-          return true;
-        }
-      } else {
-        const errorText = await response.text();
-        console.error("Error en la respuesta del servidor:", errorText);
+      if (user) {
+        await autenticar(normalizeUser(user));
+        return true;
       }
+      return false;
     } catch (err) {
       console.error("Error crítico registrando usuario:", err);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
