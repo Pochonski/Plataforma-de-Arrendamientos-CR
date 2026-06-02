@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SignJWT } from 'jose';
 import { User } from '../types';
-import { updateUser as updateUserApi, createUser } from '@/lib/api/users';
+import { updateUser as updateUserApi, createUser, fetchUsers } from '@/lib/api/users';
 import { googleAuth } from '@/lib/api/auth';
 
 interface AuthContextType {
@@ -73,22 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (correo: string, contraseña: string): Promise<boolean> => {
+  const login = async (correo: string, _contraseña: string): Promise<boolean> => {
     try {
-      // Login con API de Azure APIM
-      const apiUrl = import.meta.env.VITE_API_URL;
-      if (apiUrl) {
-        const response = await fetch(`${apiUrl}/usuarios`);
-        if (response.ok) {
-          const usuarios = await response.json();
-          const foundUser = usuarios.find((u: any) => u.correo === correo);
-          if (foundUser) {
-            // Normalize role from APIM ("dueno" → "dueño")
-            const normalizedUser = normalizeUser(foundUser);
-            await autenticar(normalizedUser);
-            return true;
-          }
-        }
+      const usuarios = await fetchUsers();
+      const foundUser = usuarios.find((u: any) => u.correo === correo);
+      if (foundUser) {
+        const normalizedUser = normalizeUser(foundUser);
+        await autenticar(normalizedUser);
+        return true;
       }
     } catch (err) {
       console.error("Error validando usuario contra Azure APIM", err);

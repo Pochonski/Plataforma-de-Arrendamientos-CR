@@ -1,6 +1,10 @@
 import { api } from './client';
 import type { User } from '@/app/types';
 
+export async function fetchUsers(): Promise<User[]> {
+  return api.get('/usuarios');
+}
+
 export async function fetchUser(id: string): Promise<User> {
   return api.get(`/usuario/${id}`);
 }

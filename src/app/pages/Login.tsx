@@ -66,36 +66,6 @@ export default function Login() {
         return;
       }
 
-      const apiUrl = import.meta.env.VITE_API_URL;
-      if (apiUrl) {
-        try {
-          const response = await fetch(`${apiUrl}/usuarios`, { cache: 'no-store' });
-          if (response.ok) {
-            const usuarios = await response.json();
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const email = (payload.email || '').toLowerCase();
-            const existingUser = usuarios.find((u: any) =>
-              (u.Correo || u.correo || '').toLowerCase() === email
-            );
-            if (existingUser) {
-              const rol = existingUser.Rol === 'dueno' || existingUser.Rol === 'arrendador' ? 'dueño'
-                       : existingUser.Rol === 'arrendatario' ? 'inquilino'
-                       : existingUser.Rol || existingUser.rol || 'inquilino';
-              const success = await loginWithGoogle(token, rol);
-              if (success) {
-                toast.success('¡Bienvenido con Google!');
-                navigate('/dashboard', { replace: true });
-              } else {
-                toast.error('Error al iniciar sesión con Google');
-              }
-              return;
-            }
-          }
-        } catch (e) {
-          console.error('Error checking existing user:', e);
-        }
-      }
-
       setPendingGoogleToken(token);
       setShowRoleSelection(true);
     } catch (err) {
