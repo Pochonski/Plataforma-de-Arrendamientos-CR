@@ -14,8 +14,7 @@ import type {
 
 interface APIMProperty {
   id?: string;
-  propiedad_id?: string;
-  _id?: string;
+  idPropiedad?: string;
   titulo?: string;
   descripcion?: string;
   precio?: number | string;
@@ -146,7 +145,7 @@ export function normalizeProperty(raw: APIMProperty): Property {
   }
 
   return {
-    id: raw.id ?? raw.propiedad_id ?? raw._id ?? '',
+    id: raw.idPropiedad ?? raw.id ?? '',
     titulo: isGeneric(raw.titulo) ? 'Propiedad Nueva' : (raw.titulo ?? ''),
     descripcion: isGeneric(raw.descripcion) ? '' : (raw.descripcion ?? ''),
     precio,
