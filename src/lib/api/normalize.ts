@@ -14,6 +14,8 @@ import type {
 
 interface APIMProperty {
   id?: string;
+  propiedad_id?: string;
+  _id?: string;
   titulo?: string;
   descripcion?: string;
   precio?: number | string;
@@ -144,7 +146,7 @@ export function normalizeProperty(raw: APIMProperty): Property {
   }
 
   return {
-    id: !raw.id || isGeneric(raw.id) ? `mock-${Math.random().toString(36).substr(2, 9)}` : raw.id,
+    id: raw.id ?? raw.propiedad_id ?? raw._id ?? '',
     titulo: isGeneric(raw.titulo) ? 'Propiedad Nueva' : (raw.titulo ?? ''),
     descripcion: isGeneric(raw.descripcion) ? '' : (raw.descripcion ?? ''),
     precio,
