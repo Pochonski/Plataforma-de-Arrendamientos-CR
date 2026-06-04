@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleLogin } from '@react-oauth/google';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { useAuth } from '../contexts/AuthContext';
+import { useGoogleAuth } from '@/lib/hooks/useGoogleAuth';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -26,12 +27,9 @@ export default function Login() {
   const [recordarme, setRecordarme] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
   const [serverError, setServerError] = useState('');
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
-  const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null);
-
-  const { login, loginWithGoogle } = useAuth();
+  const google = useGoogleAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -57,46 +55,7 @@ export default function Login() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    setIsGoogleLoading(true);
-    try {
-      const token = credentialResponse.credential as string;
-      if (!token) {
-        toast.error('No se pudo obtener el token de Google');
-        return;
-      }
-
-      setPendingGoogleToken(token);
-      setShowRoleSelection(true);
-    } catch (err) {
-      toast.error('Error al procesar login de Google');
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
-  const handleGoogleRoleSelection = async (rol: 'dueño' | 'inquilino') => {
-    if (!pendingGoogleToken) return;
-
-    setIsGoogleLoading(true);
-    try {
-      const success = await loginWithGoogle(pendingGoogleToken, rol);
-      if (success) {
-        toast.success('¡Bienvenido con Google!');
-        navigate('/dashboard', { replace: true });
-      } else {
-        toast.error('No se pudo crear la cuenta con Google');
-      }
-    } catch (err) {
-      toast.error('Error al crear cuenta con Google');
-    } finally {
-      setIsGoogleLoading(false);
-      setShowRoleSelection(false);
-      setPendingGoogleToken(null);
-    }
-  };
-
-  const isLoading = form.formState.isSubmitting || isGoogleLoading;
+  const isLoading = form.formState.isSubmitting || google.isLoading;
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -229,7 +188,7 @@ export default function Login() {
 
               <div className="flex justify-center">
                 <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
+                  onSuccess={google.handleGoogleSuccess}
                   onError={() => {
                     toast.error('Error con Google OAuth');
                   }}
@@ -279,7 +238,7 @@ export default function Login() {
       </div>
 
       {/* Role Selection Dialog for Google Login */}
-      <Dialog open={showRoleSelection} onOpenChange={setShowRoleSelection}>
+      <Dialog open={google.showRoleSelection} onOpenChange={google.closeRoleDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">Selecciona tu rol</DialogTitle>
@@ -291,7 +250,7 @@ export default function Login() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             <Card
               className="cursor-pointer hover:border-primary hover:shadow-lg transition-all"
-              onClick={() => handleGoogleRoleSelection('dueño')}
+              onClick={() => google.handleRoleSelection('dueño')}
             >
               <CardContent className="p-6 space-y-4 text-center">
                 <div className="inline-flex items-center justify-center size-16 rounded-full bg-primary/10 text-primary">
@@ -303,15 +262,15 @@ export default function Login() {
                     Busco gestionar mis propiedades y administrar contratos de alquiler
                   </p>
                 </div>
-                <Button className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Creando cuenta...' : 'Continuar como dueño'}
+                <Button className="w-full" disabled={google.isLoading}>
+                  {google.isLoading ? 'Creando cuenta...' : 'Continuar como dueño'}
                 </Button>
               </CardContent>
             </Card>
 
             <Card
               className="cursor-pointer hover:border-primary hover:shadow-lg transition-all"
-              onClick={() => handleGoogleRoleSelection('inquilino')}
+              onClick={() => google.handleRoleSelection('inquilino')}
             >
               <CardContent className="p-6 space-y-4 text-center">
                 <div className="inline-flex items-center justify-center size-16 rounded-full bg-primary/10 text-primary">
@@ -323,8 +282,8 @@ export default function Login() {
                     Busco encontrar una propiedad y gestionar mi alquiler
                   </p>
                 </div>
-                <Button className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Creando cuenta...' : 'Continuar como inquilino'}
+                <Button className="w-full" disabled={google.isLoading}>
+                  {google.isLoading ? 'Creando cuenta...' : 'Continuar como inquilino'}
                 </Button>
               </CardContent>
             </Card>
