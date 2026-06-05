@@ -5,7 +5,7 @@
   "globalEnvironmentVariables": [
     {
       "name": "VITE_GOOGLE_CLIENT_ID",
-      "value": "703304000101-mv908iu4u9fqcpkmrnfg6u9fd0pkqk2o.apps.googleusercontent.com"
+      "value": "703304000101-f5ku79ld8mejv04dkfqt4ejbilm4dv66.apps.googleusercontent.com"
     },
     {
       "name": "VITE_API_URL",
