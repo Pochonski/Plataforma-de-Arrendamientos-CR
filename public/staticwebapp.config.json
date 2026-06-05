@@ -2,6 +2,11 @@
   "navigationFallback": {
     "rewrite": "/index.html"
   },
+  "globalHeaders": {
+    "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+    "Cross-Origin-Embedder-Policy": "unsafe-none",
+    "Cross-Origin-Resource-Policy": "cross-origin"
+  },
   "globalEnvironmentVariables": [
     {
       "name": "VITE_GOOGLE_CLIENT_ID",
@@ -9,7 +14,11 @@
     },
     {
       "name": "VITE_API_URL",
-      "value": "https://arrendamientos-cr-api.azure-api.net"
+      "value": "https://plataforma-arrendamientos-api.azure-api.net"
+    },
+    {
+      "name": "VITE_APIM_URL",
+      "value": "https://plataforma-arrendamientos-api.azure-api.net"
     }
   ]
 }
