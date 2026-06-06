@@ -286,7 +286,7 @@ export default function Registro() {
       </div>
 
       {/* Role Selection Dialog */}
-      <Dialog open={showRoleSelection} onOpenChange={setShowRoleSelection}>
+      <Dialog open={google.showRoleSelection} onOpenChange={google.closeRoleDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">Selecciona tu rol</DialogTitle>
