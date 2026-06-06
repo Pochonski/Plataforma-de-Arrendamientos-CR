@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 export default function Registro() {
   const [showPassword, setShowPassword] = useState(true);
   const [showConfirmPassword, setShowConfirmPassword] = useState(true);
+  const [showEmailRoleDialog, setShowEmailRoleDialog] = useState(false);
   const [serverError, setServerError] = useState('');
 
   const google = useGoogleAuth();
@@ -44,7 +45,7 @@ export default function Registro() {
 
   const onSubmit = () => {
     setServerError('');
-    setShowRoleSelection(true);
+    setShowEmailRoleDialog(true);
   };
 
   const handleRoleSelection = async (rol: 'dueño' | 'inquilino') => {
@@ -57,11 +58,11 @@ export default function Registro() {
         navigate('/dashboard');
       } else {
         setServerError('No se pudo crear la cuenta. Intenta de nuevo.');
-        setShowRoleSelection(false);
+        setShowEmailRoleDialog(false);
       }
     } catch (err) {
       setServerError('Ocurrió un error. Por favor intenta de nuevo.');
-      setShowRoleSelection(false);
+      setShowEmailRoleDialog(false);
     }
   };
 
@@ -286,7 +287,7 @@ export default function Registro() {
       </div>
 
       {/* Role Selection Dialog */}
-      <Dialog open={google.showRoleSelection} onOpenChange={google.closeRoleDialog}>
+      <Dialog open={showEmailRoleDialog} onOpenChange={setShowEmailRoleDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">Selecciona tu rol</DialogTitle>
