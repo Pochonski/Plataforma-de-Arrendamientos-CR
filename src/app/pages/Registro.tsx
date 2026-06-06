@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { GoogleLogin } from '@react-oauth/google';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registroFormSchema } from '@/lib/validations';
+import { registroFormSchema, passwordRequirements, getPasswordStrength } from '@/lib/validations';
 import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
 import { useGoogleAuth } from '@/lib/hooks/useGoogleAuth';
@@ -67,6 +67,8 @@ export default function Registro() {
   };
 
   const isLoading = form.formState.isSubmitting;
+  const watchedPassword = useWatch({ control: form.control, name: 'contraseña' });
+  const strength = watchedPassword ? getPasswordStrength(watchedPassword) : { score: 0, meetsAll: false };
 
   return (
     <>
@@ -177,6 +179,40 @@ export default function Registro() {
                       <p className="text-sm text-destructive flex items-center gap-1">
                         <AlertCircle className="size-3" /> {form.formState.errors.contraseña.message}
                       </p>
+                    )}
+                    {/* Password strength meter */}
+                    {watchedPassword && (
+                      <div className="space-y-1">
+                        <div className="flex gap-1">
+                          {[0, 1, 2, 3].map((i) => (
+                            <div
+                              key={i}
+                              className={`h-1 flex-1 rounded-full transition-colors ${
+                                i < strength.score
+                                  ? strength.meetsAll ? 'bg-green-500' : 'bg-yellow-500'
+                                  : 'bg-muted'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <div className="space-y-1">
+                          {passwordRequirements.map((req) => (
+                            <div
+                              key={req.id}
+                              className={`text-xs flex items-center gap-1 ${
+                                req.test(watchedPassword) ? 'text-green-600' : 'text-muted-foreground'
+                              }`}
+                            >
+                              <div className={`size-3 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                req.test(watchedPassword) ? 'bg-green-500 text-white' : 'bg-muted'
+                              }`}>
+                                {req.test(watchedPassword) ? '✓' : ''}
+                              </div>
+                              {req.label}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
 

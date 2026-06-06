@@ -7,11 +7,35 @@ export const loginSchema = z.object({
 });
 export type LoginFormData = z.infer<typeof loginSchema>;
 
+// ─── Password Strength ────────────────────────────────────────────────────────
+export type PasswordRequirement = {
+  id: string;
+  label: string;
+  test: (pwd: string) => boolean;
+};
+
+export const passwordRequirements: PasswordRequirement[] = [
+  { id: 'length', label: 'Mínimo 8 caracteres', test: (p) => p.length >= 8 },
+  { id: 'uppercase', label: 'Al menos una mayúscula', test: (p) => /[A-Z]/.test(p) },
+  { id: 'number', label: 'Al menos un número', test: (p) => /[0-9]/.test(p) },
+  { id: 'special', label: 'Al menos un carácter especial (!@#$...)', test: (p) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p) },
+];
+
+export function getPasswordStrength(pwd: string): { score: number; meetsAll: boolean } {
+  const score = passwordRequirements.filter((r) => r.test(pwd)).length;
+  return { score, meetsAll: score === passwordRequirements.length };
+}
+
 // ─── Registro ─────────────────────────────────────────────────────────────────
+// Costa Rica phone: 8 digits, or +506 + 8 digits (with or without dashes/spaces)
+const crcPhoneRegex = /^(\+506)?[\s\-]?\d{4}[\s\-]?\d{4}$/;
+
 const registroFields = {
   nombre: z.string({ error: 'Por favor completa tu nombre' }).min(2, 'El nombre debe tener al menos 2 caracteres'),
   correo: z.string({ error: 'Por favor completa el correo' }).email('Correo electrónico inválido'),
-  telefono: z.string({ error: 'Por favor completa el teléfono' }).min(8, 'El teléfono debe tener al menos 8 dígitos'),
+  telefono: z
+    .string({ error: 'Por favor completa el teléfono' })
+    .regex(crcPhoneRegex, 'Teléfono inválido. Formato: 8888-8888 o +506 8888-8888'),
   contraseña: z
     .string({ error: 'Por favor completa la contraseña' })
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
