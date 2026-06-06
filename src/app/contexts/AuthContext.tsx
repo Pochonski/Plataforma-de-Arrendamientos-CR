@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SignJWT } from 'jose';
 import { User } from '../types';
-import { updateUser as updateUserApi, createUser, fetchUsers } from '@/lib/api/users';
-import { googleAuth } from '@/lib/api/auth';
+import { updateUser as updateUserApi, createUser } from '@/lib/api/users';
+import { login as loginApi, googleAuth } from '@/lib/api/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -61,31 +61,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Session restored on page load via API validation in login()
   }, []);
 
-  /** Establece el usuario autenticado y genera el JWT correspondiente */
-  const autenticar = async (u: User) => {
+  /** Establece el usuario autenticado con token del backend */
+  const autenticar = async (u: User, t: string | null) => {
     setUser(u);
-    try {
-      const jwt = await generarToken(u.id, u.nombre);
-      setToken(jwt);
-    } catch (err) {
-      console.error('[Auth] Error generando JWT:', err);
-      setToken(null);
-    }
+    setToken(t);
   };
 
-  const login = async (correo: string, _contraseña: string): Promise<boolean> => {
+  const login = async (correo: string, contrasena: string): Promise<boolean> => {
     try {
-      const usuarios = await fetchUsers();
-      const foundUser = usuarios.find((u: any) => u.correo === correo);
-      if (foundUser) {
-        const normalizedUser = normalizeUser(foundUser);
-        await autenticar(normalizedUser);
-        return true;
-      }
+      const { token, user } = await loginApi(correo, contrasena);
+      const normalizedUser = normalizeUser(user);
+      await autenticar(normalizedUser, token);
+      return true;
     } catch (err) {
-      console.error("Error validando usuario contra Azure APIM", err);
+      console.error('Error en login:', err);
+      return false;
     }
-    return false;
   };
 
   const loginWithGoogle = async (
@@ -94,14 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<boolean> => {
     try {
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
-      const user = await googleAuth(googleToken, backendRol);
-      if (user) {
-        await autenticar(normalizeUser(user));
-        return true;
-      }
-      return false;
+      const { token, user } = await googleAuth(googleToken, backendRol);
+      await autenticar(normalizeUser(user), token);
+      return true;
     } catch (err) {
-      console.error("Error con login de Google:", err);
+      console.error('Error con login de Google:', err);
       return false;
     }
   };
@@ -119,12 +107,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (user) {
-        await autenticar(normalizeUser(user));
+        // TODO (Phase 2): backend should return { token, user } so we don't need client-side token gen
+        const jwt = await generarToken(user.id, user.nombre);
+        await autenticar(normalizeUser(user), jwt);
         return true;
       }
       return false;
     } catch (err) {
-      console.error("Error crítico registrando usuario:", err);
+      console.error('Error crítico registrando usuario:', err);
       return false;
     }
   };
@@ -137,7 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = async (updates: Partial<User>) => {
     if (!user) return;
     const updated = await updateUserApi(user.id, updates);
-    await autenticar(updated);
+    // Token stays the same on profile update
+    await autenticar(normalizeUser(updated), token);
   };
 
   return (
