@@ -192,6 +192,7 @@ export default function Login() {
                   onError={() => {
                     toast.error('Error con Google OAuth');
                   }}
+                  nonce={google.nonce}
                   useOneTap={false}
                   text="signin_with"
                   shape="rectangular"

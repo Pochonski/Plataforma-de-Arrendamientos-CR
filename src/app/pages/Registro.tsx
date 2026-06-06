@@ -241,6 +241,7 @@ export default function Registro() {
                     onError={() => {
                       toast.error('Error con Google OAuth');
                     }}
+                    nonce={google.nonce}
                     useOneTap={false}
                     text="signup_with"
                     shape="rectangular"

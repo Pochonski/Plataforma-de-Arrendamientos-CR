@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (correo: string, contraseña: string) => Promise<boolean>;
-  loginWithGoogle: (googleToken: string, rol: 'dueño' | 'inquilino') => Promise<boolean>;
+  loginWithGoogle: (googleToken: string, rol: 'dueño' | 'inquilino', nonce?: string) => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
@@ -50,10 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async (
     googleToken: string,
     rol: 'dueño' | 'inquilino',
+    nonce?: string,
   ): Promise<boolean> => {
     try {
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
-      const { token, user } = await googleAuth(googleToken, backendRol);
+      const { token, user } = await googleAuth(googleToken, backendRol, nonce);
       await autenticar(normalizeUser(user), token);
       return true;
     } catch (err) {
