@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { SignJWT } from 'jose';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { User } from '../types';
 import { updateUser as updateUserApi, createUser } from '@/lib/api/users';
 import { login as loginApi, googleAuth } from '@/lib/api/auth';
@@ -26,40 +25,9 @@ const normalizeUser = (raw: any): User => ({
      : raw.rol ?? 'inquilino',
 });
 
-/**
- * Genera un JWT HS256 con claim sub=userId y name=nombre.
- *
- * NOTA DE SEGURIDAD: En producción real el token debería ser emitido
- * exclusivamente por el servidor (endpoint POST /login → token firmado).
- * Este enfoque client-side es válido para una demo universitaria donde:
- *   (a) el shared secret ya está en env vars de los App Services (ms-mensajes,
- *       ms-notificaciones), y (b) no existe endpoint de login con contraseña.
- * Si VITE_JWT_SECRET no está configurada, no se genera token (fail-closed).
- *
- * @throws si VITE_JWT_SECRET no está definida en el entorno
- */
-async function generarToken(userId: string, nombre: string): Promise<string> {
-  const secretStr = import.meta.env.VITE_JWT_SECRET;
-  if (!secretStr) {
-    throw new Error('[Auth] VITE_JWT_SECRET no está configurada — no se puede generar token JWT');
-  }
-  const secret = new TextEncoder().encode(secretStr);
-
-  return new SignJWT({ name: nombre })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setSubject(userId)
-    .setIssuedAt()
-    .setExpirationTime('24h')
-    .sign(secret);
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Session restored on page load via API validation in login()
-  }, []);
 
   /** Establece el usuario autenticado con token del backend */
   const autenticar = async (u: User, t: string | null) => {
@@ -98,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
 
-      const user = await createUser({
+      const { token, user } = await createUser({
         nombre,
         correo,
         contrasena: contraseña,
@@ -106,13 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         telefono,
       });
 
-      if (user) {
-        // TODO (Phase 2): backend should return { token, user } so we don't need client-side token gen
-        const jwt = await generarToken(user.id, user.nombre);
-        await autenticar(normalizeUser(user), jwt);
-        return true;
-      }
-      return false;
+      await autenticar(normalizeUser(user), token);
+      return true;
     } catch (err) {
       console.error('Error crítico registrando usuario:', err);
       return false;

@@ -15,8 +15,8 @@ export async function createUser(data: {
   contrasena: string;
   rol: 'dueno' | 'inquilino';
   telefono?: string;
-}): Promise<User> {
-  return api.post('/usuarios', data);
+}): Promise<{ token: string; user: User }> {
+  return api.post('/auth/registro', data);
 }
 
 export async function updateUser(id: string, data: Partial<User>): Promise<User> {
