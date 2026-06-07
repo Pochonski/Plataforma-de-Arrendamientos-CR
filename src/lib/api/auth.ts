@@ -1,8 +1,19 @@
-import { api } from './client';
+import { api, APIM_URL, API_BASE, APIM_KEY } from './client';
 import type { User } from '@/app/types';
+import { parseAuthError } from './errors';
+
+async function authPost<T>(path: string, body: unknown): Promise<T> {
+  const baseUrl = APIM_URL || API_BASE;
+  const url = `${baseUrl}${path}`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (APIM_KEY) headers['Ocp-Apim-Subscription-Key'] = APIM_KEY;
+  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  if (!res.ok) throw await parseAuthError(res);
+  return res.json() as Promise<T>;
+}
 
 export async function login(correo: string, contrasena: string): Promise<{ token: string; refreshToken: string; user: User }> {
-  return api.post('/auth/login', { correo, contrasena });
+  return authPost('/auth/login', { correo, contrasena });
 }
 
 export async function googleAuth(googleToken: string, rol: 'dueno' | 'inquilino', nonce?: string): Promise<{ token: string; refreshToken: string; user: User }> {

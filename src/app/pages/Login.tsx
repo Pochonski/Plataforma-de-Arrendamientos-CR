@@ -11,7 +11,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Checkbox } from '../components/ui/checkbox';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../components/ui/card';
 import {
@@ -22,11 +22,13 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Building2, Home } from 'lucide-react';
+import { AuthError } from '@/lib/api/errors';
 
 export default function Login() {
   const [recordarme, setRecordarme] = useState(false);
   const [showPassword, setShowPassword] = useState(true);
   const [serverError, setServerError] = useState('');
+  const [isLocked, setIsLocked] = useState(false);
 
   const google = useGoogleAuth();
   const { login } = useAuth();
@@ -42,16 +44,34 @@ export default function Login() {
     setServerError('');
 
     try {
-      const success = await login(data.correo, data.contraseña);
-      if (success) {
-        toast.success('¡Bienvenido de nuevo!');
-        const from = location.state?.from?.pathname || location.state?.returnTo || '/dashboard';
-        navigate(from, { replace: true });
-      } else {
-        setServerError('Correo o contraseña incorrectos');
-      }
+      await login(data.correo, data.contraseña);
+      toast.success('¡Bienvenido de nuevo!');
+      const from = location.state?.from?.pathname || location.state?.returnTo || '/dashboard';
+      navigate(from, { replace: true });
     } catch (err) {
-      setServerError('Ocurrió un error. Por favor intenta de nuevo.');
+      if (err instanceof AuthError) {
+        if (err.isLocked()) {
+          const until = err.blockedUntil
+            ? new Date(err.blockedUntil).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
+            : '15 minutos';
+          setServerError(`⏰ Cuenta bloqueada. Intenta de nuevo en ${until}.`);
+        } else if (err.kind === 'invalid_credentials') {
+          if (err.intentosRestantes !== undefined && err.intentosRestantes > 0) {
+            setServerError(`Correo o contraseña incorrectos. Te quedan ${err.intentosRestantes} intento${err.intentosRestantes === 1 ? '' : 's'}.`);
+          } else {
+            setServerError('Correo o contraseña incorrectos');
+          }
+          setIsLocked(false);
+        } else if (err.kind === 'network') {
+          setServerError('No se pudo conectar al servidor. Verifica tu conexión.');
+          setIsLocked(false);
+        } else {
+          setServerError(err.message || 'Ocurrió un error. Por favor intenta de nuevo.');
+          setIsLocked(false);
+        }
+      } else {
+        setServerError('Ocurrió un error. Por favor intenta de nuevo.');
+      }
     }
   };
 
@@ -73,10 +93,19 @@ export default function Login() {
             </div>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {serverError && (
+              {serverError && !isLocked && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                   <AlertCircle className="size-4 flex-shrink-0" />
                   <span>{serverError}</span>
+                </div>
+              )}
+              {serverError && isLocked && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 text-amber-600 text-sm">
+                  <Clock className="size-4 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Cuenta temporalmente bloqueada</p>
+                    <p className="mt-0.5 opacity-80">{serverError}</p>
+                  </div>
                 </div>
               )}
 

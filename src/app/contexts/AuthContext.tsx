@@ -2,12 +2,13 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import { User } from '../types';
 import { updateUser as updateUserApi, createUser } from '@/lib/api/users';
 import { login as loginApi, googleAuth, logout as logoutApi } from '@/lib/api/auth';
+import { AuthError } from '@/lib/api/errors';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
-  login: (correo: string, contraseña: string) => Promise<boolean>;
+  login: (correo: string, contraseña: string) => Promise<void>;
   loginWithGoogle: (googleToken: string, rol: 'dueño' | 'inquilino', nonce?: string) => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -45,16 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem(STORAGE_KEY_REFRESH);
   };
 
-  const login = async (correo: string, contrasena: string): Promise<boolean> => {
-    try {
-      const { token, refreshToken: rt, user } = await loginApi(correo, contrasena);
-      const normalizedUser = normalizeUser(user);
-      await autenticar(normalizedUser, token, rt);
-      return true;
-    } catch (err) {
-      console.error('Error en login:', err);
-      return false;
-    }
+  const login = async (correo: string, contrasena: string): Promise<void> => {
+    const { token, refreshToken: rt, user } = await loginApi(correo, contrasena);
+    await autenticar(normalizeUser(user), token, rt);
   };
 
   const loginWithGoogle = async (
