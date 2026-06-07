@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = async (updates: Partial<User>) => {
     if (!user) return;
-    const updated = await updateUserApi(user.id, updates);
+    const updated = await updateUserApi(user.id, updates, token ?? undefined);
     // Token stays the same on profile update
     await autenticar(normalizeUser(updated), token, refreshToken);
   };

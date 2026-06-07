@@ -5,8 +5,8 @@ export async function fetchUsers(): Promise<User[]> {
   return api.get('/usuarios');
 }
 
-export async function fetchUser(id: string): Promise<User> {
-  return api.get(`/usuario/${id}`);
+export async function fetchUser(id: string, token?: string): Promise<User> {
+  return api.get(`/usuario/${id}`, undefined, token ? { 'Authorization': `Bearer ${token}` } : undefined);
 }
 
 export async function createUser(data: {
@@ -19,6 +19,6 @@ export async function createUser(data: {
   return api.post('/auth/registro', data);
 }
 
-export async function updateUser(id: string, data: Partial<User>): Promise<User> {
-  return api.put(`/usuario/${id}`, data);
+export async function updateUser(id: string, data: Partial<User>, token?: string): Promise<User> {
+  return api.put(`/usuario/${id}`, data, undefined, token ? { 'Authorization': `Bearer ${token}` } : undefined);
 }
