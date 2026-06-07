@@ -10,7 +10,9 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
   if (!res.ok) throw await parseAuthError(res);
   const text = await res.text();
-  if (!text) return undefined as T;
+  if (!text) {
+    throw new Error('Respuesta vacía del servidor de autenticación');
+  }
   return JSON.parse(text) as T;
 }
 

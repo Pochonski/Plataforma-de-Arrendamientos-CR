@@ -43,6 +43,7 @@ export interface GoogleSignInButtonProps {
 const GSI_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
 let scriptLoadingPromise: Promise<void> | null = null;
+let initializedClientId: string | null = null;
 
 function ensureGsiScript(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
@@ -77,9 +78,14 @@ export function GoogleSignInButton({
 }: GoogleSignInButtonProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
 
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  onSuccessRef.current = onSuccess;
+  onErrorRef.current = onError;
+
   useEffect(() => {
     if (!clientId) {
-      onError?.('Google Client ID no configurado');
+      onErrorRef.current?.('Google Client ID no configurado');
       return;
     }
 
@@ -88,21 +94,27 @@ export function GoogleSignInButton({
     ensureGsiScript()
       .then(() => {
         if (cancelled || !buttonRef.current || !window.google?.accounts?.id) return;
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          nonce,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-          itp_support: true,
-          use_fedcm_for_prompt: false,
-          callback: (response) => {
-            if (response?.credential) {
-              onSuccess(response.credential);
-            } else {
-              onError?.('No se recibió credential de Google');
-            }
-          },
-        });
+
+        if (initializedClientId !== clientId) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            nonce,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+            itp_support: true,
+            use_fedcm_for_prompt: false,
+            callback: (response) => {
+              if (response?.credential) {
+                onSuccessRef.current(response.credential);
+              } else {
+                onErrorRef.current?.('No se recibió credential de Google');
+              }
+            },
+          });
+          initializedClientId = clientId;
+        }
+
+        buttonRef.current.innerHTML = '';
         window.google.accounts.id.renderButton(buttonRef.current, {
           type: 'standard',
           theme: 'outline',
@@ -117,13 +129,13 @@ export function GoogleSignInButton({
       .catch((err: unknown) => {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : 'Error cargando GSI';
-        onError?.(message);
+        onErrorRef.current?.(message);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [clientId, nonce, text, onSuccess, onError]);
+  }, [clientId, nonce, text]);
 
   return <div ref={buttonRef} className="flex justify-center" />;
 }
