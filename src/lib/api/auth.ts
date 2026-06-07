@@ -9,7 +9,9 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
   if (APIM_KEY) headers['Ocp-Apim-Subscription-Key'] = APIM_KEY;
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
   if (!res.ok) throw await parseAuthError(res);
-  return res.json() as Promise<T>;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export async function login(correo: string, contrasena: string): Promise<{ token: string; refreshToken: string; user: User }> {

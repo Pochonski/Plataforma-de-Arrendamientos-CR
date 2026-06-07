@@ -1,6 +1,5 @@
 import { useCallback, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import type { CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { toast } from 'sonner';
 import { AuthError } from '@/lib/api/errors';
@@ -22,15 +21,14 @@ export function useGoogleAuth() {
   const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  const handleGoogleSuccess = useCallback(async (credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = useCallback(async (credential: string) => {
     setIsLoading(true);
     try {
-      const token = credentialResponse.credential as string;
-      if (!token) {
+      if (!credential) {
         toast.error('No se pudo obtener el token de Google');
         return;
       }
-      setPendingGoogleToken(token);
+      setPendingGoogleToken(credential);
       setShowRoleSelection(true);
     } catch {
       toast.error('Error al procesar login de Google');

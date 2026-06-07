@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { GoogleLogin } from '@react-oauth/google';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registroFormSchema, passwordRequirements, getPasswordStrength } from '@/lib/validations';
@@ -21,6 +20,7 @@ import {
 } from '../components/ui/dialog';
 import { UserPlus, Mail, Lock, User, AlertCircle, Building2, Home, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { GoogleSignInButton } from '../components/shared/GoogleSignInButton';
 
 export default function Registro() {
   const [showPassword, setShowPassword] = useState(true);
@@ -272,17 +272,12 @@ export default function Registro() {
                 </div>
 
                 <div className="flex justify-center">
-                  <GoogleLogin
-                    onSuccess={google.handleGoogleSuccess}
-                    onError={() => {
-                      toast.error('Error con Google OAuth');
-                    }}
+                  <GoogleSignInButton
+                    clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}
                     nonce={google.nonce}
-                    useOneTap={false}
                     text="signup_with"
-                    shape="rectangular"
-                    logo_alignment="left"
-                    width={240}
+                    onSuccess={google.handleGoogleSuccess}
+                    onError={(message) => toast.error(message || 'Error con Google OAuth')}
                   />
                 </div>
               </div>

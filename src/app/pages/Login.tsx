@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
-import { GoogleLogin } from '@react-oauth/google';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
@@ -23,6 +22,7 @@ import {
 } from '../components/ui/dialog';
 import { Building2, Home } from 'lucide-react';
 import { AuthError } from '@/lib/api/errors';
+import { GoogleSignInButton } from '../components/shared/GoogleSignInButton';
 
 export default function Login() {
   const [recordarme, setRecordarme] = useState(false);
@@ -216,18 +216,12 @@ export default function Login() {
               </div>
 
               <div className="flex justify-center">
-                <GoogleLogin
-                  onSuccess={google.handleGoogleSuccess}
-                  onError={() => {
-                    toast.error('Error con Google OAuth');
-                  }}
+                <GoogleSignInButton
+                  clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}
                   nonce={google.nonce}
-                  useOneTap={false}
                   text="signin_with"
-                  shape="rectangular"
-                  logo_alignment="left"
-                  width={240}
-                  click_listener={null}
+                  onSuccess={google.handleGoogleSuccess}
+                  onError={(message) => toast.error(message || 'Error con Google OAuth')}
                 />
               </div>
             </div>

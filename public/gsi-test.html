@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>GSI Test - Plataforma Arrendamientos</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    .box { border: 1px solid #ccc; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .ok { background: #d4edda; border-color: #c3e6cb; }
+    .err { background: #f8d7da; border-color: #f5c6cb; }
+    .pending { background: #fff3cd; border-color: #ffeeba; }
+    pre { background: #f4f4f4; padding: 12px; border-radius: 4px; overflow-x: auto; }
+    h1 { margin: 0 0 10px; }
+    code { background: #eee; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>Google Sign-In - Test de aislamiento</h1>
+  <p>Origen actual: <code id="origin"></code></p>
+  <p>Client ID: <code id="clientId"></code></p>
+
+  <div id="status" class="box pending">
+    <strong>Estado:</strong> <span id="statusText">Cargando GSI...</span>
+  </div>
+
+  <div id="gsi-container" style="margin: 20px 0;"></div>
+
+  <div class="box">
+    <strong>Log de eventos GSI:</strong>
+    <pre id="log"></pre>
+  </div>
+
+  <div id="result" class="box" style="display:none;">
+    <strong>Resultado:</strong>
+    <pre id="resultContent"></pre>
+  </div>
+
+  <script>
+    const CLIENT_ID = '703304000101-f5ku79ld8mejv04dkfqt4ejbilm4dv66.apps.googleusercontent.com';
+    document.getElementById('origin').textContent = window.location.origin;
+    document.getElementById('clientId').textContent = CLIENT_ID;
+
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+    const statusTextEl = document.getElementById('statusText');
+    const resultEl = document.getElementById('result');
+    const resultContentEl = document.getElementById('resultContent');
+
+    function log(msg) {
+      const time = new Date().toLocaleTimeString();
+      logEl.textContent += `[${time}] ${msg}\n`;
+      console.log(msg);
+    }
+
+    function setStatus(text, cls) {
+      statusTextEl.textContent = text;
+      statusEl.className = `box ${cls}`;
+    }
+
+    window.onload = function() {
+      if (typeof google === 'undefined') {
+        setStatus('❌ google object no se cargó — la librería GSI falló', 'err');
+        log('ERROR: google is undefined. Posible 400/403 al cargar accounts.google.com/gsi/client');
+        return;
+      }
+
+      log('✅ GSI library cargada');
+
+      try {
+        google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: handleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+        log('✅ google.accounts.id.initialize() ejecutado');
+        setStatus('GSI inicializado — renderizando botón...', 'pending');
+
+        google.accounts.id.renderButton(
+          document.getElementById('gsi-container'),
+          { theme: 'outline', size: 'large', text: 'signin_with' }
+        );
+        log('✅ Botón GSI renderizado');
+        setStatus('✅ Botón visible. Hacé click para probar el flujo OAuth completo.', 'ok');
+      } catch (e) {
+        setStatus('❌ Error al inicializar GSI', 'err');
+        log('ERROR en initialize: ' + e.message);
+        console.error(e);
+      }
+    };
+
+    function handleCredentialResponse(response) {
+      log('🎉 ¡Credential response recibida!');
+      log('JWT length: ' + (response.credential?.length || 0));
+      resultEl.style.display = 'block';
+      resultContentEl.textContent = JSON.stringify({
+        credential_preview: response.credential?.substring(0, 80) + '...',
+        select_by: response.select_by,
+      }, null, 2);
+      setStatus('🎉 Login exitoso', 'ok');
+    }
+
+    // Capturar errores de la red GSI en tiempo real
+    const origFetch = window.fetch;
+    window.fetch = function(...args) {
+      const url = args[0]?.toString() || '';
+      if (url.includes('accounts.google.com')) {
+        log(`→ fetch ${url.substring(0, 100)}`);
+      }
+      return origFetch.apply(this, args).then(res => {
+        if (url.includes('accounts.google.com')) {
+          log(`← ${res.status} ${res.statusText} (${url.substring(0, 60)})`);
+        }
+        return res;
+      }).catch(err => {
+        if (url.includes('accounts.google.com')) {
+          log(`✖ Network error: ${err.message}`);
+        }
+        throw err;
+      });
+    };
+  </script>
+</body>
+</html>

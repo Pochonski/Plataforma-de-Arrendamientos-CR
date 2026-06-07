@@ -13,10 +13,8 @@ vi.mock('@/app/contexts/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-vi.mock('@react-oauth/google', () => ({
-  GoogleLogin: () => null,
-  GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) => children,
-  useGoogleLogin: vi.fn(),
+vi.mock('@/app/components/shared/GoogleSignInButton', () => ({
+  GoogleSignInButton: () => null,
 }));
 
 import Login from '../Login';
