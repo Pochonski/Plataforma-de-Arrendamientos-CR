@@ -15,7 +15,7 @@ export async function createUser(data: {
   contrasena: string;
   rol: 'dueno' | 'inquilino';
   telefono?: string;
-}): Promise<{ token: string; user: User }> {
+}): Promise<{ token: string; refreshToken: string; user: User }> {
   return api.post('/auth/registro', data);
 }
 
