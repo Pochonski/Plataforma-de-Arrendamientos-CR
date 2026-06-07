@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import type { CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { toast } from 'sonner';
+import { AuthError } from '@/lib/api/errors';
 
 function generateNonce(): string {
   const array = new Uint8Array(32);
@@ -47,11 +48,17 @@ export function useGoogleAuth() {
         if (success) {
           toast.success('¡Bienvenido con Google!');
           navigate('/dashboard', { replace: true });
+        }
+      } catch (err) {
+        if (err instanceof AuthError) {
+          if (err.kind === 'network') {
+            toast.error('No se pudo conectar al servidor de Google. Verifica tu conexión.');
+          } else {
+            toast.error(err.message || 'Error con Google OAuth');
+          }
         } else {
           toast.error('No se pudo crear la cuenta con Google');
         }
-      } catch {
-        toast.error('Error al crear cuenta con Google');
       } finally {
         setIsLoading(false);
         setShowRoleSelection(false);

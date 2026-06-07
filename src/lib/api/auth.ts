@@ -17,7 +17,7 @@ export async function login(correo: string, contrasena: string): Promise<{ token
 }
 
 export async function googleAuth(googleToken: string, rol: 'dueno' | 'inquilino', nonce?: string): Promise<{ token: string; refreshToken: string; user: User }> {
-  return api.post('/auth/google', { googleToken, rol, nonce });
+  return authPost('/auth/google', { googleToken, rol, nonce });
 }
 
 export async function refreshToken(refreshToken?: string): Promise<{ token: string; refreshToken: string; user: User }> {
