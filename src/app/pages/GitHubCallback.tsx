@@ -1,10 +1,14 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 
+const CALLBACK_KEY = 'github_oauth_callback';
+
 /**
  * Página de callback para GitHub OAuth.
  * GitHub redirige aquí con ?code=...&state=... y esta página
  * postea el mensaje a la ventana padre (que abrió el popup) y se cierra.
+ * También escribe en sessionStorage como fallback por si postMessage
+ * no llega (bloqueadores, timing en mobile, etc.).
  */
 export default function GitHubCallback() {
   const [searchParams] = useSearchParams();
@@ -15,23 +19,36 @@ export default function GitHubCallback() {
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
+    const payload = {
+      type: 'github-oauth-callback',
+      code,
+      state,
+      error: error
+        ? `${error}${errorDescription ? `: ${errorDescription}` : ''}`
+        : undefined,
+    };
+
+    // Fallback #1: sessionStorage (mismo tab que el opener) + storage event
+    // Fallback #2: postMessage al opener (caso normal)
+    try {
+      if (code) {
+        sessionStorage.setItem(CALLBACK_KEY, JSON.stringify({ code, state }));
+      }
+    } catch {
+      // sessionStorage puede fallar en algunos navegadores; ignorar
+    }
+
     if (window.opener) {
-      window.opener.postMessage(
-        {
-          type: 'github-oauth-callback',
-          code,
-          state,
-          error: error
-            ? `${error}${errorDescription ? `: ${errorDescription}` : ''}`
-            : undefined,
-        },
-        window.location.origin,
-      );
+      try {
+        window.opener.postMessage(payload, window.location.origin);
+      } catch {
+        // Algunos navegadores rechazan si la ventana está cerrándose; ignorar
+      }
     }
 
     const timer = setTimeout(() => {
       window.close();
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchParams]);
