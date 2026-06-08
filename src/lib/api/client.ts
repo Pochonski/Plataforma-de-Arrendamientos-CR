@@ -4,6 +4,14 @@ export const API_BASE = import.meta.env.VITE_API_URL || '';
 export const APIM_URL = import.meta.env.VITE_APIM_URL || '';
 export const APIM_KEY = import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '';
 
+/**
+ * Prefijo común para todos los endpoints REST del backend.
+ * En prod (SWA + linked backend) el SWA proxia `<host>/api/*` al App Service,
+ * así que el cliente siempre pega `/api/...` y el browser ve mismo-origen.
+ * Override por env: `VITE_API_PREFIX` (ej. '' para hablarle directo al App Service).
+ */
+export const API_PREFIX = import.meta.env.VITE_API_PREFIX ?? '/api';
+
 type RequestOptions = Omit<RequestInit, 'body' | 'headers'> & {
   body?: unknown;
   headers?: Record<string, string>;
@@ -79,7 +87,8 @@ function getFunMessage(status: number, isNetworkError: boolean): string {
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { baseUrl, headers: extraHeaders, body, ...rest } = options;
   const resolvedBase = baseUrl ?? APIM_URL ?? API_BASE;
-  const url = `${resolvedBase}${path}`;
+  const normalizedPath = path.startsWith(API_PREFIX) ? path : `${API_PREFIX}${path}`;
+  const url = `${resolvedBase}${normalizedPath}`;
 
   const headers: Record<string, string> = {
     'Accept': 'application/json',

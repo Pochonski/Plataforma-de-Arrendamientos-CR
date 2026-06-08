@@ -1,10 +1,11 @@
-import { api, APIM_URL, API_BASE, APIM_KEY } from './client';
+import { api, APIM_URL, API_BASE, APIM_KEY, API_PREFIX } from './client';
 import type { User } from '@/app/types';
 import { parseAuthError } from './errors';
 
 async function authPost<T>(path: string, body: unknown): Promise<T> {
   const baseUrl = APIM_URL || API_BASE;
-  const url = `${baseUrl}${path}`;
+  const normalizedPath = path.startsWith(API_PREFIX) ? path : `${API_PREFIX}${path}`;
+  const url = `${baseUrl}${normalizedPath}`;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (APIM_KEY) headers['Ocp-Apim-Subscription-Key'] = APIM_KEY;
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });

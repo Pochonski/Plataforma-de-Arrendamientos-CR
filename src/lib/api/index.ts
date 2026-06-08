@@ -1,4 +1,4 @@
-export { api, apiFetch, API_BASE, APIM_URL, APIM_KEY } from './client';
+export { api, apiFetch, API_BASE, APIM_URL, APIM_KEY, API_PREFIX } from './client';
 
 export {
   normalizeProperty,
