@@ -18,15 +18,18 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function login(correo: string, contrasena: string): Promise<{ token: string; refreshToken: string; user: User }> {
-  return authPost('/auth/login', { correo, contrasena });
+  const r = await authPost<{ token: string; refreshToken: string; usuario: User }>('/auth/login', { correo, contrasena });
+  return { token: r.token, refreshToken: r.refreshToken, user: r.usuario };
 }
 
 export async function googleAuth(googleToken: string, rol: 'dueno' | 'inquilino', nonce?: string): Promise<{ token: string; refreshToken: string; user: User }> {
-  return authPost('/auth/google', { googleToken, rol, nonce });
+  const r = await authPost<{ token: string; refreshToken: string; usuario: User }>('/auth/google', { googleToken, rol, nonce });
+  return { token: r.token, refreshToken: r.refreshToken, user: r.usuario };
 }
 
 export async function gitHubAuth(code: string, redirectUri: string, rol: 'dueno' | 'inquilino'): Promise<{ token: string; refreshToken: string; user: User }> {
-  return authPost('/auth/github', { code, redirectUri, rol });
+  const r = await authPost<{ token: string; refreshToken: string; usuario: User }>('/auth/github', { code, redirectUri, rol });
+  return { token: r.token, refreshToken: r.refreshToken, user: r.usuario };
 }
 
 export async function refreshToken(refreshToken?: string): Promise<{ token: string; refreshToken: string; user: User }> {

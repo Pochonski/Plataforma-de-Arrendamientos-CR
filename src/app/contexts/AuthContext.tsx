@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (err) {
       console.error('Error con login de Google:', err);
-      return false;
+      throw err;
     }
   };
 
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (err) {
       console.error('Error con login de GitHub:', err);
-      return false;
+      throw err;
     }
   };
 
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (err) {
       console.error('Error crítico registrando usuario:', err);
-      return false;
+      throw err;
     }
   };
 
