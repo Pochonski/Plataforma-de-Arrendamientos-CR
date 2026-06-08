@@ -4,6 +4,12 @@ export const API_BASE = import.meta.env.VITE_API_URL || '';
 export const APIM_URL = import.meta.env.VITE_APIM_URL || '';
 export const APIM_KEY = import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '';
 
+export const BACKEND_USUARIOS = import.meta.env.VITE_BACKEND_USUARIOS || '';
+export const BACKEND_PROPIEDADES = import.meta.env.VITE_BACKEND_PROPIEDADES || 'https://ms-propiedades.azurewebsites.net';
+export const BACKEND_CONTRATOS_PAGOS = import.meta.env.VITE_BACKEND_CONTRATOS_PAGOS || 'https://ms-contratos-pagos.azurewebsites.net';
+export const BACKEND_MENSAJES = import.meta.env.VITE_BACKEND_MENSAJES || 'https://ms-mensajes.azurewebsites.net';
+export const BACKEND_NOTIFICACIONES = import.meta.env.VITE_BACKEND_NOTIFICACIONES || 'https://ms-notificaciones.azurewebsites.net';
+
 /**
  * Prefijo común para todos los endpoints REST del backend.
  * En prod (SWA + linked backend) el SWA proxia `<host>/api/*` al App Service,
@@ -97,7 +103,10 @@ function getFunMessage(status: number, isNetworkError: boolean): string {
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { baseUrl, headers: extraHeaders, body, ...rest } = options;
   const resolvedBase = baseUrl ?? APIM_URL ?? API_BASE;
-  const normalizedPath = path.startsWith(API_PREFIX) ? path : `${API_PREFIX}${path}`;
+  const isAbsolute = /^https?:\/\//i.test(resolvedBase);
+  const normalizedPath = isAbsolute || path.startsWith(API_PREFIX)
+    ? path
+    : `${API_PREFIX}${path}`;
   const url = `${resolvedBase}${normalizedPath}`;
 
   const headers: Record<string, string> = {
