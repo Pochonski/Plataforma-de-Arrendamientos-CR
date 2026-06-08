@@ -75,7 +75,7 @@ function getFunMessage(status: number, isNetworkError: boolean): string {
 }
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { baseUrl, headers: extraHeaders, ...rest } = options;
+  const { baseUrl, headers: extraHeaders, body, ...rest } = options;
   const resolvedBase = baseUrl ?? APIM_URL ?? API_BASE;
   const url = `${resolvedBase}${path}`;
 
@@ -89,10 +89,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const config: RequestInit = {
     ...rest,
     headers,
+    body: body !== undefined ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
   };
-  if (rest.body && typeof rest.body !== 'string') {
-    config.body = JSON.stringify(rest.body);
-  }
 
   try {
     const res = await fetch(url, config);
