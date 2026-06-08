@@ -1,3 +1,5 @@
+import { toast } from 'sonner';
+
 export const API_BASE = import.meta.env.VITE_API_URL || '';
 export const APIM_URL = import.meta.env.VITE_APIM_URL || '';
 export const APIM_KEY = import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '';
@@ -88,7 +90,10 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     const res = await fetch(url, config);
     if (!res.ok) {
       const msg = getFunMessage(res.status, false);
-      console.warn(`⚠️ ${msg} [${res.status} ${res.statusText}] — ${path}`);
+      // 401 lo maneja el AuthContext (redirige al login) — no duplicar toast
+      if (res.status !== 401) {
+        toast.error(msg);
+      }
       throw new Error(`API error ${res.status}: ${res.statusText}`);
     }
 
@@ -97,8 +102,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     return JSON.parse(text) as T;
   } catch (err) {
     if (err instanceof TypeError && err.message.includes('fetch')) {
-      const msg = getFunMessage(0, true);
-      console.warn(`⚠️ ${msg} — ${path}`);
+      toast.error(getFunMessage(0, true));
     }
     throw err;
   }
