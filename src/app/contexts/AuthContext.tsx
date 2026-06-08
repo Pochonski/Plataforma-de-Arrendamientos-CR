@@ -19,14 +19,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Normalize the user object received from APIM:
-// - APIM returns rol: "dueno" (no tilde), frontend expects 'dueño' | 'inquilino'
-const normalizeUser = (raw: any): User => ({
-  ...raw,
-  rol: raw.rol === 'dueno' || raw.rol === 'arrendador' ? 'dueño'
-     : raw.rol === 'arrendatario' ? 'inquilino'
-     : raw.rol ?? 'inquilino',
-});
+// Normalize the user object received from backend:
+// - Spring Boot returns rol: "dueno" (no tilde), frontend expects 'dueño' | 'inquilino'
+// - Si el response no trae user (ej. error 4xx disfrazado de 2xx, o response envelope
+//   distinto), devolvemos un User vacío en vez de reventar con
+//   "Cannot read properties of undefined (reading 'rol')".
+const normalizeUser = (raw: any): User => {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: '',
+      nombre: '',
+      correo: '',
+      rol: 'inquilino',
+    } as User;
+  }
+  return {
+    ...raw,
+    rol: raw.rol === 'dueno' || raw.rol === 'arrendador' ? 'dueño'
+       : raw.rol === 'arrendatario' ? 'inquilino'
+       : raw.rol ?? 'inquilino',
+  };
+};
 
 const STORAGE_KEY_TOKEN = 'auth_token';
 const STORAGE_KEY_REFRESH = 'auth_refresh_token';
@@ -49,6 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (correo: string, contrasena: string): Promise<void> => {
     const { token, refreshToken: rt, user } = await loginApi(correo, contrasena);
+    if (!user) {
+      throw new Error('El servidor no devolvió datos de usuario. Intenta de nuevo.');
+    }
     await autenticar(normalizeUser(user), token, rt);
   };
 
@@ -60,6 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
       const { token, refreshToken: rt, user } = await googleAuth(googleToken, backendRol, nonce);
+      if (!user) {
+        throw new Error('El servidor no devolvió datos de usuario. Intenta de nuevo.');
+      }
       await autenticar(normalizeUser(user), token, rt);
       return true;
     } catch (err) {
@@ -76,6 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
       const { token, refreshToken: rt, user } = await gitHubAuth(code, redirectUri, backendRol);
+      if (!user) {
+        throw new Error('El servidor no devolvió datos de usuario. Intenta de nuevo.');
+      }
       await autenticar(normalizeUser(user), token, rt);
       return true;
     } catch (err) {
@@ -95,6 +117,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         rol: backendRol,
         telefono,
       });
+
+      if (!user) {
+        console.error('[register] createUser returned no user object:', {
+          token: !!token, refreshToken: !!rt, user,
+        });
+        throw new Error('El servidor no devolvió datos de usuario. Intenta de nuevo.');
+      }
 
       await autenticar(normalizeUser(user), token, rt);
       return true;
