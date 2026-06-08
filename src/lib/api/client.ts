@@ -124,6 +124,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
   const config: RequestInit = {
     ...rest,
+    method,
     headers,
     body: body !== undefined ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
   };
