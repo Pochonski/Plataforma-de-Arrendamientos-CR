@@ -8,6 +8,23 @@ export function useProperties(page: number = 1, filters?: Parameters<typeof fetc
   return useQuery({
     queryKey: [PROPERTIES_KEY, page, filters],
     queryFn: () => fetchProperties(page, filters),
+    // Unwrap the PropertiesResponse envelope so callers can do `data.filter(...)`
+    // directly. Before this, `data` was the full response object ({data, total,
+    // page, totalPages}) and calling .filter on it threw 'f.filter is not a function'.
+    // Pages that need pagination meta (total/page/totalPages) should call
+    // fetchProperties() directly via useQuery without this select.
+    select: (res) => (res as { data: Property[] }).data,
+  });
+}
+
+/**
+ * Versión que devuelve el response completo (data, total, page, totalPages)
+ * para páginas con paginación (Landing, Propiedades, DuenoDashboard).
+ */
+export function usePropertiesPaged(page: number = 1, filters?: Parameters<typeof fetchProperties>[1]) {
+  return useQuery({
+    queryKey: [PROPERTIES_KEY, 'paged', page, filters],
+    queryFn: () => fetchProperties(page, filters),
   });
 }
 

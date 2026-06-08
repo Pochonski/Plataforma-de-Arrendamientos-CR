@@ -21,11 +21,11 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useProperties } from '../../lib/hooks';
+import { usePropertiesPaged } from '../../lib/hooks';
 import { formatPrice } from '../utils/formatters';
 
 export default function Landing() {
-  const { data: propsData } = useProperties(1, {});
+  const { data: propsData } = usePropertiesPaged(1, {});
   const properties = propsData?.data ?? [];
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();

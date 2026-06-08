@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useProperties, useDebounce } from '../../lib/hooks';
+import { usePropertiesPaged, useDebounce } from '../../lib/hooks';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -65,7 +65,7 @@ export default function Propiedades() {
     setPage(1);
   }, [filters]);
 
-  const { data: propsData, isLoading: isLoadingProperties } = useProperties(page, filters);
+  const { data: propsData, isLoading: isLoadingProperties } = usePropertiesPaged(page, filters);
 
   const properties = propsData?.data ?? [];
   const propertiesTotal = propsData?.total ?? 0;

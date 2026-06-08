@@ -20,8 +20,7 @@ import { formatPrice, getMonthName, getPaymentStatusBadge } from '../../utils/fo
 
 export default function DuenoDashboard() {
   const { user } = useAuth();
-  const { data: propsData, isLoading: isLoadingProperties, refetch: refetchProperties } = useProperties(1, { duenoId: user?.id });
-  const properties = propsData?.data ?? [];
+  const { data: properties = [], isLoading: isLoadingProperties, refetch: refetchProperties } = useProperties(1, { duenoId: user?.id });
   const { data: invitations = [], isLoading: isLoadingInvitations, refetch: refetchInvitations } = useInvitations(user?.id ?? '');
   const { data: payments = [], isLoading: isLoadingPayments, refetch: refetchPayments } = usePayments(user?.id);
 
