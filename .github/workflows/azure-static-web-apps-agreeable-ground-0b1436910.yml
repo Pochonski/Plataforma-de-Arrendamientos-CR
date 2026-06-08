@@ -38,6 +38,7 @@ jobs:
           VITE_APIM_SUBSCRIPTION_KEY: ${{ secrets.VITE_APIM_SUBSCRIPTION_KEY }}
           VITE_USE_API: ${{ secrets.VITE_USE_API }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
           # Tiempo real — microservicios de mensajería y notificaciones
           VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL }}
           VITE_NOTIF_WS_URL: ${{ secrets.VITE_NOTIF_WS_URL }}
