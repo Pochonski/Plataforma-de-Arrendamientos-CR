@@ -12,6 +12,16 @@ export const APIM_KEY = import.meta.env.VITE_APIM_SUBSCRIPTION_KEY || '';
  */
 export const API_PREFIX = import.meta.env.VITE_API_PREFIX ?? '/api';
 
+export const AUTH_TOKEN_KEY = 'auth_token';
+
+export function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
 type RequestOptions = Omit<RequestInit, 'body' | 'headers'> & {
   body?: unknown;
   headers?: Record<string, string>;
@@ -96,6 +106,11 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     ...extraHeaders,
   };
   if (APIM_KEY) headers['Ocp-Apim-Subscription-Key'] = APIM_KEY;
+  const hasAuth = typeof headers['Authorization'] === 'string' && headers['Authorization'].length > 0;
+  if (!hasAuth) {
+    const token = getAuthToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const config: RequestInit = {
     ...rest,

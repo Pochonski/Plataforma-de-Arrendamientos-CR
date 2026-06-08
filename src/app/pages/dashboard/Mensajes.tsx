@@ -66,7 +66,7 @@ export default function Mensajes() {
           try {
             const userData = await queryClient.fetchQuery({
               queryKey: ['users', id],
-              queryFn: () => fetchUser(id, token ?? undefined),
+              queryFn: () => fetchUser(id),
               staleTime: 5 * 60 * 1000,
             });
             if (userData?.nombre) {

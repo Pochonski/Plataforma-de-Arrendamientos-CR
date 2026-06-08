@@ -35,6 +35,7 @@ export async function gitHubAuth(code: string, redirectUri: string, rol: 'dueno'
 export async function refreshToken(refreshToken?: string): Promise<{ token: string; refreshToken: string; user: User }> {
   return api.post('/auth/refresh', { refreshToken }, undefined, {
     'X-Refresh-Token': refreshToken || '',
+    'Authorization': '',
   });
 }
 
