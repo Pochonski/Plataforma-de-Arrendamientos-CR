@@ -15,6 +15,7 @@ import DesignDocs from './pages/DesignDocs';
 import AceptarInvitacion from './pages/AceptarInvitacion';
 import RecuperarContrasena from './pages/RecuperarContrasena';
 import NotFound from './pages/NotFound';
+import GitHubCallback from './pages/GitHubCallback';
 
 // Dashboard landing pages (eager)
 import DuenoDashboard from './pages/dashboard/DuenoDashboard';
@@ -69,6 +70,7 @@ export const router = createBrowserRouter([
       { path: 'propiedades/:id', element: <PropiedadDetalle /> },
       { path: 'invitacion/:token', element: <AceptarInvitacion /> },
       { path: 'recuperar-contraseña', element: <RecuperarContrasena /> },
+      { path: 'auth/github/callback', element: <GitHubCallback /> },
       { path: 'design-docs', element: <DesignDocs /> },
       { path: 'centro-ayuda', element: <LazyRoute component={DashboardCentroAyuda} /> },
       { path: 'terminos', element: <LazyRoute component={DashboardTerminos} /> },

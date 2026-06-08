@@ -25,6 +25,10 @@ export async function googleAuth(googleToken: string, rol: 'dueno' | 'inquilino'
   return authPost('/auth/google', { googleToken, rol, nonce });
 }
 
+export async function gitHubAuth(code: string, redirectUri: string, rol: 'dueno' | 'inquilino'): Promise<{ token: string; refreshToken: string; user: User }> {
+  return authPost('/auth/github', { code, redirectUri, rol });
+}
+
 export async function refreshToken(refreshToken?: string): Promise<{ token: string; refreshToken: string; user: User }> {
   return api.post('/auth/refresh', { refreshToken }, undefined, {
     'X-Refresh-Token': refreshToken || '',

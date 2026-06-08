@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { User } from '../types';
 import { updateUser as updateUserApi, createUser } from '@/lib/api/users';
-import { login as loginApi, googleAuth, logout as logoutApi } from '@/lib/api/auth';
+import { login as loginApi, googleAuth, gitHubAuth, logout as logoutApi } from '@/lib/api/auth';
 import { AuthError } from '@/lib/api/errors';
 
 interface AuthContextType {
@@ -10,6 +10,7 @@ interface AuthContextType {
   refreshToken: string | null;
   login: (correo: string, contraseña: string) => Promise<void>;
   loginWithGoogle: (googleToken: string, rol: 'dueño' | 'inquilino', nonce?: string) => Promise<boolean>;
+  loginWithGitHub: (code: string, redirectUri: string, rol: 'dueño' | 'inquilino') => Promise<boolean>;
   register: (nombre: string, correo: string, contraseña: string, rol: 'dueño' | 'inquilino', telefono?: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
@@ -67,7 +68,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (nombre: string, correo: string, contrasena: string, rol: 'dueño' | 'inquilino', telefono?: string): Promise<boolean> => {
+  const loginWithGitHub = async (
+    code: string,
+    redirectUri: string,
+    rol: 'dueño' | 'inquilino',
+  ): Promise<boolean> => {
+    try {
+      const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
+      const { token, refreshToken: rt, user } = await gitHubAuth(code, redirectUri, backendRol);
+      await autenticar(normalizeUser(user), token, rt);
+      return true;
+    } catch (err) {
+      console.error('Error con login de GitHub:', err);
+      return false;
+    }
+  };
+
+  const register = async (nombre: string, correo: string, contrasena: string, rol: 'dueño' | 'inquilino', telefono?: string) => {
     try {
       const backendRol = rol === 'dueño' ? 'dueno' : 'inquilino';
 
@@ -116,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshToken,
         login,
         loginWithGoogle,
+        loginWithGitHub,
         register,
         logout,
         updateUser,

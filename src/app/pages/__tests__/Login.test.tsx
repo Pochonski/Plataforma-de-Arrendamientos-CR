@@ -17,6 +17,21 @@ vi.mock('@/app/components/shared/GoogleSignInButton', () => ({
   GoogleSignInButton: () => null,
 }));
 
+vi.mock('@/app/components/shared/GitHubSignInButton', () => ({
+  GitHubSignInButton: () => null,
+}));
+
+vi.mock('@/lib/hooks/useGitHubAuth', () => ({
+  useGitHubAuth: () => ({
+    showRoleSelection: false,
+    isLoading: false,
+    redirectUri: 'http://localhost/auth/github/callback',
+    handleGitHubSuccess: vi.fn(),
+    handleRoleSelection: vi.fn(),
+    closeRoleDialog: vi.fn(),
+  }),
+}));
+
 import Login from '../Login';
 
 describe('Login', () => {
