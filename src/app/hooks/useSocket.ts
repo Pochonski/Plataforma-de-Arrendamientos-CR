@@ -19,6 +19,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { toast } from 'sonner';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '';
 
@@ -99,12 +100,15 @@ export function useSocket({ userId, token, onNuevoMensaje }: UseSocketOptions): 
     });
 
     socket.on('connect_error', (err) => {
-      console.warn('[Socket] Error de conexión:', err.message);
+      // ID fijo para que Sonner actualice el mismo toast en vez de apilar uno por reintento
+      toast.error(`🔌 Sin conexión al servidor de mensajes — ${err.message}`, {
+        id: 'socket-connect-error',
+      });
       setConnected(false);
     });
 
     socket.on('error', (err: { mensaje?: string }) => {
-      console.error('[Socket] Error del servidor:', err.mensaje);
+      toast.error(err.mensaje ?? '⚠️ Error inesperado del servidor de mensajes');
     });
 
     return () => {
