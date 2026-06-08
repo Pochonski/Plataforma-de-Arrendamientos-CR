@@ -1,7 +1,18 @@
 {
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/api/*", "/*.{css,js,png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,eot,webp,avif,map,json}"]
   },
+  "routes": [
+    {
+      "route": "/api/*",
+      "allowedRoles": ["anonymous", "authenticated"],
+      "headers": {
+        "X-Forwarded-Host": "arrendamientos-ms-users-boot.azurewebsites.net"
+      },
+      "rewrite": "https://arrendamientos-ms-users-boot.azurewebsites.net/api/{*}"
+    }
+  ],
   "globalHeaders": {
     "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
     "Cross-Origin-Embedder-Policy": "unsafe-none",
@@ -11,14 +22,6 @@
     {
       "name": "VITE_GOOGLE_CLIENT_ID",
       "value": "703304000101-f5ku79ld8mejv04dkfqt4ejbilm4dv66.apps.googleusercontent.com"
-    },
-    {
-      "name": "VITE_API_URL",
-      "value": "https://plataforma-arrendamientos-api.azure-api.net"
-    },
-    {
-      "name": "VITE_APIM_URL",
-      "value": "https://plataforma-arrendamientos-api.azure-api.net"
     }
   ]
 }
