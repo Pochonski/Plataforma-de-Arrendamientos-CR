@@ -101,7 +101,8 @@ function getFunMessage(status: number, isNetworkError: boolean): string {
 }
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { baseUrl, headers: extraHeaders, body, ...rest } = options;
+  const { baseUrl, headers: extraHeaders, body, method: methodOpt, ...rest } = options;
+  const method = methodOpt ?? 'GET';
   const resolvedBase = baseUrl ?? APIM_URL ?? API_BASE;
   const isAbsolute = /^https?:\/\//i.test(resolvedBase);
   const normalizedPath = isAbsolute || path.startsWith(API_PREFIX)
@@ -130,7 +131,30 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   try {
     const res = await fetch(url, config);
     if (!res.ok) {
-      const msg = getFunMessage(res.status, false);
+      // Loguear el error completo a la consola para diagnóstico.
+      // El toast puede pasar desapercibido si se dismiss automático.
+      let responseBody = '';
+      try {
+        responseBody = await res.clone().text();
+      } catch { /* ignore */ }
+      console.error(`[API] ${method} ${url} → ${res.status} ${res.statusText}`, {
+        status: res.status,
+        body: responseBody,
+      });
+
+      // Si el backend devolvió un JSON con `message` propio, mostrarlo
+      // en vez del mensaje random divertido — más útil para debug.
+      let backendMessage: string | null = null;
+      if (responseBody) {
+        try {
+          const parsed = JSON.parse(responseBody);
+          if (parsed && typeof parsed.message === 'string' && parsed.message) {
+            backendMessage = parsed.message;
+          }
+        } catch { /* not JSON */ }
+      }
+      const msg = backendMessage ?? getFunMessage(res.status, false);
+
       // 401 lo maneja el AuthContext (redirige al login) — no duplicar toast
       if (res.status !== 401) {
         toast.error(msg);
